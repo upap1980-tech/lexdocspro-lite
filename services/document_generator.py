@@ -1,225 +1,280 @@
 """
-Generador de documentos jurídicos profesionales
+Generador de documentos legales con IA
 """
-from jinja2 import Template
-from datetime import datetime
-from pathlib import Path
-import json
 
 class DocumentGenerator:
-    """Generador de documentos legales"""
-    
     def __init__(self, ai_service):
         self.ai_service = ai_service
-        self.templates_dir = Path(__file__).parent / 'templates' / 'legal'
-        
-    def generate_document(self, doc_type: str, data: dict, 
-                         provider: str = 'ollama') -> str:
-        """
-        Generar documento jurídico profesional
-        
-        Args:
-            doc_type: demanda, recurso, contrato, escrito, burofax
-            data: Datos del documento
-            provider: Proveedor de IA a usar
-        """
-        
-        # Prompt especializado por tipo de documento
-        prompts = {
-            'demanda': self._prompt_demanda,
-            'recurso': self._prompt_recurso,
-            'contrato': self._prompt_contrato,
-            'escrito': self._prompt_escrito,
-            'burofax': self._prompt_burofax
+    
+    def get_templates(self):
+        """Retorna todos los templates disponibles"""
+        return {
+            'demanda_civil': {
+                'name': '⚖️ Demanda Civil',
+                'description': 'Demanda completa para juicio ordinario o verbal',
+                'fields': [
+                    {'name': 'juzgado', 'label': 'Juzgado', 'type': 'text'},
+                    {'name': 'demandante', 'label': 'Demandante', 'type': 'text'},
+                    {'name': 'demandado', 'label': 'Demandado', 'type': 'text'},
+                    {'name': 'hechos', 'label': 'Hechos', 'type': 'textarea'},
+                    {'name': 'petitorio', 'label': 'Petitorio', 'type': 'textarea'}
+                ]
+            },
+            'escrito_alegaciones': {
+                'name': '📝 Escrito de Alegaciones',
+                'description': 'Respuesta a trámite de alegaciones',
+                'fields': [
+                    {'name': 'procedimiento', 'label': 'Nº Procedimiento', 'type': 'text'},
+                    {'name': 'parte', 'label': 'En nombre de', 'type': 'text'},
+                    {'name': 'alegaciones', 'label': 'Alegaciones', 'type': 'textarea'}
+                ]
+            },
+            'recurso_apelacion': {
+                'name': '🔄 Recurso de Apelación',
+                'description': 'Recurso contra sentencia de primera instancia',
+                'fields': [
+                    {'name': 'sentencia', 'label': 'Sentencia a recurrir', 'type': 'text'},
+                    {'name': 'recurrente', 'label': 'Recurrente', 'type': 'text'},
+                    {'name': 'fundamentos', 'label': 'Fundamentos de Derecho', 'type': 'textarea'},
+                    {'name': 'suplica', 'label': 'Súplica', 'type': 'textarea'}
+                ]
+            },
+            'burofax': {
+                'name': '📮 Burofax',
+                'description': 'Comunicación fehaciente por burofax',
+                'fields': [
+                    {'name': 'remitente', 'label': 'Remitente', 'type': 'text'},
+                    {'name': 'destinatario', 'label': 'Destinatario', 'type': 'text'},
+                    {'name': 'asunto', 'label': 'Asunto', 'type': 'text'},
+                    {'name': 'contenido', 'label': 'Contenido', 'type': 'textarea'}
+                ]
+            },
+            'requerimiento': {
+                'name': '⚠️ Requerimiento Extrajudicial',
+                'description': 'Requerimiento previo a reclamación judicial',
+                'fields': [
+                    {'name': 'requirente', 'label': 'Requirente', 'type': 'text'},
+                    {'name': 'requerido', 'label': 'Requerido', 'type': 'text'},
+                    {'name': 'objeto', 'label': 'Objeto del requerimiento', 'type': 'textarea'},
+                    {'name': 'plazo', 'label': 'Plazo', 'type': 'text'}
+                ]
+            },
+            'contestacion_demanda': {
+                'name': '🛡️ Contestación a la Demanda',
+                'description': 'Respuesta formal a demanda civil',
+                'fields': [
+                    {'name': 'procedimiento', 'label': 'Nº Procedimiento', 'type': 'text'},
+                    {'name': 'demandado', 'label': 'Demandado (quien contesta)', 'type': 'text'},
+                    {'name': 'hechos_propios', 'label': 'Hechos propios', 'type': 'textarea'},
+                    {'name': 'excepciones', 'label': 'Excepciones y defensas', 'type': 'textarea'},
+                    {'name': 'suplica', 'label': 'Súplica', 'type': 'textarea'}
+                ]
+            },
+            'recurso_reposicion': {
+                'name': '🔁 Recurso de Reposición',
+                'description': 'Recurso contra autos y providencias',
+                'fields': [
+                    {'name': 'procedimiento', 'label': 'Nº Procedimiento', 'type': 'text'},
+                    {'name': 'resolucion', 'label': 'Resolución recurrida', 'type': 'text'},
+                    {'name': 'recurrente', 'label': 'Recurrente', 'type': 'text'},
+                    {'name': 'motivos', 'label': 'Motivos del recurso', 'type': 'textarea'}
+                ]
+            },
+            'desistimiento': {
+                'name': '🚫 Desistimiento',
+                'description': 'Escrito de desistimiento del procedimiento',
+                'fields': [
+                    {'name': 'procedimiento', 'label': 'Nº Procedimiento', 'type': 'text'},
+                    {'name': 'parte', 'label': 'Parte que desiste', 'type': 'text'},
+                    {'name': 'motivo', 'label': 'Motivo (opcional)', 'type': 'textarea'}
+                ]
+            },
+            'personacion': {
+                'name': '👤 Personación y Solicitud de Copias',
+                'description': 'Primera comparecencia en autos',
+                'fields': [
+                    {'name': 'procedimiento', 'label': 'Nº Procedimiento', 'type': 'text'},
+                    {'name': 'parte', 'label': 'En nombre de', 'type': 'text'},
+                    {'name': 'procurador', 'label': 'Procurador', 'type': 'text'},
+                    {'name': 'abogado', 'label': 'Abogado', 'type': 'text'}
+                ]
+            },
+            'poder_procesal': {
+                'name': '📜 Poder para Pleitos',
+                'description': 'Otorgamiento de poder procesal',
+                'fields': [
+                    {'name': 'poderdante', 'label': 'Poderdante', 'type': 'text'},
+                    {'name': 'apoderado', 'label': 'Apoderado (Procurador)', 'type': 'text'},
+                    {'name': 'dni_poderdante', 'label': 'DNI Poderdante', 'type': 'text'},
+                    {'name': 'ambito', 'label': 'Ámbito del poder', 'type': 'select', 'options': ['General', 'Específico para este pleito']}
+                ]
+            },
+            'escrito_prueba': {
+                'name': '🔬 Proposición de Prueba',
+                'description': 'Escrito de proposición de medios de prueba',
+                'fields': [
+                    {'name': 'procedimiento', 'label': 'Nº Procedimiento', 'type': 'text'},
+                    {'name': 'parte', 'label': 'Parte que propone', 'type': 'text'},
+                    {'name': 'hechos', 'label': 'Hechos a probar', 'type': 'textarea'},
+                    {'name': 'pruebas', 'label': 'Medios de prueba propuestos', 'type': 'textarea'}
+                ]
+            },
+            'querella': {
+                'name': '⚔️ Querella Criminal',
+                'description': 'Escrito de querella penal',
+                'fields': [
+                    {'name': 'querellante', 'label': 'Querellante', 'type': 'text'},
+                    {'name': 'querellado', 'label': 'Querellado', 'type': 'text'},
+                    {'name': 'hechos', 'label': 'Hechos denunciados', 'type': 'textarea'},
+                    {'name': 'delito', 'label': 'Delito/s', 'type': 'text'},
+                    {'name': 'pruebas', 'label': 'Pruebas', 'type': 'textarea'}
+                ]
+            }
         }
+    
+    def generate(self, doc_type, data, provider='ollama'):
+        """Generar documento usando IA"""
         
-        if doc_type not in prompts:
-            return "Tipo de documento no soportado"
+        templates = self.get_templates()
+        
+        if doc_type not in templates:
+            raise ValueError(f"Tipo de documento no válido: {doc_type}")
+        
+        template = templates[doc_type]
+        
+        # Construir prompt según el tipo
+        prompt = self._build_prompt(doc_type, template, data)
         
         # Generar con IA
-        prompt = prompts[doc_type](data)
-        result = self.ai_service.chat(
-            prompt=prompt,
-            provider=provider,
-            mode='deep'
-        )
+        response = self.ai_service.generar_documento(prompt, provider)
         
-        if not result['success']:
-            return f"Error: {result.get('error')}"
-        
-        # Post-procesar documento
-        document = self._format_legal_document(result['response'], doc_type, data)
-        
-        return document
+        return response
     
-    def _prompt_demanda(self, data: dict) -> str:
-        return f"""Genera una DEMANDA JUDICIAL profesional para el derecho español con los siguientes datos:
+    def _build_prompt(self, doc_type, template, data):
+        """Construir prompt para la IA según el tipo de documento"""
+        
+        prompts = {
+            'demanda_civil': f"""
+Genera una DEMANDA CIVIL profesional con la siguiente información:
 
-TIPO DE PROCEDIMIENTO: {data.get('tipo_procedimiento', 'Ordinario')}
-JUZGADO: {data.get('juzgado', 'Juzgado de Primera Instancia')}
-MATERIA: {data.get('materia', '')}
-
-DATOS DEL DEMANDANTE:
-{data.get('demandante', '')}
-
-DATOS DEL DEMANDADO:
-{data.get('demandado', '')}
+JUZGADO: {data.get('juzgado')}
+DEMANDANTE: {data.get('demandante')}
+DEMANDADO: {data.get('demandado')}
 
 HECHOS:
-{data.get('hechos', '')}
+{data.get('hechos')}
 
-PETICIONES:
-{data.get('peticiones', '')}
+PETITORIO:
+{data.get('petitorio')}
 
-DOCUMENTACIÓN ADJUNTA:
-{data.get('documentos', '')}
+Estructura completa: Encabezamiento, Hechos numerados, Fundamentos de Derecho con jurisprudencia, Petitorio (SUPLICO), Otrosí (documentos).
+""",
+            
+            'contestacion_demanda': f"""
+Genera una CONTESTACIÓN A LA DEMANDA profesional con:
 
-GENERA UNA DEMANDA COMPLETA Y PROFESIONAL que incluya:
-1. Encabezamiento con identificación de partes y juzgado
-2. Sección de HECHOS numerados y detallados
-3. Sección de FUNDAMENTOS DE DERECHO con cita de artículos
-4. PETITUM con las solicitudes concretas
-5. OTROSÍ DIGO con solicitud de documentación si procede
-6. Cierre formal con fecha y firma
+PROCEDIMIENTO: {data.get('procedimiento')}
+DEMANDADO (que contesta): {data.get('demandado')}
 
-Usa lenguaje jurídico técnico profesional español."""
+HECHOS PROPIOS:
+{data.get('hechos_propios')}
 
-    def _prompt_recurso(self, data: dict) -> str:
-        return f"""Genera un RECURSO profesional para el derecho español:
+EXCEPCIONES Y DEFENSAS:
+{data.get('excepciones')}
 
-TIPO DE RECURSO: {data.get('tipo_recurso', 'Apelación')}
-RESOLUCIÓN RECURRIDA: {data.get('resolucion', '')}
-TRIBUNAL: {data.get('tribunal', '')}
+SÚPLICA:
+{data.get('suplica')}
 
-PARTE RECURRENTE:
-{data.get('recurrente', '')}
+Incluye: Encabezamiento, Hechos numerados, Fundamentos de Derecho (defensa), Súplica solicitando desestimación de la demanda.
+""",
 
-PARTE RECURRIDA:
-{data.get('recurrido', '')}
+            'recurso_reposicion': f"""
+Genera un RECURSO DE REPOSICIÓN profesional:
 
-MOTIVOS DE RECURSO:
-{data.get('motivos', '')}
+PROCEDIMIENTO: {data.get('procedimiento')}
+RESOLUCIÓN RECURRIDA: {data.get('resolucion')}
+RECURRENTE: {data.get('recurrente')}
 
-PRETENSIÓN:
-{data.get('pretension', '')}
+MOTIVOS DEL RECURSO:
+{data.get('motivos')}
 
-GENERA UN RECURSO COMPLETO que incluya:
-1. Encabezamiento y comparecencia
-2. ANTECEDENTES procesales
-3. MOTIVOS DEL RECURSO numerados con fundamentación jurídica
-4. Cita de jurisprudencia relevante del Tribunal Supremo
-5. SUPLICO con las peticiones
-6. Cierre formal
+Estructura: Encabezamiento, Antecedentes, Motivos del recurso con fundamentación jurídica, Súplica de revocación.
+""",
 
-Lenguaje técnico procesal español."""
+            'desistimiento': f"""
+Genera un ESCRITO DE DESISTIMIENTO profesional:
 
-    def _prompt_contrato(self, data: dict) -> str:
-        return f"""Redacta un CONTRATO profesional según derecho español:
+PROCEDIMIENTO: {data.get('procedimiento')}
+PARTE QUE DESISTE: {data.get('parte')}
+MOTIVO: {data.get('motivo', 'Por convenir a mis intereses')}
 
-TIPO DE CONTRATO: {data.get('tipo_contrato', '')}
+Incluye: Encabezamiento formal, manifestación clara del desistimiento, súplica de archivo.
+""",
 
-PARTE CONTRATANTE 1:
-{data.get('parte1', '')}
+            'personacion': f"""
+Genera un ESCRITO DE PERSONACIÓN Y SOLICITUD DE COPIAS:
 
-PARTE CONTRATANTE 2:
-{data.get('parte2', '')}
+PROCEDIMIENTO: {data.get('procedimiento')}
+EN NOMBRE DE: {data.get('parte')}
+PROCURADOR: {data.get('procurador')}
+ABOGADO: {data.get('abogado')}
 
-OBJETO DEL CONTRATO:
-{data.get('objeto', '')}
+Incluye: Personación formal, acreditación de representación, solicitud de copias, domicilio procesal.
+""",
 
-CONDICIONES ESPECÍFICAS:
-{data.get('condiciones', '')}
+            'poder_procesal': f"""
+Genera un PODER PARA PLEITOS profesional:
 
-PLAZO Y PRECIO:
-{data.get('plazo_precio', '')}
+PODERDANTE: {data.get('poderdante')}
+DNI: {data.get('dni_poderdante')}
+APODERADO: {data.get('apoderado')}
+ÁMBITO: {data.get('ambito')}
 
-GENERA UN CONTRATO COMPLETO que incluya:
-1. Encabezamiento y comparecencia de partes
-2. EXPONEN (antecedentes y capacidades)
-3. CLÁUSULAS numeradas:
-   - Objeto del contrato
-   - Obligaciones de las partes
-   - Precio y forma de pago
-   - Plazo y vigencia
-   - Responsabilidades
-   - Resolución y causas
-   - Confidencialidad (si procede)
-   - Jurisdicción y ley aplicable
-4. Cierre con firma de partes
+Texto notarial completo con facultades procesales: comparecer, demandar, contestar, recursos, transigir, etc.
+""",
 
-Redacción clara, técnica y equilibrada según Código Civil español."""
+            'escrito_prueba': f"""
+Genera un ESCRITO DE PROPOSICIÓN DE PRUEBA:
 
-    def _prompt_escrito(self, data: dict) -> str:
-        return f"""Redacta un ESCRITO PROCESAL profesional:
+PROCEDIMIENTO: {data.get('procedimiento')}
+PARTE: {data.get('parte')}
 
-TIPO: {data.get('tipo_escrito', 'Escrito de alegaciones')}
-DESTINATARIO: {data.get('destinatario', '')}
-PROCEDIMIENTO: {data.get('procedimiento', '')}
+HECHOS A PROBAR:
+{data.get('hechos')}
 
-PARTE SOLICITANTE:
-{data.get('solicitante', '')}
+MEDIOS DE PRUEBA:
+{data.get('pruebas')}
 
-SOLICITUD:
-{data.get('solicitud', '')}
+Estructura: Encabezamiento, Hechos controvertidos, Pruebas propuestas (documental, testifical, pericial), Súplica de admisión.
+""",
 
-FUNDAMENTACIÓN:
-{data.get('fundamentacion', '')}
+            'querella': f"""
+Genera una QUERELLA CRIMINAL profesional:
 
-GENERA UN ESCRITO COMPLETO con:
-1. Encabezamiento y comparecencia
-2. EXPONE (hechos y situación procesal)
-3. Fundamentación jurídica con citas legales
-4. SOLICITA/SUPLICA
-5. Cierre formal
+QUERELLANTE: {data.get('querellante')}
+QUERELLADO: {data.get('querellado')}
+DELITO/S: {data.get('delito')}
 
-Lenguaje procesal técnico español."""
+HECHOS:
+{data.get('hechos')}
 
-    def _prompt_burofax(self, data: dict) -> str:
-        return f"""Redacta un BUROFAX profesional:
+PRUEBAS:
+{data.get('pruebas')}
 
-REMITENTE:
-{data.get('remitente', '')}
-
-DESTINATARIO:
-{data.get('destinatario', '')}
-
-ASUNTO:
-{data.get('asunto', '')}
-
-CONTENIDO:
-{data.get('contenido', '')}
-
-REQUERIMIENTO:
-{data.get('requerimiento', '')}
-
-GENERA UN BUROFAX que incluya:
-1. Datos de remitente y destinatario
-2. Exposición de hechos clara y concisa
-3. Fundamentación legal si procede
-4. Requerimiento concreto
-5. Advertencia de consecuencias legales
-6. Plazo para respuesta
-
-Tono firme pero profesional."""
-
-    def _format_legal_document(self, content: str, doc_type: str, data: dict) -> str:
-        """Formatear documento con encabezado y pie"""
-        
-        header = f"""
-{'='*80}
-DOCUMENTO GENERADO POR LEXDOCSPRO LITE v2.0
-Tipo: {doc_type.upper()}
-Fecha: {datetime.now().strftime('%d de %B de %Y')}
-{'='*80}
-
+Incluye: Encabezamiento, Hechos narrados cronológicamente, Fundamentos jurídicos (tipificación penal), Pruebas, Responsabilidad civil, Súplica.
 """
+        }
         
-        footer = f"""
+        # Usar prompt específico o genérico
+        if doc_type in prompts:
+            return prompts[doc_type]
+        else:
+            # Prompt genérico para otros tipos
+            fields_text = "\n".join([f"{k.upper()}: {v}" for k, v in data.items()])
+            return f"""
+Genera un documento legal profesional tipo {template['name']} con la siguiente información:
 
-{'='*80}
-NOTA: Este documento ha sido generado automáticamente y debe ser revisado
-por un abogado colegiado antes de su presentación o uso oficial.
-{'='*80}
+{fields_text}
+
+Usa formato formal, estructura clara y lenguaje jurídico apropiado.
 """
-        
-        return header + content + footer

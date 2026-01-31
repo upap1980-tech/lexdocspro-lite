@@ -4,9 +4,9 @@ import json
 class OllamaService:
     def __init__(self, base_url='http://localhost:11434'):
         self.base_url = base_url
-        self.model = 'lexdocs-legal'
+        self.model = 'lexdocs-legal-pro'
         self.conversation_history = []
-        
+    
     def chat(self, prompt, context=''):
         """Enviar mensaje a Ollama con contexto jurídico"""
         try:
@@ -30,45 +30,41 @@ class OllamaService:
             
             if response.status_code == 200:
                 result = response.json().get('response', 'Sin respuesta')
-                
                 self.conversation_history.append({
                     'user': prompt,
                     'assistant': result
                 })
-                
                 return result
             else:
-                return f"❌ Error del servidor: {response.status_code}"
+                return f"Error del servidor: {response.status_code}"
                 
         except requests.exceptions.ConnectionError:
-            return """⚠️ **Ollama no está disponible**
-
+            return """Ollama no está disponible.
+            
 Ollama debe estar corriendo en segundo plano.
-Verifica con: `ollama list`
+Verifica con: ollama list
 
 Si ves modelos listados, Ollama está funcionando correctamente."""
             
         except requests.exceptions.Timeout:
-            return "⏱️ La consulta tardó demasiado. El modelo está procesando información compleja."
+            return "La consulta tardó demasiado. El modelo está procesando información compleja."
             
         except Exception as e:
-            return f"❌ Error: {str(e)}"
+            return f"Error: {str(e)}"
     
     def _build_legal_prompt(self, prompt, context):
         """Construir prompt optimizado para análisis jurídico"""
-        
         if context and len(context) > 100:
             # Análisis de documento con OCR
-            return f"""**DOCUMENTO A ANALIZAR**
-(Texto extraído mediante OCR - puede contener errores de reconocimiento)
-
+            return f"""DOCUMENTO A ANALIZAR:
+Texto extraído mediante OCR (puede contener errores de reconocimiento):
 
 {context[:4000]}
 
-**CONSULTA DEL USUARIO**
+CONSULTA DEL USUARIO:
 {prompt}
 
-**INSTRUCCIONES DE ANÁLISIS**
+INSTRUCCIONES DE ANÁLISIS:
 1. Lee el documento proporcionado
 2. Identifica tipo de documento jurídico
 3. Extrae información relevante a la consulta
@@ -80,11 +76,10 @@ Si ves modelos listados, Ollama está funcionando correctamente."""
 Responde de forma estructurada y profesional."""
         else:
             # Consulta general sin documento
-            return f"""**CONSULTA LEGAL**
-
+            return f"""CONSULTA LEGAL:
 {prompt}
 
-**INSTRUCCIONES**
+INSTRUCCIONES:
 Proporciona una respuesta fundamentada en derecho español vigente. Incluye:
 - Normativa aplicable (leyes y artículos)
 - Jurisprudencia relevante si procede

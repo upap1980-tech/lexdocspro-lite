@@ -958,3 +958,448 @@ async function extractTextFromUploadedFile(file) {
         return `[Error procesando ${file.name}: ${error.message}]`;
     }
 }
+
+// ============================================================================
+// GENERADOR DE DOCUMENTOS (añadido 31/01/2026)
+// ============================================================================
+
+const DOCUMENT_TYPES = {
+    demanda_civil: {
+        name: 'Demanda Civil',
+        icon: '⚖️',
+        desc: 'Demanda completa para juicio ordinario o verbal',
+        fields: [
+            {name: 'juzgado', label: 'Juzgado', type: 'text', placeholder: 'Juzgado de Primera Instancia nº...'},
+            {name: 'demandante', label: 'Demandante', type: 'text', placeholder: 'Nombre completo'},
+            {name: 'demandado', label: 'Demandado', type: 'text', placeholder: 'Nombre completo'},
+            {name: 'hechos', label: 'Hechos', type: 'textarea', placeholder: 'Narración de los hechos...'},
+            {name: 'petitorio', label: 'Petitorio', type: 'textarea', placeholder: 'Se solicita que...'}
+        ]
+    },
+    contestacion_demanda: {
+        name: 'Contestación a la Demanda',
+        icon: '🛡️',
+        desc: 'Respuesta formal a demanda civil',
+        fields: [
+            {name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento ordinario nº...'},
+            {name: 'demandado', label: 'Demandado (quien contesta)', type: 'text', placeholder: 'Nombre completo'},
+            {name: 'hechos_propios', label: 'Hechos propios', type: 'textarea', placeholder: 'Versión de los hechos...'},
+            {name: 'excepciones', label: 'Excepciones y defensas', type: 'textarea', placeholder: 'Defensas jurídicas...'},
+            {name: 'suplica', label: 'Súplica', type: 'textarea', placeholder: 'Se solicita la desestimación...'}
+        ]
+    },
+    recurso_apelacion: {
+        name: 'Recurso de Apelación',
+        icon: '🔄',
+        desc: 'Recurso contra sentencia de primera instancia',
+        fields: [
+            {name: 'sentencia', label: 'Sentencia a recurrir', type: 'text', placeholder: 'Sentencia nº... de fecha...'},
+            {name: 'recurrente', label: 'Recurrente', type: 'text', placeholder: 'Nombre completo'},
+            {name: 'fundamentos', label: 'Fundamentos de Derecho', type: 'textarea', placeholder: 'Infracciones cometidas...'},
+            {name: 'suplica', label: 'Súplica', type: 'textarea', placeholder: 'Se suplica la revocación...'}
+        ]
+    },
+    recurso_reposicion: {
+        name: 'Recurso de Reposición',
+        icon: '🔁',
+        desc: 'Recurso contra autos y providencias',
+        fields: [
+            {name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento nº...'},
+            {name: 'resolucion', label: 'Resolución recurrida', type: 'text', placeholder: 'Auto/Providencia de fecha...'},
+            {name: 'recurrente', label: 'Recurrente', type: 'text', placeholder: 'Nombre completo'},
+            {name: 'motivos', label: 'Motivos del recurso', type: 'textarea', placeholder: 'Fundamentos del recurso...'}
+        ]
+    },
+    escrito_alegaciones: {
+        name: 'Escrito de Alegaciones',
+        icon: '📝',
+        desc: 'Respuesta a trámite de alegaciones',
+        fields: [
+            {name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento nº...'},
+            {name: 'parte', label: 'En nombre de', type: 'text', placeholder: 'Nombre de la parte'},
+            {name: 'alegaciones', label: 'Alegaciones', type: 'textarea', placeholder: 'Contenido de las alegaciones...'}
+        ]
+    },
+    desistimiento: {
+        name: 'Desistimiento',
+        icon: '🚫',
+        desc: 'Escrito de desistimiento del procedimiento',
+        fields: [
+            {name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento nº...'},
+            {name: 'parte', label: 'Parte que desiste', type: 'text', placeholder: 'Nombre completo'},
+            {name: 'motivo', label: 'Motivo (opcional)', type: 'textarea', placeholder: 'Por convenir a mis intereses...'}
+        ]
+    },
+    personacion: {
+        name: 'Personación y Solicitud de Copias',
+        icon: '👤',
+        desc: 'Primera comparecencia en autos',
+        fields: [
+            {name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento nº...'},
+            {name: 'parte', label: 'En nombre de', type: 'text', placeholder: 'Nombre del representado'},
+            {name: 'procurador', label: 'Procurador', type: 'text', placeholder: 'Nombre del procurador'},
+            {name: 'abogado', label: 'Abogado', type: 'text', placeholder: 'Nombre del abogado'}
+        ]
+    },
+    poder_procesal: {
+        name: 'Poder para Pleitos',
+        icon: '📜',
+        desc: 'Otorgamiento de poder procesal',
+        fields: [
+            {name: 'poderdante', label: 'Poderdante', type: 'text', placeholder: 'Nombre completo'},
+            {name: 'apoderado', label: 'Apoderado (Procurador)', type: 'text', placeholder: 'Nombre del procurador'},
+            {name: 'dni_poderdante', label: 'DNI Poderdante', type: 'text', placeholder: '12345678A'},
+            {name: 'ambito', label: 'Ámbito del poder', type: 'text', placeholder: 'General o específico'}
+        ]
+    },
+    escrito_prueba: {
+        name: 'Proposición de Prueba',
+        icon: '🔬',
+        desc: 'Escrito de proposición de medios de prueba',
+        fields: [
+            {name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento nº...'},
+            {name: 'parte', label: 'Parte que propone', type: 'text', placeholder: 'Nombre de la parte'},
+            {name: 'hechos', label: 'Hechos a probar', type: 'textarea', placeholder: 'Hechos controvertidos...'},
+            {name: 'pruebas', label: 'Medios de prueba', type: 'textarea', placeholder: 'Documental, testifical, pericial...'}
+        ]
+    },
+    burofax: {
+        name: 'Burofax',
+        icon: '📮',
+        desc: 'Comunicación fehaciente por burofax',
+        fields: [
+            {name: 'remitente', label: 'Remitente', type: 'text', placeholder: 'Nombre y dirección completa'},
+            {name: 'destinatario', label: 'Destinatario', type: 'text', placeholder: 'Nombre y dirección completa'},
+            {name: 'asunto', label: 'Asunto', type: 'text', placeholder: 'Resumen del asunto'},
+            {name: 'contenido', label: 'Contenido', type: 'textarea', placeholder: 'Texto del burofax...'}
+        ]
+    },
+    requerimiento: {
+        name: 'Requerimiento Extrajudicial',
+        icon: '⚠️',
+        desc: 'Requerimiento previo a reclamación judicial',
+        fields: [
+            {name: 'requirente', label: 'Requirente', type: 'text', placeholder: 'Quien requiere'},
+            {name: 'requerido', label: 'Requerido', type: 'text', placeholder: 'Destinatario'},
+            {name: 'objeto', label: 'Objeto del requerimiento', type: 'textarea', placeholder: 'Contenido del requerimiento...'},
+            {name: 'plazo', label: 'Plazo', type: 'text', placeholder: 'Ej: 10 días hábiles'}
+        ]
+    },
+    querella: {
+        name: 'Querella Criminal',
+        icon: '⚔️',
+        desc: 'Escrito de querella penal',
+        fields: [
+            {name: 'querellante', label: 'Querellante', type: 'text', placeholder: 'Nombre completo'},
+            {name: 'querellado', label: 'Querellado', type: 'text', placeholder: 'Nombre completo'},
+            {name: 'hechos', label: 'Hechos denunciados', type: 'textarea', placeholder: 'Narración cronológica...'},
+            {name: 'delito', label: 'Delito/s', type: 'text', placeholder: 'Ej: Estafa (art. 248 CP)'},
+            {name: 'pruebas', label: 'Pruebas', type: 'textarea', placeholder: 'Medios probatorios...'}
+        ]
+    }
+};
+
+let selectedDocType = null;
+let generatedContent = null;
+let generatedFilename = null;
+
+function initDocumentGenerator() {
+    console.log('🔧 Inicializando generador de documentos...');
+    renderDocumentTypes();
+}
+
+function renderDocumentTypes() {
+    const container = document.getElementById('docTypes');
+    if (!container) return;
+    
+    let html = '';
+    for (const [key, doc] of Object.entries(DOCUMENT_TYPES)) {
+        html += `
+            <div class="doc-type" onclick="selectDocumentType('${key}')">
+                <span class="doc-type-icon">${doc.icon}</span>
+                <span class="doc-type-name">${doc.name}</span>
+            </div>
+        `;
+    }
+    container.innerHTML = html;
+}
+
+function selectDocumentType(type) {
+    selectedDocType = type;
+    const doc = DOCUMENT_TYPES[type];
+    
+    // Actualizar título y descripción
+    document.getElementById('docFormTitle').textContent = `${doc.icon} ${doc.name}`;
+    document.getElementById('docFormDesc').textContent = doc.desc;
+    
+    // Generar campos del formulario
+    let fieldsHtml = '';
+    doc.fields.forEach(field => {
+        if (field.type === 'textarea') {
+            fieldsHtml += `
+                <div class="form-group">
+                    <label>${field.label}</label>
+                    <textarea 
+                        name="${field.name}" 
+                        placeholder="${field.placeholder}"
+                        rows="4"
+                        required
+                    ></textarea>
+                </div>
+            `;
+        } else {
+            fieldsHtml += `
+                <div class="form-group">
+                    <label>${field.label}</label>
+                    <input 
+                        type="${field.type}" 
+                        name="${field.name}" 
+                        placeholder="${field.placeholder}"
+                        required
+                    />
+                </div>
+            `;
+        }
+    });
+    
+    document.getElementById('formFields').innerHTML = fieldsHtml;
+    document.getElementById('documentForm').classList.remove('hidden');
+    document.getElementById('generatedDoc').classList.add('hidden');
+    
+    // Marcar tipo seleccionado
+    document.querySelectorAll('.doc-type').forEach(el => el.classList.remove('active'));
+    event.target.closest('.doc-type').classList.add('active');
+}
+
+async function generateDocument() {
+    if (!selectedDocType) {
+        alert('Selecciona un tipo de documento primero');
+        return;
+    }
+    
+    const form = document.getElementById('documentForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    const provider = document.getElementById('docProvider').value;
+    const btn = event.target;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span> Generando...';
+    updateStatus('Generando documento...');
+    
+    try {
+        const response = await fetch('/api/generate_document', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                type: selectedDocType,
+                data: data,
+                provider: provider
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            generatedContent = result.content;
+            generatedFilename = result.filename;
+            
+            document.getElementById('docContent').textContent = result.content;
+            document.getElementById('documentForm').classList.add('hidden');
+            document.getElementById('generatedDoc').classList.remove('hidden');
+            
+            updateStatus('Documento generado correctamente');
+        } else {
+            alert('Error: ' + (result.error || 'Error desconocido'));
+            updateStatus('Error al generar documento');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al generar documento: ' + error.message);
+        updateStatus('Error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '✨ Generar Documento';
+    }
+}
+
+function copyDocument() {
+    if (!generatedContent) return;
+    
+    navigator.clipboard.writeText(generatedContent).then(() => {
+        alert('✅ Documento copiado al portapapeles');
+    }).catch(err => {
+        alert('Error al copiar: ' + err);
+    });
+}
+
+function downloadDocument() {
+    if (!generatedContent || !generatedFilename) return;
+    
+    const blob = new Blob([generatedContent], {type: 'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = generatedFilename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    updateStatus('Documento descargado');
+}
+
+function resetGenerator() {
+    selectedDocType = null;
+    generatedContent = null;
+    generatedFilename = null;
+    
+    document.getElementById('documentForm').reset();
+    document.getElementById('documentForm').classList.add('hidden');
+    document.getElementById('generatedDoc').classList.add('hidden');
+    document.getElementById('docFormTitle').textContent = 'Selecciona un tipo de documento';
+    document.getElementById('docFormDesc').textContent = '';
+    
+    document.querySelectorAll('.doc-type').forEach(el => el.classList.remove('active'));
+    
+    updateStatus('Listo');
+}
+
+// Auto-inicializar cuando se carga la página
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDocumentGenerator);
+} else {
+    initDocumentGenerator();
+}
+
+
+// ============================================
+// EXPORTACIÓN A iCLOUD
+// ============================================
+
+async function checkiCloudStatus() {
+    try {
+        const response = await fetch('/api/icloud/status');
+        const status = await response.json();
+        
+        if (status.available) {
+            console.log('✅ iCloud Drive disponible');
+            return true;
+        } else {
+            console.log('⚠️ iCloud Drive no disponible');
+            return false;
+        }
+    } catch (error) {
+        console.error('Error checking iCloud:', error);
+        return false;
+    }
+}
+
+async function exportDocumentToiCloud(content, filename, year, clientName, subfolder) {
+    try {
+        const response = await fetch('/api/icloud/export', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                content: content,
+                filename: filename,
+                year: year,
+                client_name: clientName,
+                subfolder: subfolder
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`✅ Exportado a iCloud:\n${result.filepath}`);
+            updateStatus(`✅ Exportado a iCloud`);
+        } else {
+            alert(`❌ Error: ${result.error}`);
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al exportar a iCloud');
+    }
+}
+
+async function exportAnalysisToClient() {
+    const clientName = prompt('Nombre del cliente:');
+    
+    if (!clientName) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/icloud/export-analysis', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                content: currentAnalysis,
+                client_name: clientName
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`✅ Análisis exportado a iCloud para ${clientName}:\n${result.filepath}`);
+        } else {
+            alert(`❌ Error: ${result.error}`);
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al exportar análisis');
+    }
+}
+
+async function getiCloudClients() {
+    try {
+        const response = await fetch('/api/icloud/clients');
+        const result = await response.json();
+        
+        if (result.success) {
+            return result.clients;
+        }
+        return [];
+        
+    } catch (error) {
+        console.error('Error:', error);
+        return [];
+    }
+}
+
+// Actualizar función exportToiCloud existente
+function exportToiCloud() {
+    exportAnalysisToClient();
+}
+
+// Botón de exportación para documentos generados
+async function exportGeneratedDocToiCloud() {
+    const clients = await getiCloudClients();
+    
+    let clientName;
+    
+    if (clients.length > 0) {
+        const clientList = clients.join('\n');
+        clientName = prompt(`Clientes existentes:\n${clientList}\n\nNombre del cliente (nuevo o existente):`);
+    } else {
+        clientName = prompt('Nombre del cliente:');
+    }
+    
+    if (!clientName) return;
+    
+    const timestamp = new Date().getTime();
+    const filename = `${currentDocType}_${timestamp}.txt`;
+    
+    await exportDocumentToiCloud(
+        generatedDocContent,
+        filename,
+        new Date().getFullYear(),
+        clientName,
+        'GENERADOS'
+    );
+}

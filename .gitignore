@@ -1,37 +1,35 @@
-
-Python
-pycache/
+# Python
+__pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
 venv/
-ENV/
 env/
+*.egg-info/
+.pytest_cache/
 
-IDEs
+# Backups
+*.bak
+*.backup*
+
+# Archivos temporales de prueba
+test_*.py
+compare_*.py
+
+# Modelfiles (Ollama - locales)
+Modelfile*
+
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
-Datos sensibles
-config_local.py
-.env
+# Sistema
+.DS_Store
 *.log
 
-Archivos de sistema
-.DS_Store
-Thumbs.db
-
-Documentos generados
-_GENERADOS/
-*.txt
-*.pdf
-!README.md
-
-Temporales
-tmp/
+# Específicos del proyecto
 temp/
-*.tmp
+tmp/

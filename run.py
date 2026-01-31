@@ -211,3 +211,86 @@ if __name__ == '__main__':
     webbrowser.open('http://localhost:5001')
     
     app.run(debug=True, host='0.0.0.0', port=5001)
+
+# ============================================
+# ENDPOINTS iCLOUD
+# ============================================
+from services.icloud_service import iCloudService
+
+# Inicializar servicio
+icloud_service = iCloudService()
+
+@app.route('/api/icloud/status')
+def icloud_status():
+    """Verificar estado de iCloud"""
+    try:
+        status = icloud_service.get_icloud_status()
+        return jsonify({
+            'success': True,
+            **status
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/icloud/export', methods=['POST'])
+def icloud_export():
+    """Exportar documento a iCloud"""
+    try:
+        data = request.json
+        content = data.get('content')
+        filename = data.get('filename')
+        year = data.get('year')
+        client_name = data.get('client_name')
+        subfolder = data.get('subfolder')
+        
+        filepath = icloud_service.export_document(
+            content=content,
+            filename=filename,
+            year=year,
+            client_name=client_name,
+            subfolder=subfolder
+        )
+        
+        return jsonify({
+            'success': True,
+            'filepath': filepath
+        })
+        
+    except Exception as e:
+        print(f"❌ Error exportando a iCloud: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/icloud/export-analysis', methods=['POST'])
+def icloud_export_analysis():
+    """Exportar análisis LexNET a carpeta de cliente"""
+    try:
+        data = request.json
+        content = data.get('content')
+        client_name = data.get('client_name')
+        
+        filepath = icloud_service.export_analysis_to_client(
+            analysis_content=content,
+            client_name=client_name
+        )
+        
+        return jsonify({
+            'success': True,
+            'filepath': filepath
+        })
+        
+    except Exception as e:
+        print(f"❌ Error exportando análisis: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/icloud/clients')
+def icloud_clients():
+    """Listar clientes en iCloud"""
+    try:
+        clients = icloud_service.list_clients()
+        return jsonify({
+            'success': True,
+            'clients': clients
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
