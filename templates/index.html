@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LexDocsPro LITE</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 LexDocsPro LITE</h1>
+            <p>Gestor de Documentos Legales</p>
+        </header>
+
+        <div class="main-layout">
+            <div class="panel explorer">
+                <h2>📁 Expedientes</h2>
+                <div id="currentPath" class="path"></div>
+                <div id="fileTree" class="file-tree"></div>
+                <button onclick="refreshFiles()" class="btn-refresh">🔄 Refrescar</button>
+            </div>
+
+            <div class="panel viewer">
+                <h2>📄 Documento</h2>
+                <div id="pdfViewer" class="pdf-container">
+                    <p class="placeholder">Selecciona un PDF para visualizar</p>
+                </div>
+                <button id="btnOCR" onclick="runOCR()" class="btn-ocr" disabled>🔍 Ejecutar OCR</button>
+            </div>
+
+            <div class="panel chat">
+                <h2>💬 Asistente IA</h2>
+                <div id="chatMessages" class="chat-messages"></div>
+                <div class="chat-input">
+                    <textarea id="chatPrompt" placeholder="Escribe tu pregunta..." rows="3"></textarea>
+                    <button onclick="sendMessage()" class="btn-send">Enviar</button>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <span id="status">Listo</span>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
