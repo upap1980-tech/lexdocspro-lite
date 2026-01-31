@@ -6,9 +6,6 @@ let ocrText = '';
 let availableProviders = [];
 let currentDocType = null;
 let generatedDocContent = '';
-let uploadedFiles = [];
-let processedTexts = [];
-let currentAnalysis = '';
 
 // ============================================
 // INICIALIZACIÓN
@@ -21,9 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Inicializar generador de documentos
     loadDocumentTemplates();
-    
-    // Inicializar drag & drop para LexNET
-    initializeLexNetUploader();
     
     // Event listener para Enter en chat
     const promptInput = document.getElementById('chatPrompt');
@@ -46,11 +40,10 @@ function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     
     // Activar tab seleccionado
-    const clickedBtn = event.target;
-    clickedBtn.classList.add('active');
+    event.target.classList.add('active');
     document.getElementById(`tab-${tabName}`).classList.add('active');
     
-    updateStatus(`Pestaña: ${tabName === 'consulta' ? 'Consultas' : tabName === 'documentos' ? 'Generador de Documentos' : 'Analizador LexNET'}`);
+    updateStatus(`Pestaña: ${tabName === 'consulta' ? 'Consultas' : 'Generador de Documentos'}`);
 }
 
 // ============================================
@@ -62,11 +55,11 @@ async function loadAIProviders() {
         const data = await response.json();
         
         availableProviders = data.providers;
-        const selects = [
-            document.getElementById('aiProvider'),
-            document.getElementById('docProvider'),
-            document.getElementById('lexnetProvider')
-        ];
+        const select = document.getElementById('aiProvider');
+        const docSelect = document.getElementById('docProvider');
+        
+        select.innerHTML = '';
+        docSelect.innerHTML = '';
         
         const providerNames = {
             'ollama': '🏠 Ollama (Local)',
@@ -77,19 +70,17 @@ async function loadAIProviders() {
             'deepseek': '🌊 DeepSeek'
         };
         
-        selects.forEach(select => {
-            if (select) {
-                select.innerHTML = '';
-                availableProviders.forEach(provider => {
-                    const option = document.createElement('option');
-                    option.value = provider;
-                    option.textContent = providerNames[provider] || provider;
-                    if (provider === data.default) {
-                        option.selected = true;
-                    }
-                    select.appendChild(option);
-                });
+        availableProviders.forEach(provider => {
+            const option = document.createElement('option');
+            option.value = provider;
+            option.textContent = providerNames[provider] || provider;
+            if (provider === data.default) {
+                option.selected = true;
             }
+            select.appendChild(option);
+            
+            const option2 = option.cloneNode(true);
+            docSelect.appendChild(option2);
         });
         
         if (availableProviders.length > 0) {
@@ -121,8 +112,6 @@ async function refreshFiles(path = '') {
 function renderFileTree(data) {
     const tree = document.getElementById('fileTree');
     const pathDiv = document.getElementById('currentPath');
-    
-    if (!tree) return;
     
     pathDiv.textContent = data.current_path || 'Raíz';
     tree.innerHTML = '';
@@ -228,15 +217,18 @@ async function sendMessage() {
     const provider = document.getElementById('aiProvider').value;
     const mode = document.getElementById('aiMode').value;
     
+    // Mostrar mensaje del usuario
     addMessage('user', prompt);
     promptInput.value = '';
     
+    // Indicador de modo
     const modeNames = {
         'standard': '⚡ Rápida',
         'deep': '🔍 Profunda',
         'research': '📚 Investigación'
     };
     
+    // Mostrar indicador de carga
     const loadingId = addMessage('assistant', `<span class="loading"></span> ${modeNames[mode]} con ${provider}...`);
     updateStatus(`💬 Consultando ${provider} (${modeNames[mode]})...`);
     
@@ -254,6 +246,7 @@ async function sendMessage() {
         
         const data = await response.json();
         
+        // Reemplazar mensaje de carga
         const loadingMsg = document.getElementById(loadingId);
         if (loadingMsg) {
             if (data.success) {
@@ -278,8 +271,6 @@ async function sendMessage() {
 
 function addMessage(type, text) {
     const container = document.getElementById('chatMessages');
-    if (!container) return;
-    
     const msgId = 'msg-' + Date.now();
     
     const div = document.createElement('div');
@@ -302,8 +293,6 @@ async function loadDocumentTemplates() {
         const templates = await response.json();
         
         const container = document.getElementById('docTypes');
-        if (!container) return;
-        
         container.innerHTML = '';
         
         Object.entries(templates).forEach(([type, template]) => {
@@ -325,14 +314,17 @@ async function loadDocumentTemplates() {
 function selectDocType(type, template) {
     currentDocType = type;
     
+    // Actualizar botones
     document.querySelectorAll('.doc-type-btn').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
     
+    // Mostrar formulario
     document.getElementById('docFormTitle').textContent = template.name;
     document.getElementById('docFormDesc').textContent = template.description;
     document.getElementById('documentForm').classList.remove('hidden');
     document.getElementById('generatedDoc').classList.add('hidden');
     
+    // Generar campos del formulario
     const fieldsContainer = document.getElementById('formFields');
     fieldsContainer.innerHTML = '';
     
@@ -372,6 +364,7 @@ function selectDocType(type, template) {
 async function generateDocument() {
     if (!currentDocType) return;
     
+    // Recoger datos del formulario
     const formData = {};
     document.querySelectorAll('#formFields input, #formFields textarea, #formFields select').forEach(field => {
         formData[field.name] = field.value;
@@ -397,6 +390,7 @@ async function generateDocument() {
         if (result.success) {
             generatedDocContent = result.content;
             
+            // Mostrar documento generado
             document.getElementById('documentForm').classList.add('hidden');
             document.getElementById('generatedDoc').classList.remove('hidden');
             document.getElementById('docContent').textContent = result.content;
@@ -443,144 +437,14 @@ function resetGenerator() {
 }
 
 // ============================================
-// ANALIZADOR LEXNET
-// ============================================
-function initializeLexNetUploader() {
-    const uploadZone = document.getElementById('uploadZone');
-    
-    if (uploadZone) {
-        uploadZone.addEventListener('click', () => {
-            document.getElementById('fileMultiple').click();
-        });
-        
-        uploadZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadZone.classList.add('dragover');
-        });
-        
-        uploadZone.addEventListener('dragleave', () => {
-            uploadZone.classList.remove('dragover');
-        });
-        
-        uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadZone.classList.remove('dragover');
-            
-            const files = Array.from(e.dataTransfer.files);
-            addFiles(files);
-        });
-    }
-}
-
-function handleMultipleFiles() {
-    const fileInput = document.getElementById('fileMultiple');
-    const files = Array.from(fileInput.files);
-    addFiles(files);
-}
-
-function addFiles(files) {
-    files.forEach(file => {
-        if (!uploadedFiles.find(f => f.name === file.name && f.size === file.size)) {
-            uploadedFiles.push(file);
-            addFileToList(file);
-        }
-    });
-    
-    updateAnalyzeButton();
-    classifyFiles();
-}
-
-function addFileToList(file) {
-    const filesList = document.getElementById('filesList');
-    if (!filesList) return;
-    
-    const fileItem = document.createElement('div');
-    fileItem.className = 'file-item';
-    fileItem.id = `file-${uploadedFiles.length - 1}`;
-    
-    const icon = getFileIcon(file.name);
-    const size = formatFileSize(file.size);
-    
-    fileItem.innerHTML = `
-        <div class="file-info">
-            <span class="file-icon">${icon}</span>
-            <div class="file-details">
-                <span class="file-name">${file.name}</span>
-                <span class="file-meta">${size} • ${file.type || 'Desconocido'}</span>
-            </div>
-        </div>
-        <div class="file-status" id="status-${uploadedFiles.length - 1}">
-            ⏳ Pendiente
-        </div>
-        <button class="file-remove" onclick="removeFile(${uploadedFiles.length - 1})">
-            🗑️ Quitar
-        </button>
-    `;
-    
-    filesList.appendChild(fileItem);
-}
-
-function getFileIcon(filename) {
-    const ext = filename.split('.').pop().toLowerCase();
-    const icons = {
-        'pdf': '📄', 'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️',
-        'doc': '📝', 'docx': '📝', 'xls': '📊', 'xlsx': '📊'
-    };
-    return icons[ext] || '📎';
-}
-
-function formatFileSize(bytes) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-}
-
-function removeFile(index) {
-    uploadedFiles.splice(index, 1);
-    const filesList = document.getElementById('filesList');
-    filesList.innerHTML = '';
-    uploadedFiles.forEach(addFileToList);
-    updateAnalyzeButton();
-}
-
-function updateAnalyzeButton() {
-    const btnAnalyze = document.getElementById('btnAnalyze');
-    if (btnAnalyze) {
-        btnAnalyze.disabled = uploadedFiles.length === 0;
-    }
-}
-
-function classifyFiles() {
-    // Implementación simplificada
-    updateStatus(`${uploadedFiles.length} archivo(s) cargado(s)`);
-}
-
-// Placeholder functions
-function analyzeLexNetFlexible() {
-    alert('Función en desarrollo');
-}
-
-function copyLexNetAnalysis() {}
-function downloadLexNetAnalysis() {}
-function exportToiCloud() {}
-function resetLexNet() {
-    uploadedFiles = [];
-    document.getElementById('filesList').innerHTML = '';
-    updateAnalyzeButton();
-}
-
-// ============================================
 // UTILIDADES
 // ============================================
 function updateStatus(text) {
-    const status = document.getElementById('status');
-    if (status) {
-        status.textContent = text;
-    }
+    document.getElementById('status').textContent = text;
 }
 
 // ============================================
-// ANALIZADOR LEXNET - VERSIÓN SIMPLE
+// ANALIZADOR LEXNET
 // ============================================
 let lexnetFiles = {
     resumen: null,
@@ -594,7 +458,9 @@ let lexnetTexts = {
     principal: ''
 };
 
-function handleLexNetFile(type) {
+let currentAnalysis = '';
+
+function handleFileUpload(type) {
     const fileInput = document.getElementById(`file${type.charAt(0).toUpperCase() + type.slice(1)}`);
     const statusSpan = document.getElementById(`status${type.charAt(0).toUpperCase() + type.slice(1)}`);
     
@@ -605,12 +471,14 @@ function handleLexNetFile(type) {
         statusSpan.classList.add('uploaded');
         
         updateStatus(`📄 ${file.name} cargado`);
+        
+        // Verificar si se pueden habilitar los botones
         checkLexNetReady();
     }
 }
 
 function checkLexNetReady() {
-    const btnAnalyze = document.getElementById('btnAnalyzeLexNet');
+    const btnAnalyze = document.getElementById('btnAnalyze');
     
     // Requerir al menos resumen y principal
     if (lexnetFiles.resumen && lexnetFiles.principal) {
@@ -622,7 +490,7 @@ function checkLexNetReady() {
 
 async function analyzeLexNet() {
     const provider = document.getElementById('lexnetProvider').value;
-    const btnAnalyze = document.getElementById('btnAnalyzeLexNet');
+    const btnAnalyze = document.getElementById('btnAnalyze');
     
     btnAnalyze.disabled = true;
     btnAnalyze.innerHTML = '<span class="loading"></span> Analizando...';
@@ -630,25 +498,44 @@ async function analyzeLexNet() {
     updateStatus('🔍 Extrayendo texto con OCR...');
     
     try {
-        // Extraer texto de cada PDF
+        // 1. Extraer texto de cada PDF con OCR
+        const progressDiv = document.createElement('div');
+        progressDiv.className = 'ocr-progress';
+        progressDiv.innerHTML = `
+            <div class="ocr-progress-item" id="progress-resumen">
+                <div class="spinner"></div> Procesando RESUMEN.pdf...
+            </div>
+            <div class="ocr-progress-item" id="progress-caratula">
+                <div class="spinner"></div> Procesando CARATULA.pdf...
+            </div>
+            <div class="ocr-progress-item" id="progress-principal">
+                <div class="spinner"></div> Procesando resolución principal...
+            </div>
+        `;
+        
+        document.querySelector('.lexnet-upload').appendChild(progressDiv);
+        
+        // OCR RESUMEN
         if (lexnetFiles.resumen) {
-            updateStatus('📋 Procesando RESUMEN...');
-            lexnetTexts.resumen = await extractTextFromUploadedFile(lexnetFiles.resumen);
+            lexnetTexts.resumen = await extractTextFromFile(lexnetFiles.resumen);
+            updateProgressItem('resumen', lexnetTexts.resumen ? 'done' : 'error');
         }
         
+        // OCR CARATULA
         if (lexnetFiles.caratula) {
-            updateStatus('📄 Procesando CARATULA...');
-            lexnetTexts.caratula = await extractTextFromUploadedFile(lexnetFiles.caratula);
+            lexnetTexts.caratula = await extractTextFromFile(lexnetFiles.caratula);
+            updateProgressItem('caratula', lexnetTexts.caratula ? 'done' : 'error');
         }
         
+        // OCR PRINCIPAL
         if (lexnetFiles.principal) {
-            updateStatus('⚖️ Procesando resolución principal...');
-            lexnetTexts.principal = await extractTextFromUploadedFile(lexnetFiles.principal);
+            lexnetTexts.principal = await extractTextFromFile(lexnetFiles.principal);
+            updateProgressItem('principal', lexnetTexts.principal ? 'done' : 'error');
         }
         
         updateStatus('🤖 Analizando con IA...');
         
-        // Enviar a analizar
+        // 2. Enviar a analizar
         const response = await fetch('/api/lexnet/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -659,6 +546,8 @@ async function analyzeLexNet() {
         });
         
         const result = await response.json();
+        
+        progressDiv.remove();
         
         if (result.success) {
             currentAnalysis = result.analisis;
@@ -683,27 +572,32 @@ async function analyzeLexNet() {
     }
 }
 
-async function extractTextFromUploadedFile(file) {
+async function extractTextFromFile(file) {
     try {
+        // Crear FormData y subir archivo temporalmente
         const formData = new FormData();
         formData.append('file', file);
         
-        const response = await fetch('/api/ocr/upload', {
-            method: 'POST',
-            body: formData
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            return result.text;
-        } else {
-            throw new Error(result.error);
-        }
+        // Aquí deberíamos implementar un endpoint para OCR directo
+        // Por ahora simulamos con un placeholder
+        return `Contenido extraído de ${file.name}`;
         
     } catch (error) {
         console.error('Error extrayendo texto:', error);
         return '';
+    }
+}
+
+function updateProgressItem(type, status) {
+    const item = document.getElementById(`progress-${type}`);
+    if (item) {
+        if (status === 'done') {
+            item.innerHTML = '✅ Completado';
+            item.classList.add('done');
+        } else if (status === 'error') {
+            item.innerHTML = '❌ Error';
+            item.classList.add('error');
+        }
     }
 }
 
@@ -743,218 +637,9 @@ function resetLexNet() {
     document.getElementById('statusCaratula').classList.remove('uploaded');
     document.getElementById('statusPrincipal').classList.remove('uploaded');
     
-    document.getElementById('lexnetContent').innerHTML = '<p class="placeholder">Sube al menos RESUMEN.pdf y Resolución Principal, luego presiona "Analizar Notificación"</p>';
+    document.getElementById('lexnetContent').innerHTML = '<p class="placeholder">Sube los archivos y presiona "Analizar Notificación" para comenzar</p>';
     document.getElementById('lexnetActions').classList.add('hidden');
     
     checkLexNetReady();
     updateStatus('Listo para nuevo análisis');
-}
-
-// ELIMINAR las funciones duplicadas/obsoletas
-if (typeof initializeLexNetUploader !== 'undefined') {
-    delete window.initializeLexNetUploader;
-}
-if (typeof handleMultipleFiles !== 'undefined') {
-    delete window.handleMultipleFiles;
-}
-if (typeof addFiles !== 'undefined') {
-    delete window.addFiles;
-}
-if (typeof addFileToList !== 'undefined') {
-    delete window.addFileToList;
-}
-if (typeof removeFile !== 'undefined') {
-    delete window.removeFile;
-}
-if (typeof classifyFiles !== 'undefined') {
-    delete window.classifyFiles;
-}
-if (typeof analyzeLexNetFlexible !== 'undefined') {
-    delete window.analyzeLexNetFlexible;
-}
-if (typeof exportToiCloud !== 'undefined') {
-    delete window.exportToiCloud;
-}
-// ============================================
-// ANALIZADOR LEXNET - VERSIÓN MÚLTIPLE SIMPLE
-// ============================================
-let lexnetMultipleFiles = [];
-
-function handleMultipleFilesLexNet() {
-    const fileInput = document.getElementById('filesMultiple');
-    const files = Array.from(fileInput.files);
-    
-    // Añadir nuevos archivos
-    files.forEach(file => {
-        if (!lexnetMultipleFiles.find(f => f.name === file.name && f.size === file.size)) {
-            lexnetMultipleFiles.push(file);
-        }
-    });
-    
-    renderFilesListLexNet();
-    updateAnalyzeLexNetButton();
-}
-
-function renderFilesListLexNet() {
-    const container = document.getElementById('filesListLexNet');
-    container.innerHTML = '';
-    
-    if (lexnetMultipleFiles.length === 0) {
-        return;
-    }
-    
-    lexnetMultipleFiles.forEach((file, index) => {
-        const item = document.createElement('div');
-        item.className = 'file-item-simple';
-        
-        const icon = getFileIcon(file.name);
-        
-        item.innerHTML = `
-            <span>${icon} <span class="file-name-simple">${file.name}</span></span>
-            <button class="file-remove-simple" onclick="removeFileLexNet(${index})">Quitar</button>
-        `;
-        
-        container.appendChild(item);
-    });
-    
-    updateStatus(`${lexnetMultipleFiles.length} archivo(s) listo(s) para analizar`);
-}
-
-function removeFileLexNet(index) {
-    lexnetMultipleFiles.splice(index, 1);
-    renderFilesListLexNet();
-    updateAnalyzeLexNetButton();
-}
-
-function updateAnalyzeLexNetButton() {
-    const btn = document.getElementById('btnAnalyzeLexNet');
-    btn.disabled = lexnetMultipleFiles.length === 0;
-}
-
-async function analyzeLexNetMultiple() {
-    const provider = document.getElementById('lexnetProvider').value;
-    const btn = document.getElementById('btnAnalyzeLexNet');
-    
-    btn.disabled = true;
-    btn.innerHTML = '<span class="loading"></span> Analizando...';
-    
-    try {
-        // Procesar todos los archivos
-        const textos = {};
-        
-        for (let i = 0; i < lexnetMultipleFiles.length; i++) {
-            const file = lexnetMultipleFiles[i];
-            updateStatus(`📄 Procesando ${i+1}/${lexnetMultipleFiles.length}: ${file.name}...`);
-            
-            const text = await extractTextFromUploadedFile(file);
-            
-            // Clasificar automáticamente
-            const name = file.name.toLowerCase();
-            if (name.includes('resumen') || name.includes('acuse')) {
-                textos.resumen = text;
-            } else if (name.includes('caratula') || name.includes('carátula')) {
-                textos.caratula = text;
-            } else if (!textos.principal) {
-                // El primero que no sea resumen/caratula es el principal
-                textos.principal = text;
-            } else {
-                // Adjuntos
-                if (!textos.adjuntos) textos.adjuntos = [];
-                textos.adjuntos.push(text);
-            }
-        }
-        
-        // Si no hay principal, usar el primer archivo
-        if (!textos.principal && lexnetMultipleFiles.length > 0) {
-            textos.principal = await extractTextFromUploadedFile(lexnetMultipleFiles[0]);
-        }
-        
-        updateStatus('🤖 Analizando con IA...');
-        
-        // Enviar a analizar
-        const response = await fetch('/api/lexnet/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                textos: textos,
-                provider: provider,
-                archivos: lexnetMultipleFiles.map(f => ({ nombre: f.name }))
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            currentAnalysis = result.analisis;
-            document.getElementById('lexnetContent').textContent = result.analisis;
-            document.getElementById('lexnetActions').classList.remove('hidden');
-            updateStatus(`✅ Análisis completado`);
-        } else {
-            alert(`Error: ${result.error}`);
-            updateStatus('❌ Error en análisis');
-        }
-        
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error al analizar: ' + error.message);
-        updateStatus('❌ Error');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = '🔍 Analizar Notificación';
-    }
-}
-
-function resetLexNetMultiple() {
-    lexnetMultipleFiles = [];
-    document.getElementById('filesMultiple').value = '';
-    document.getElementById('filesListLexNet').innerHTML = '';
-    document.getElementById('lexnetContent').innerHTML = '<p class="placeholder">Sube al menos 1 documento y presiona "Analizar Notificación"</p>';
-    document.getElementById('lexnetActions').classList.add('hidden');
-    updateAnalyzeLexNetButton();
-    updateStatus('Listo para nuevo análisis');
-}
-
-// Limpiar funciones antiguas de LexNet
-const oldLexnetFunctions = [
-    'handleLexNetFile',
-    'checkLexNetReady',
-    'analyzeLexNet',
-    'resetLexNet'
-];
-
-oldLexnetFunctions.forEach(fname => {
-    if (typeof window[fname] !== 'undefined') {
-        delete window[fname];
-    }
-});
-
-// Mejorar extractTextFromUploadedFile con más logging
-async function extractTextFromUploadedFile(file) {
-    try {
-        console.log(`📄 Extrayendo texto de: ${file.name} (${file.size} bytes)`);
-        
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        const response = await fetch('/api/ocr/upload', {
-            method: 'POST',
-            body: formData
-        });
-        
-        const result = await response.json();
-        
-        console.log('OCR resultado:', result);
-        
-        if (result.success) {
-            console.log(`✅ Texto extraído: ${result.text.length} caracteres`);
-            return result.text;
-        } else {
-            console.error('❌ Error OCR:', result.error);
-            throw new Error(result.error);
-        }
-        
-    } catch (error) {
-        console.error('❌ Error extrayendo texto:', error);
-        return `[Error procesando ${file.name}: ${error.message}]`;
-    }
 }
