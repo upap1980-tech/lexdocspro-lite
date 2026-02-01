@@ -370,43 +370,17 @@ function selectDocType(type, template) {
 }
 
 async function generateDocument() {
-    if (!currentDocType) {
-        console.warn('No hay tipo de documento seleccionado');
-        return;
-    }
-
+    if (!currentDocType) return;
+    
     const formData = {};
-    let valid = true;
-
-    document
-        .querySelectorAll('#formFields input[required], #formFields textarea[required]')
-        .forEach(field => {
-            if (!field.value.trim()) {
-                field.classList.add('error-field');
-                valid = false;
-            } else {
-                field.classList.remove('error-field');
-                formData[field.name] = field.value;
-            }
-        });
-
-    if (!valid) {
-        if (typeof showValidationError === 'function') {
-            showValidationError('Completa todos los campos obligatorios antes de generar el documento.');
-        }
-        return;
-    }
-
+    document.querySelectorAll('#formFields input, #formFields textarea, #formFields select').forEach(field => {
+        formData[field.name] = field.value;
+    });
+    
     const provider = document.getElementById('docProvider').value;
-    const btn = document.querySelector('.btn-generate');
-
-    if (btn) {
-        btn.disabled = true;
-        btn.textContent = '⏳ Generando...';
-    }
-
-    updateStatus('✨ Generando documento con IA...');
-
+    
+    updateStatus('✨ Generando documento profesional...');
+    
     try {
         const response = await fetch('/api/documents/generate', {
             method: 'POST',
@@ -417,36 +391,26 @@ async function generateDocument() {
                 provider: provider
             })
         });
-
+        
         const result = await response.json();
-
+        
         if (result.success) {
-            document.getElementById('docContent').textContent = result.content;
+            generatedDocContent = result.content;
+            
             document.getElementById('documentForm').classList.add('hidden');
             document.getElementById('generatedDoc').classList.remove('hidden');
+            document.getElementById('docContent').textContent = result.content;
+            
             updateStatus(`✅ Documento generado: ${result.filename}`);
         } else {
-            const msg = `Error al generar documento: ${result.error}`;
-            if (typeof showValidationError === 'function') {
-                showValidationError(msg);
-            } else {
-                alert(msg);
-            }
+            alert(`Error: ${result.error}`);
             updateStatus('❌ Error al generar documento');
         }
+        
     } catch (error) {
         console.error('Error:', error);
-        if (typeof showValidationError === 'function') {
-            showValidationError('Error de conexión al generar el documento.');
-        } else {
-            alert('Error de conexión al generar el documento.');
-        }
+        alert('Error al generar el documento');
         updateStatus('❌ Error en generación');
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = '✨ Generar Documento';
-        }
     }
 }
 
@@ -1135,6 +1099,9 @@ const DOCUMENT_TYPES = {
     }
 };
 
+let selectedDocType = null;
+let generatedContent = null;
+let generatedFilename = null;
 
 function initDocumentGenerator() {
     console.log('🔧 Inicializando generador de documentos...');
@@ -1158,7 +1125,7 @@ function renderDocumentTypes() {
 }
 
 function selectDocumentType(type) {
-    currentDocType = type;
+    selectedDocType = type;
     const doc = DOCUMENT_TYPES[type];
     
     // Actualizar título y descripción
@@ -1204,8 +1171,87 @@ function selectDocumentType(type) {
     event.target.closest('.doc-type').classList.add('active');
 }
 
+async function generateDocument() {
+    if (!selectedDocType) {
+        alert('Selecciona un tipo de documento primero');
+        return;
+    }
+    
+    const form = document.getElementById('documentForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    const provider = document.getElementById('docProvider').value;
+    const btn = event.target;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span> Generando...';
+    updateStatus('Generando documento...');
+    
+    try {
+        const response = await fetch('/api/generate_document', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                type: selectedDocType,
+                data: data,
+                provider: provider
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            generatedContent = result.content;
+            generatedFilename = result.filename;
+            
+            document.getElementById('docContent').textContent = result.content;
+            document.getElementById('documentForm').classList.add('hidden');
+            document.getElementById('generatedDoc').classList.remove('hidden');
+            
+            updateStatus('Documento generado correctamente');
+        } else {
+            alert('Error: ' + (result.error || 'Error desconocido'));
+            updateStatus('Error al generar documento');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al generar documento: ' + error.message);
+        updateStatus('Error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '✨ Generar Documento';
+    }
+}
+
+function copyDocument() {
+    if (!generatedContent) return;
+    
+    navigator.clipboard.writeText(generatedContent).then(() => {
+        alert('✅ Documento copiado al portapapeles');
+    }).catch(err => {
+        alert('Error al copiar: ' + err);
+    });
+}
+
+function downloadDocument() {
+    if (!generatedContent || !generatedFilename) return;
+    
+    const blob = new Blob([generatedContent], {type: 'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = generatedFilename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    updateStatus('Documento descargado');
+}
+
 function resetGenerator() {
-    currentDocType = null;
+    selectedDocType = null;
     generatedContent = null;
     generatedFilename = null;
     
@@ -1407,33 +1453,3 @@ const consultasPredefinidas = [
 ];
 
 console.log('✅ Sistema de consultas rápidas cargado:', consultasPredefinidas.length, 'consultas disponibles');
-
-// ============================================
-// VALIDACIÓN MEJORADA - GENERADOR DOCUMENTOS
-// ============================================
-
-function showValidationError(message) {
-    let errorDiv = document.getElementById('validationError');
-    if (!errorDiv) {
-        errorDiv = document.createElement('div');
-        errorDiv.id = 'validationError';
-        errorDiv.className = 'validation-error';
-        const formActions = document.querySelector('.form-actions');
-        if (formActions) {
-            formActions.parentNode.insertBefore(errorDiv, formActions);
-        }
-    }
-    
-    errorDiv.innerHTML = `
-        <div class="error-content">
-            <span class="error-icon">⚠️</span>
-            <span class="error-message">${message}</span>
-        </div>
-    `;
-    errorDiv.style.display = 'block';
-    
-    setTimeout(() => {
-        errorDiv.style.display = 'none';
-    }, 5000);
-}
-

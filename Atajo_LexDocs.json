@@ -1,0 +1,68 @@
+{
+"name": "Procesar Documento Legal PRO",
+"icon": "⚖️",
+"color": "blue",
+"actions": [
+{
+"type": "selectFiles",
+"allowMultiple": true
+},
+{
+"type": "getText",
+"prompt": "Número de expediente (3 dígitos)",
+"default": "015"
+},
+{
+"type": "getNumber",
+"prompt": "Año",
+"default": 2026
+},
+{
+"type": "url",
+"method": "GET",
+"url": "http://localhost:5001/api/icloud/clients"
+},
+{
+"type": "getText",
+"prompt": "Cliente",
+"suggestions": "previous_result"
+},
+{
+"type": "menu",
+"prompt": "Jurisdicción",
+"items": ["Civil", "Penal", "Laboral", "Administrativo"]
+},
+{
+"type": "url",
+"method": "POST",
+"url": "http://localhost:5001/api/ocr/upload",
+"body": {"file": "selected_files"}
+},
+{
+"type": "if",
+"condition": "contains LEXNET",
+"then": [
+{
+"type": "url",
+"method": "POST",
+"url": "http://localhost:5001/api/lexnet/analyze"
+},
+{
+"type": "url",
+"method": "POST",
+"url": "http://localhost:5001/api/icloud/export-analysis"
+}
+]
+},
+{
+"type": "url",
+"method": "POST",
+"url": "http://localhost:5001/api/icloud/export"
+},
+{
+"type": "notification",
+"title": "✅ Documento Procesado",
+"message": "Guardado en iCloud"
+}
+]
+}

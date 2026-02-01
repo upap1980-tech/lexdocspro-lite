@@ -111,7 +111,39 @@ CONSULTA:
             if provider.is_available():
                 available.append(name)
         return available
-
+    
+    def consultar(self, texto: str, pregunta: str, provider: str = None, mode: str = 'standard', max_length: int = None) -> str:
+        """
+        Método de consulta rápida sobre un texto
+        Compatible con llamadas desde el frontend
+        
+        Args:
+            texto: Contenido del documento/texto a analizar
+            pregunta: Pregunta o instrucción del usuario
+            provider: Proveedor de IA a usar (opcional)
+            mode: Modo de análisis ('standard', 'deep', 'research')
+            max_length: Longitud máxima del texto (opcional, no usado actualmente)
+            
+        Returns:
+            str: Respuesta de la IA
+        """
+        # Si el texto es muy largo, truncar manteniendo inicio y fin
+        if max_length and len(texto) > max_length:
+            mid = max_length // 2
+            texto = texto[:mid] + "\n\n[...contenido omitido...]\n\n" + texto[-mid:]
+        
+        result = self.chat(
+            prompt=pregunta,
+            context=texto,
+            provider=provider,
+            mode=mode
+        )
+        
+        if result.get('success'):
+            return result.get('response', 'Sin respuesta')
+        else:
+            error_msg = result.get('error', 'Desconocido')
+            return f"Error al consultar IA: {error_msg}"
 
 class OllamaProvider:
     """Proveedor Ollama (local)"""
@@ -179,71 +211,163 @@ class GroqProvider:
     
     def __init__(self):
         self.api_key = os.getenv('GROQ_API_KEY')
-        self.model = 'llama-3.1-70b-versatile'  # Recomendado para análisis legal
-        # Otros modelos disponibles:
-        # - llama-3.1-8b-instant (más rápido, menos potente)
-        # - mixtral-8x7b-32768 (muy bueno para español)
+        self.model = 'llama-3.1-70b-versatile'
     
     def generate(self, prompt_dict: Dict, mode: str) -> str:
         if not self.api_key:
             raise Exception("Groq API key no configurada. Obtén una gratis en: https://console.groq.com")
         
-        from groq import Groq
-        client = Groq(api_key=self.api_key)
-        
-        # Seleccionar modelo según modo
-        if mode == 'deep' or mode == 'research':
-            model = 'llama-3.1-70b-versatile'  # Más potente
-        else:
-            model = 'llama-3.1-8b-instant'  # Más rápido
-        
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": prompt_dict['system']},
-                {"role": "user", "content": prompt_dict['user']}
-            ],
-            temperature=0.3 if mode == 'standard' else 0.5,
-            max_tokens=4000 if mode == 'deep' else 2000
-        )
-        return response.choices[0].message.content
+        try:
+            from groq import Groq
+            
+            # Inicializar cliente SIN parámetros opcionales problemáticos
+            client = Groq(api_key=self.api_key)
+            
+            # Seleccionar modelo según modo
+            if mode == 'deep' or mode == 'research':
+                model = 'llama-3.1-70b-versatile'
+            else:
+                model = 'llama-3.1-8b-instant'
+            
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": prompt_dict['system']},
+                    {"role": "user", "content": prompt_dict['user']}
+                ],
+                temperature=0.3 if mode == 'standard' else 0.5,
+                max_tokens=4000 if mode == 'deep' else 2000
+            )
+            
+            return response.choices[0].message.content
+            
+        except ImportError:
+            raise Exception("Librería 'groq' no instalada. Instala con: pip install groq")
+        except Exception as e:
+            raise Exception(f"Error en Groq: {str(e)}")
     
     def is_available(self) -> bool:
-        return bool(self.api_key)
-
+        if not self.api_key:
+            return False
+        try:
+            from groq import Groq
+            return True
+        except ImportError:
+            return False
 
 class PerplexityProvider:
-    """Proveedor Perplexity"""
+    """Proveedor Perplexity PRO con soporte multimodal"""
     
     def __init__(self):
         self.api_key = os.getenv('PERPLEXITY_API_KEY')
-        self.model = 'llama-3.1-sonar-large-128k-online'
+        self.model = os.getenv('PERPLEXITY_MODEL', 'llama-3.1-sonar-large-128k-online')
+        self.base_url = 'https://api.perplexity.ai/chat/completions'
     
     def generate(self, prompt_dict: Dict, mode: str) -> str:
         if not self.api_key:
             raise Exception("Perplexity API key no configurada")
         
-        response = requests.post(
-            'https://api.perplexity.ai/chat/completions',
-            headers={
+        try:
+            # Construir mensajes según el formato de Perplexity
+            messages = [
+                {
+                    "role": "system",
+                    "content": prompt_dict.get('system', 'Eres un asistente legal especializado en derecho español.')
+                },
+                {
+                    "role": "user",
+                    "content": prompt_dict.get('user', prompt_dict.get('prompt', ''))
+                }
+            ]
+            
+            # Payload corregido para Perplexity API
+            payload = {
+                "model": self.model,
+                "messages": messages,
+                "temperature": 0.2 if mode == 'standard' else 0.4,
+                "top_p": 0.9,
+                "return_citations": True,  # Aprovechar capacidad de citas
+                "return_images": False,     # Desactivar imágenes por ahora
+                "search_recency_filter": "month",  # Búsqueda web reciente
+                "top_k": 0,
+                "stream": False,
+                "presence_penalty": 0,
+                "frequency_penalty": 1
+            }
+            
+            headers = {
                 'Authorization': f'Bearer {self.api_key}',
-                'Content-Type': 'application/json'
-            },
-            json={
-                'model': self.model,
-                'messages': [
-                    {"role": "system", "content": prompt_dict['system']},
-                    {"role": "user", "content": prompt_dict['user']}
-                ],
-                'temperature': 0.3 if mode == 'standard' else 0.5,
-                'max_tokens': 4000 if mode == 'deep' else 2000
-            },
-            timeout=60
-        )
-        return response.json()['choices'][0]['message']['content']
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+            
+            # Debug detallado
+            print(f"[DEBUG] Perplexity Request:")
+            print(f"  Model: {self.model}")
+            print(f"  Messages: {len(messages)} mensajes")
+            print(f"  User prompt: {messages[1]['content'][:100]}...")
+            
+            response = requests.post(
+                self.base_url,
+                headers=headers,
+                json=payload,
+                timeout=60  # Perplexity puede tardar más por búsqueda web
+            )
+            
+            # Debug respuesta
+            print(f"[DEBUG] Perplexity Response:")
+            print(f"  Status: {response.status_code}")
+            print(f"  Headers: {dict(response.headers)}")
+            
+            # Manejo de errores HTTP
+            if response.status_code != 200:
+                error_detail = response.text[:500]
+                print(f"[ERROR] Perplexity: {error_detail}")
+                
+                if response.status_code == 400:
+                    raise Exception(f"Formato incorrecto. Detalles: {error_detail}")
+                elif response.status_code == 401:
+                    raise Exception("API Key inválida o expirada")
+                elif response.status_code == 429:
+                    raise Exception("Límite de rate excedido. Espera 60 segundos.")
+                elif response.status_code == 500:
+                    raise Exception("Error interno de Perplexity. Intenta en unos minutos.")
+                else:
+                    raise Exception(f"Error HTTP {response.status_code}: {error_detail}")
+            
+            response.raise_for_status()
+            data = response.json()
+            
+            # Debug estructura de respuesta
+            print(f"[DEBUG] Response keys: {list(data.keys())}")
+            
+            # Extraer respuesta
+            if 'choices' in data and len(data['choices']) > 0:
+                content = data['choices'][0]['message']['content']
+                
+                # Agregar citas si están disponibles
+                if 'citations' in data and data['citations']:
+                    content += "\n\n📚 Fuentes consultadas:\n"
+                    for i, citation in enumerate(data['citations'][:3], 1):
+                        content += f"{i}. {citation}\n"
+                
+                return content
+            else:
+                raise Exception(f"Estructura de respuesta inesperada: {list(data.keys())}")
+                
+        except requests.exceptions.Timeout:
+            raise Exception("Timeout - Perplexity tardó más de 60s. Intenta con un prompt más corto.")
+        except requests.exceptions.ConnectionError:
+            raise Exception("Error de conexión. Verifica tu internet.")
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Error de red: {str(e)}")
+        except Exception as e:
+            raise Exception(f"Error Perplexity: {str(e)}")
     
     def is_available(self) -> bool:
-        return bool(self.api_key)
+        """Verificar si Perplexity está disponible"""
+        return bool(self.api_key and self.api_key.startswith('pplx-'))
+
 
 
 class GeminiProvider:

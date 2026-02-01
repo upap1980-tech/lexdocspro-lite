@@ -1,10 +1,6 @@
 """
 Generador de documentos legales con IA
-Versión completa y sin errores
 """
-from datetime import datetime
-import os
-
 
 class DocumentGenerator:
     def __init__(self, ai_service):
@@ -24,15 +20,13 @@ class DocumentGenerator:
                     {'name': 'petitorio', 'label': 'Petitorio', 'type': 'textarea'}
                 ]
             },
-            'contestacion_demanda': {
-                'name': '🛡️ Contestación a la Demanda',
-                'description': 'Respuesta formal a demanda civil',
+            'escrito_alegaciones': {
+                'name': '📝 Escrito de Alegaciones',
+                'description': 'Respuesta a trámite de alegaciones',
                 'fields': [
                     {'name': 'procedimiento', 'label': 'Nº Procedimiento', 'type': 'text'},
-                    {'name': 'demandado', 'label': 'Demandado (quien contesta)', 'type': 'text'},
-                    {'name': 'hechos_propios', 'label': 'Hechos propios', 'type': 'textarea'},
-                    {'name': 'excepciones', 'label': 'Excepciones y defensas', 'type': 'textarea'},
-                    {'name': 'suplica', 'label': 'Súplica', 'type': 'textarea'}
+                    {'name': 'parte', 'label': 'En nombre de', 'type': 'text'},
+                    {'name': 'alegaciones', 'label': 'Alegaciones', 'type': 'textarea'}
                 ]
             },
             'recurso_apelacion': {
@@ -45,6 +39,37 @@ class DocumentGenerator:
                     {'name': 'suplica', 'label': 'Súplica', 'type': 'textarea'}
                 ]
             },
+            'burofax': {
+                'name': '📮 Burofax',
+                'description': 'Comunicación fehaciente por burofax',
+                'fields': [
+                    {'name': 'remitente', 'label': 'Remitente', 'type': 'text'},
+                    {'name': 'destinatario', 'label': 'Destinatario', 'type': 'text'},
+                    {'name': 'asunto', 'label': 'Asunto', 'type': 'text'},
+                    {'name': 'contenido', 'label': 'Contenido', 'type': 'textarea'}
+                ]
+            },
+            'requerimiento': {
+                'name': '⚠️ Requerimiento Extrajudicial',
+                'description': 'Requerimiento previo a reclamación judicial',
+                'fields': [
+                    {'name': 'requirente', 'label': 'Requirente', 'type': 'text'},
+                    {'name': 'requerido', 'label': 'Requerido', 'type': 'text'},
+                    {'name': 'objeto', 'label': 'Objeto del requerimiento', 'type': 'textarea'},
+                    {'name': 'plazo', 'label': 'Plazo', 'type': 'text'}
+                ]
+            },
+            'contestacion_demanda': {
+                'name': '🛡️ Contestación a la Demanda',
+                'description': 'Respuesta formal a demanda civil',
+                'fields': [
+                    {'name': 'procedimiento', 'label': 'Nº Procedimiento', 'type': 'text'},
+                    {'name': 'demandado', 'label': 'Demandado (quien contesta)', 'type': 'text'},
+                    {'name': 'hechos_propios', 'label': 'Hechos propios', 'type': 'textarea'},
+                    {'name': 'excepciones', 'label': 'Excepciones y defensas', 'type': 'textarea'},
+                    {'name': 'suplica', 'label': 'Súplica', 'type': 'textarea'}
+                ]
+            },
             'recurso_reposicion': {
                 'name': '🔁 Recurso de Reposición',
                 'description': 'Recurso contra autos y providencias',
@@ -53,15 +78,6 @@ class DocumentGenerator:
                     {'name': 'resolucion', 'label': 'Resolución recurrida', 'type': 'text'},
                     {'name': 'recurrente', 'label': 'Recurrente', 'type': 'text'},
                     {'name': 'motivos', 'label': 'Motivos del recurso', 'type': 'textarea'}
-                ]
-            },
-            'escrito_alegaciones': {
-                'name': '📝 Escrito de Alegaciones',
-                'description': 'Respuesta a trámite de alegaciones',
-                'fields': [
-                    {'name': 'procedimiento', 'label': 'Nº Procedimiento', 'type': 'text'},
-                    {'name': 'parte', 'label': 'En nombre de', 'type': 'text'},
-                    {'name': 'alegaciones', 'label': 'Alegaciones', 'type': 'textarea'}
                 ]
             },
             'desistimiento': {
@@ -90,7 +106,7 @@ class DocumentGenerator:
                     {'name': 'poderdante', 'label': 'Poderdante', 'type': 'text'},
                     {'name': 'apoderado', 'label': 'Apoderado (Procurador)', 'type': 'text'},
                     {'name': 'dni_poderdante', 'label': 'DNI Poderdante', 'type': 'text'},
-                    {'name': 'ambito', 'label': 'Ámbito del poder', 'type': 'text'}
+                    {'name': 'ambito', 'label': 'Ámbito del poder', 'type': 'select', 'options': ['General', 'Específico para este pleito']}
                 ]
             },
             'escrito_prueba': {
@@ -101,26 +117,6 @@ class DocumentGenerator:
                     {'name': 'parte', 'label': 'Parte que propone', 'type': 'text'},
                     {'name': 'hechos', 'label': 'Hechos a probar', 'type': 'textarea'},
                     {'name': 'pruebas', 'label': 'Medios de prueba propuestos', 'type': 'textarea'}
-                ]
-            },
-            'burofax': {
-                'name': '📮 Burofax',
-                'description': 'Comunicación fehaciente por burofax',
-                'fields': [
-                    {'name': 'remitente', 'label': 'Remitente', 'type': 'text'},
-                    {'name': 'destinatario', 'label': 'Destinatario', 'type': 'text'},
-                    {'name': 'asunto', 'label': 'Asunto', 'type': 'text'},
-                    {'name': 'contenido', 'label': 'Contenido', 'type': 'textarea'}
-                ]
-            },
-            'requerimiento': {
-                'name': '⚠️ Requerimiento Extrajudicial',
-                'description': 'Requerimiento previo a reclamación judicial',
-                'fields': [
-                    {'name': 'requirente', 'label': 'Requirente', 'type': 'text'},
-                    {'name': 'requerido', 'label': 'Requerido', 'type': 'text'},
-                    {'name': 'objeto', 'label': 'Objeto del requerimiento', 'type': 'textarea'},
-                    {'name': 'plazo', 'label': 'Plazo', 'type': 'text'}
                 ]
             },
             'querella': {
@@ -138,47 +134,27 @@ class DocumentGenerator:
     
     def generate(self, doc_type, data, provider='ollama'):
         """Generar documento usando IA"""
-        try:
-            templates = self.get_templates()
-            
-            if doc_type not in templates:
-                return {'success': False, 'error': f'Tipo de documento no válido: {doc_type}'}
-            
-            template = templates[doc_type]
-            
-            # Construir prompt según el tipo
-            prompt = self._build_prompt(doc_type, template, data)
-            
-            # Generar con IA (usar método correcto)
-            if hasattr(self.ai_service, 'chat'):
-                # Método chat (más compatible)
-                response = self.ai_service.chat(prompt, provider=provider)
-                if isinstance(response, dict):
-                    content = response.get('response', '')
-                else:
-                    content = str(response)
-            else:
-                # Fallback: intentar otros métodos
-                return {'success': False, 'error': 'Servicio de IA no disponible'}
-            
-            if not content or len(content) < 50:
-                return {'success': False, 'error': 'Documento generado muy corto o vacío'}
-            
-            return {
-                'success': True,
-                'content': content.strip(),
-                'filename': f"{doc_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-            }
         
-        except Exception as e:
-            print(f"❌ Error en generate(): {str(e)}")
-            return {'success': False, 'error': str(e)}
+        templates = self.get_templates()
+        
+        if doc_type not in templates:
+            raise ValueError(f"Tipo de documento no válido: {doc_type}")
+        
+        template = templates[doc_type]
+        
+        # Construir prompt según el tipo
+        prompt = self._build_prompt(doc_type, template, data)
+        
+        # Generar con IA
+        response = self.ai_service.generar_documento(prompt, provider)
+        
+        return response
     
     def _build_prompt(self, doc_type, template, data):
         """Construir prompt para la IA según el tipo de documento"""
         
         prompts = {
-            'demanda_civil': f"""Genera una DEMANDA CIVIL profesional española con:
+            'demanda_civil': f"""Genera una DEMANDA CIVIL profesional española:
 
 JUZGADO: {data.get('juzgado', 'N/A')}
 DEMANDANTE: {data.get('demandante', 'N/A')}
@@ -190,7 +166,7 @@ HECHOS:
 PETITORIO:
 {data.get('petitorio', 'N/A')}
 
-Estructura: Encabezamiento oficial, hechos numerados, fundamentos de derecho, petitorio (SUPLICO), otrosí.""",
+Estructura: Encabezamiento oficial, hechos numerados, fundamentos de derecho, petitorio (SUPLICO), otrosí con documentos.""",
 
             'contestacion_demanda': f"""Genera una CONTESTACIÓN A LA DEMANDA profesional:
 
@@ -247,7 +223,7 @@ Estructura formal.""",
 PROCEDIMIENTO: {data.get('procedimiento', 'N/A')}
 PARTE QUE DESISTE: {data.get('parte', 'N/A')}
 
-MOTIVO:
+MOTIVO (opcional):
 {data.get('motivo', 'Por convenir a mis intereses.')}
 
 Desistimiento formal del procedimiento.""",
@@ -296,7 +272,7 @@ ASUNTO: {data.get('asunto', 'N/A')}
 CONTENIDO:
 {data.get('contenido', 'N/A')}
 
-Formato oficial de burofax notarial fehaciente. Incluir fecha y datos de firmantes.""",
+Formato oficial de burofax notarial fehaciente. Incluir fecha, hora y firmantes.""",
 
             'requerimiento': f"""Genera un REQUERIMIENTO EXTRAJUDICIAL profesional:
 
@@ -324,13 +300,9 @@ PRUEBAS:
 Escrito de querella criminal con fundamentos penales.""",
         }
         
-        if doc_type in prompts:
-            return prompts[doc_type]
-        else:
-            # Prompt genérico para cualquier tipo no previsto
-            fields_text = "\n".join([f"{k.upper()}: {v}" for k, v in data.items() if v])
-            return f"""Genera un documento legal profesional tipo {template.get('name', doc_type)}:
+        if doc_type not in prompts:
+            return f"Genera un documento legal tipo {doc_type} profesional con datos: {data}"
+        
+        return prompts[doc_type]
 
-{fields_text}
 
-Usa formato formal, estructura clara y lenguaje jurídico apropiado."""

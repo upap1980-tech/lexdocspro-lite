@@ -45,16 +45,6 @@
                             <option value="research">📚 Investigación</option>
                         </select>
                     </div>
-    <!-- CONSULTAS RÁPIDAS PREDEFINIDAS -->
-    <div class="consultas-rapidas" style="margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 8px;">
-        <h3 style="font-size: 14px; margin-bottom: 8px; color: #555;">⚡ Consultas Rápidas:</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <button onclick="cargarConsulta('Explica los elementos del delito de estafa según el Código Penal español')" class="btn-consulta-rapida" title="Análisis completo del delito de estafa">📋 Elementos delito estafa</button>
-            <button onclick="cargarConsulta('¿Cuáles son los plazos para recurrir una sentencia civil en España?')" class="btn-consulta-rapida" title="Plazos de recurso civil">⏰ Plazos procesales</button>
-            <button onclick="cargarConsulta('¿Qué requisitos formales debe cumplir una demanda civil según la LEC?')" class="btn-consulta-rapida" title="Requisitos formales de demanda">📄 Requisitos demanda</button>
-            <button onclick="cargarConsulta('Analiza este auto judicial y extrae: tipo, fecha, tribunal, partes y decisión')" class="btn-consulta-rapida" title="Análisis automático de auto LexNET">🔍 Análisis Auto LexNET</button>
-        </div>
-    </div>
                     <div id="chatMessages" class="chat-messages"></div>
                     <div class="chat-input">
                         <textarea id="chatPrompt" placeholder="Escribe tu consulta legal..." rows="3"></textarea>
