@@ -1,0 +1,112 @@
+name: Code Analysis - Antigravity Scan
+
+on:
+  push:
+    branches: [ analysis/01-preliminary-scan, main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  dependency-analysis:
+    runs-on: ubuntu-latest
+    name: 📦 Análisis de Dependencias
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      
+      - name: Install dependencies analyzer
+        run: |
+          pip install pipdeptree pip-audit safety
+      
+      - name: Analyze requirements.txt
+        run: |
+          echo "=== DEPENDENCIAS PRINCIPALES ===" 
+          cat requirements.txt
+          echo -e "\n=== ÁRBOL DE DEPENDENCIAS ===" 
+          pipdeptree -p $(cat requirements.txt | cut -d'=' -f1 | paste -sd, -) || true
+          echo -e "\n=== VULNERABILIDADES ===" 
+          pip-audit || true
+
+  security-scan:
+    runs-on: ubuntu-latest
+    name: 🔒 Escaneo de Seguridad
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      
+      - name: Install security tools
+        run: |
+          pip install bandit
+      
+      - name: Run Bandit security scan
+        run: |
+          echo "=== BANDIT SECURITY SCAN ===" 
+          bandit -r . -ll -f csv > bandit-report.csv || true
+          cat bandit-report.csv || echo "No se encontraron problemas críticos"
+      
+      - name: Upload security report
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports
+          path: bandit-report.csv
+        if: always()
+
+  code-metrics:
+    runs-on: ubuntu-latest
+    name: 📊 Métricas de Código
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      
+      - name: Install metrics tools
+        run: |
+          pip install radon
+      
+      - name: Calculate code metrics
+        run: |
+          echo "=== ANÁLISIS DE COMPLEJIDAD CICLOMÁTICA ===" 
+          radon cc . -a -s || true
+          echo -e "\n=== MÉTRICAS DE MANTENIBILIDAD ===" 
+          radon mi . -s || true
+          echo -e "\n=== ANÁLISIS DE LÍNEAS DE CÓDIGO ===" 
+          radon raw . -s || true
+
+  file-inventory:
+    runs-on: ubuntu-latest
+    name: 📁 Inventario de Archivos
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Generate file inventory
+        run: |
+          echo "=== ESTRUCTURA DEL PROYECTO ===" 
+          find . -type f -name "*.py" -o -name "*.js" -o -name "*.html" -o -name "*.txt" | grep -v ".git" | grep -v "__pycache__" | sort > file-inventory.txt
+          
+          echo "=== RESUMEN ===" 
+          echo "Python files:" $(find . -type f -name "*.py" | grep -v ".git" | wc -l)
+          echo "JavaScript files:" $(find . -type f -name "*.js" | grep -v ".git" | wc -l)
+          echo "HTML files:" $(find . -type f -name "*.html" | grep -v ".git" | wc -l)
+          echo "Total:" $(find . -type f \( -name "*.py" -o -name "*.js" -o -name "*.html" \) | grep -v ".git" | wc -l)
+      
+      - name: Upload file inventory
+        uses: actions/upload-artifact@v3
+        with:
+          name: analysis-reports
+          path: file-inventory.txt
+        if: always()
