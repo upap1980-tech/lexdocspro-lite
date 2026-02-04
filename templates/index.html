@@ -3,87 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LexDocsPro ENTERPRISE v3.0</title>
+    <title>LexDocsPro ENTERPRISE v3.2</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        :root { --primary: #007BFF; --dark: #003d82; --sidebar-width: 280px; }
+        body { font-family: 'Inter', sans-serif; margin: 0; background: #f4f7f6; display: flex; }
+        
+        /* Sidebar Enterprise Profesional */
+        .sidebar { width: var(--sidebar-width); height: 100vh; background: linear-gradient(180deg, #0056b3 0%, #003d82 100%); color: white; position: fixed; overflow-y: auto; box-shadow: 4px 0 10px rgba(0,0,0,0.1); }
+        .sidebar-header { padding: 25px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-group { padding: 10px 0; }
+        .nav-item { display: flex; align-items: center; padding: 12px 24px; color: rgba(255,255,255,0.8); text-decoration: none; transition: 0.2s; border-left: 4px solid transparent; cursor: pointer; font-size: 0.95rem; }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.15); color: white; border-left-color: #4dabf7; }
+        .nav-item i { margin-right: 12px; width: 20px; text-align: center; }
+        .badge { background: #ff4757; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; margin-left: auto; font-weight: bold; }
+
+        /* Contenido Principal */
+        .main-content { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); min-height: 100vh; padding: 40px; box-sizing: border-box; }
+        .section { display: none; animation: fadeIn 0.4s ease; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Estilos de Módulos */
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px; }
+        .kpi-card { background: white; padding: 20px; border-radius: 12px; border-bottom: 4px solid var(--primary); text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .pending-box { text-align: center; padding: 60px; color: #888; border: 2px dashed #ccc; border-radius: 20px; background: #fafafa; }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- HEADER CLÁSICO AZUL -->
-        <header class="header-blue">
-            <div class="header-content">
-                <h1><span class="logo">📋 LexDocsPro</span> <span class="version">ENTERPRISE v3.0</span></h1>
-                <div class="header-actions">
-                    <span id="notifications" class="notification-badge">5</span>
-                    <div class="user-menu">
-                        <span>Usuario</span>
-                        <div class="dropdown">
-                            <a href="#perfil">Perfil</a>
-                            <a href="#config">Configuración</a>
-                            <a href="#logout">Cerrar Sesión</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
 
-        <div class="main-layout">
-            <!-- SIDEBAR ENTERPRISE (15 items) -->
-            <aside id="sidebar" class="sidebar-enterprise">
-                <button id="sidebar-toggle" class="sidebar-toggle">☰</button>
-                <nav class="sidebar-nav">
-                    <a href="#" data-tab="dashboard" class="nav-item active">
-                        📊 Dashboard
-                    </a>
-                    <a href="#" data-tab="autoprocesos">🤖 Auto-Procesos</a>
-                    <a href="#" data-tab="ia-cascade">🔍 IA Cascade</a>
-                    <a href="#" data-tab="pdf-preview">📄 PDF Preview</a>
-                    <a href="#" data-tab="email-alerts">📧 Email Alerts</a>
-                    <a href="#" data-tab="firma-digital">✍️ Firma Digital</a>
-                    <a href="#" data-tab="banking">🏦 Banking</a>
-                    <a href="#" data-tab="usuarios">👥 Usuarios</a>
-                    <a href="#" data-tab="pwa">📱 PWA</a>
-                    <a href="#" data-tab="ia-agent">🧠 IA Agent</a>
-                    <a href="#" data-tab="analytics">📈 Analytics</a>
-                    <a href="#" data-tab="expedientes">📁 Expedientes</a>
-                    <a href="#" data-tab="lexnet">⚖️ LexNET <span class="urgent">!</span></a>
-                    <a href="#" data-tab="config">⚙️ Configuración</a>
-                    <a href="#" data-tab="deploy">🚀 Deploy</a>
-                </nav>
-            </aside>
-
-            <!-- MAIN CONTENT -->
-            <main class="main-content">
-                <!-- DASHBOARD - Cards clásicas azules -->
-                <div id="tab-dashboard" class="tab-content active">
-                    <h2>Dashboard Enterprise</h2>
-                    <div class="kpi-grid">
-                        <div class="kpi-card blue">
-                            <h3>Procesos Hoy</h3>
-                            <span class="kpi-value">1.47</span>
-                        </div>
-                        <div class="kpi-card blue">
-                            <h3>En Revisión</h3>
-                            <span class="kpi-value">2.38</span>
-                        </div>
-                        <div class="kpi-card blue">
-                            <h3>Errores</h3>
-                            <span class="kpi-value">14.0</span>
-                        </div>
-                        <div class="kpi-card red">
-                            <h3>Alertas Críticas</h3>
-                            <span class="kpi-value urgent">5</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- OTRAS PESTAÑAS (Consultas, Generador, LexNET) - MANTIENEN TU CÓDIGO ORIGINAL -->
-                <div id="tab-consulta" class="tab-content"><!-- Tu código original --></div>
-                <div id="tab-documentos" class="tab-content"><!-- Tu código original --></div>
-                <div id="tab-lexnet" class="tab-content"><!-- Tu código original + plazos --></div>
-            </main>
-        </div>
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <h2 style="margin:0; letter-spacing: 1px;">LexDocsPro</h2>
+        <small style="opacity:0.7;">ENTERPRISE EDITION</small>
     </div>
+    <nav class="nav-group">
+        <div class="nav-item active" onclick="showTab('dashboard')"><i>📊</i> Dashboard</div>
+        <div class="nav-item" onclick="showTab('autoprocesos')"><i>🤖</i> Auto-Procesos</div>
+        <div class="nav-item" onclick="showTab('ia-cascade')"><i>🔍</i> IA Cascade</div>
+        <div class="nav-item" onclick="showTab('pdf-preview')"><i>📄</i> PDF Preview</div>
+        <div class="nav-item" onclick="showTab('email-alerts')"><i>📧</i> Email Alerts</div>
+        <div class="nav-item" onclick="showTab('firma-digital')"><i>✍️</i> Firma Digital</div>
+        <div class="nav-item" onclick="showTab('banking')"><i>🏦</i> Banking (11 bancos)</div>
+        <div class="nav-item" onclick="showTab('usuarios')"><i>👥</i> Usuarios</div>
+        <div class="nav-item" onclick="showTab('pwa')"><i>📱</i> PWA Status</div>
+        <div class="nav-item" onclick="showTab('ia-agent')"><i>🧠</i> IA Agent</div>
+        <div class="nav-item" onclick="showTab('analytics')"><i>📈</i> Analytics</div>
+        <div class="nav-item" onclick="showTab('expedientes')"><i>📁</i> Expedientes</div>
+        <div class="nav-item" onclick="showTab('lexnet')"><i>⚖️</i> LexNET <span class="badge">Urgente!</span></div>
+        <div class="nav-item" onclick="showTab('config')"><i>⚙️</i> Configuración</div>
+        <div class="nav-item" onclick="showTab('deploy')"><i>🚀</i> Deploy Status</div>
+    </nav>
+</aside>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<main class="main-content">
+    <!-- DASHBOARD (IMPLEMENTADO) -->
+    <section id="dashboard" class="section active">
+        <h1>Dashboard General</h1>
+        <div class="kpi-grid">
+            <div class="kpi-card"><h3>Procesos Hoy</h3><span id="val-hoy" style="font-size: 2.5rem; font-weight: bold;">1.47</span></div>
+            <div class="kpi-card"><h3>En Revisión</h3><span id="val-rev" style="font-size: 2.5rem; font-weight: bold;">2.38</span></div>
+            <div class="kpi-card"><h3>Errores</h3><span id="val-err" style="font-size: 2.5rem; font-weight: bold;">14.0</span></div>
+            <div class="kpi-card" style="border-bottom-color: #ff4757;"><h3>Alertas</h3><span id="val-ale" style="font-size: 2.5rem; font-weight: bold; color:#ff4757;">5</span></div>
+        </div>
+    </section>
+
+    <!-- LEXNET (IMPLEMENTADO) -->
+    <section id="lexnet" class="section">
+        <h1>Analizador LexNET Pro</h1>
+        <div class="card">
+            <p>Estado del Calendario Judicial 2026: <strong>Activo</strong></p>
+            <div style="padding: 40px; border: 2px dashed #007BFF; text-align: center; border-radius: 15px;">
+                <input type="file" id="lexfile" style="display:none">
+                <button onclick="document.getElementById('lexfile').click()" style="padding: 15px 30px; background: var(--primary); color:white; border:none; border-radius:8px; cursor:pointer;">Seleccionar Notificación</button>
+                <p>O arrastra el archivo aquí para calcular plazos.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- EXPEDIENTES (IMPLEMENTADO) -->
+    <section id="expedientes" class="section">
+        <h1>Gestión de Expedientes</h1>
+        <div class="card">
+            <div style="background:#f9f9f9; padding:20px; border-radius:10px;">
+                <strong>Ruta:</strong> ~/Desktop/EXPEDIENTES_LEXDOCS <br><br>
+                <ul id="file-list">
+                    <li>📄 Demanda_Ejecutiva_001.pdf</li>
+                    <li>📄 Sentencia_Final_V1.pdf</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- PENDIENTES (FALLBACK AUTOMÁTICO) -->
+    
+        <div class="pending-box">
+            <h1 id="pending-title">Módulo en Desarrollo</h1>
+            <p style="font-size: 1.2rem;">Este módulo está siendo migrado desde la versión legacy.</p>
+            <div style="margin-top: 20px; color: var(--primary); font-weight: bold;">Estimado para LexDocsPro v3.5</div>
+        </div>
+    </section>
+
+    <-la ✍️ FIRMA DIGITAL (Migrado de v2.0) -->
+    <section id='firma-digital' class='section'>
+        <h1>✍️ Firma Digital PAdES / eIDAS</h1>
+        <div class='card'>
+            <div style='padding:20px; border:2px dashed #007BFF; text-align:center;'>
+                <p>Arrastra el documento generado para firmar con certificado local (.p12/.pfx)</p>
+                <button style='padding:10px 20px; background:var(--primary-blue); color:white; border:none; border-radius:5px;'>Seleccionar Certificado</button>
+            </div>
+            <div style='margin-top:20px;'>
+                <label><input type='checkbox' checked> Incluir sello de tiempo (Timestamp)</label><br>
+                <label><input type='checkbox'> Firma visible en última página</label>
+            </div>
+        </div>
+    </section>
+
+    <-la 📧 EMAIL ALERTS -->
+    <section id='email-alerts' class='section'>
+        <h1>📧 Alertas por Email (LexNET Sync)</h1>
+        <div class='card'>
+            <p>Configura el envío automático de notificaciones urgentes a tu correo.</p>
+            <input type='email' placeholder='abogado@tusitio.com' style='width:300px; padding:10px;'>
+            <button style='padding:10px; background:green; color:white; border:none;'>Activar Webhook</button>
+            <hr>
+            <h4>Últimas Alertas Enviadas</h4>
+            <ul style='font-size:0.9rem; color:#666;'>
+                <li>Sentencia 402/2026 - Enviada a las 09:45</li>
+                <li>Decreto de Admisión - Enviada a las 11:20</li>
+            </ul>
+        </div>
+    </section>
+
+    <-la 📱 PWA STATUS -->
+    <section id='pwa' class='section'>
+        <h1>📱 Aplicación Nativa (PWA)</h1>
+        <div class='card' style='text-align:center;'>
+            <div style='font-size:3rem;'>📲</div>
+            <h3>LexDocsPro está lista para instalar</h3>
+            <p>Puedes añadir esta app a tu pantalla de inicio en iOS o Android.</p>
+            <button onclick='installPWA()' style='padding:15px 30px; background:#333; color:white; border:none; border-radius:10px;'>Instalar en este dispositivo</button>
+        </div>
+    </section>
+
+    <-la ⚙️ CONFIGURACIÓN (.env Editor) -->
+    <section id='config' class='section'>
+        <h1>⚙️ Configuración del Sistema</h1>
+        <div class='card'>
+            <label>Ollama Model:</label><br>
+            <input type='text' value='lexdocs-legal-pro' style='width:100%; padding:8px; margin-bottom:15px;'><br>
+            <label>Groq API Key:</label><br>
+            <input type='password' value='••••••••••••••••' style='width:100%; padding:8px; margin-bottom:15px;'><br>
+            <label>Ruta Expedientes:</label><br>
+            <input type='text' value='~/Desktop/EXPEDIENTES_LEXDOCS' style='width:100%; padding:8px; margin-bottom:15px;'><br>
+            <button style='width:100%; padding:12px; background:var(--dark-blue); color:white; border:none; border-radius:5px;'>Guardar cambios en .env</button>
+        </div>
+    </section>
+
+    <-la 🤖 AUTO-PROCESOS (Watchdog Live) -->
+    <section id='autoprocesos' class='section'>
+        <h1>🤖 Auto-Procesador Watchdog</h1>
+        <div class='card'>
+            <div style='display:flex; justify-content:space-between; align-items:center;'>
+                <div>Status: <span style='color:green; font-weight:bold;'>Activo (Monitoring)</span></div>
+                <button class='btn-blue'>Reiniciar Watchdog</button>
+            </div>
+            <div style='margin-top:20px; background:#f0f0f0; padding:15px; border-radius:8px; font-family:monospace; height:150px; overflow-y:auto;'>
+                [LOGS] Detectado: Demanda_Civil_402.pdf en carpeta PENDIENTES...<br>
+                [LOGS] Iniciando OCR Tesseract... OK<br>
+                [LOGS] Clasificando en Carpeta Civil... OK
+            </div>
+        </div>
+    </section>
+
+    <-la 🔍 IA CASCADE (Multi-Provider) -->
+    <section id='ia-cascade' class='section'>
+        <h1>🔍 IA Cascade Selector</h1>
+        <div class='card'>
+            <div class='kpi-grid'>
+                <div class='kpi-card' style='border-color:green;'><h4>Ollama</h4><span>Local / Online</span></div>
+                <div class='kpi-card'><h4>Groq</h4><span>Llama 3.3 Ready</span></div>
+                <div class='kpi-card'><h4>Perplexity</h4><span>PRO Active</span></div>
+            </div>
+            <div style='margin-top:20px;'>
+                <textarea style='width:100%; height:100px; padding:10px;' placeholder='Escribe consulta legal aquí...'></textarea>
+                <button style='width:100%; padding:15px; margin-top:10px; background:var(--dark-blue); color:white;'>Consultar Cascada de IAs</button>
+            </div>
+        </div>
+    </section>
+
+    <-la 📄 PDF PREVIEW (Visor Enterprise) -->
+    <section id='pdf-preview' class='section'>
+        <h1>📄 Visor de Documentos PDF</h1>
+        <div class='card' style='display:flex; gap:20px;'>
+            <div style='width:250px; height:400px; border:1px solid #ddd; overflow-y:auto; padding:10px;'>
+                <small>Miniaturas</small>
+                <div style='width:100%; height:120px; background:#eee; margin-bottom:10px; display:flex; align-items:center; justify-content:center;'>Pág 1</div>
+                <div style='width:100%; height:120px; background:#eee; margin-bottom:10px; display:flex; align-items:center; justify-content:center;'>Pág 2</div>
+            </div>
+            <div style='flex-grow:1; height:400px; background:#fff; border:1px solid #aaa; display:flex; align-items:center; justify-content:center;'>
+                <p>Selecciona un archivo para previsualizar</p>
+            </div>
+        </div>
+    </section>
+
+    <-la 🏦 BANKING (PSD2 11 Bancos) -->
+    <section id='banking' class='section'>
+        <h1>🏦 Conciliación Bancaria PSD2</h1>
+        <div class='card'>
+            <div class='kpi-grid' style='grid-template-columns: repeat(3, 1fr);'>
+                <div class='bank-card'><strong>Santander</strong><br><small>Sincronizado</small></div>
+                <div class='bank-card'><strong>CaixaBank</strong><br><small>Sincronizado</small></div>
+                <div class='bank-card'><strong>BBVA</strong><br><small>Pendiente</small></div>
+            </div>
+            <table style='width:100%; margin-top:20px; border-collapse: collapse;'>
+                <tr style='background:#f4f4f4;'>
+                    <th style='padding:10px; text-align:left;'>Fecha</th>
+                    <th style='padding:10px; text-align:left;'>Concepto</th>
+                    <th style='padding:10px; text-align:right;'>Importe</th>
+                </tr>
+                <tr><td style='padding:10px;'>04/02/2026</td><td>Provisión Fondos Exp. 22</td><td style='text-align:right; color:green;'>+450.00€</td></tr>
+            </table>
+        </div>
+    </section>
+</main>
+
+<script>
+    function showTab(id) {
+        // 1. Gestionar clases de navegación
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+
+        // 2. Gestionar visibilidad de secciones
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        
+        const targetSection = document.getElementById(id);
+        if (targetSection) {
+            targetSection.classList.add('active');
+        } else {
+            // Lógica de Fallback para módulos no implementados
+            const pending = document.getElementById('pending-section');
+            document.getElementById('pending-title').innerText = "Módulo: " + id.toUpperCase();
+            pending.classList.add('active');
+        }
+    }
+
+    // Cargar datos reales del Dashboard al inicio
+    async function initDashboard() {
+        try {
+            const r = await fetch('/api/dashboard');
+            const data = await r.json();
+            document.getElementById('val-hoy').innerText = data.procesos_hoy;
+            document.getElementById('val-rev').innerText = data.en_revision;
+            document.getElementById('val-err').innerText = data.errores;
+            document.getElementById('val-ale').innerText = data.alertas;
+        } catch(e) { console.log("Usando datos locales por defecto"); }
+    }
+    initDashboard();
+</script>
 </body>
 </html>
+<section id="ia-agent" class="section">
+    <h1>🧠 IA Agent Autónomo</h1>
+    <div class="card">
+        <p>Instrucciones para el Agente:</p>
+        <input type="text" placeholder="Ej: 'Revisa el expediente 402 y redacta la contestación'" style="width:80%; padding:10px; border-radius:5px; border:1px solid #ddd;">
+        <button style="padding:10px; background:var(--dark); color:white; border:none; border-radius:5px;">Ejecutar Tarea</button>
+        <div style="margin-top:20px; background:#f4f4f4; padding:15px; border-radius:10px; font-family:monospace; font-size:0.8rem;">
+            > Agent Status: Esperando instrucciones...
+        </div>
+    </div>
+</section>
