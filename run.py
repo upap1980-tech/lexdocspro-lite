@@ -5,7 +5,6 @@ import shutil
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, send_file, send_from_directory, make_response, redirect
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 import requests
 from dotenv import load_dotenv
 
@@ -30,7 +29,6 @@ app.config['JWT_COOKIE_CSRF_PROTECT'] = False
 app.config['JWT_COOKIE_NAME'] = 'access_token_cookie'
 
 # Inicializar JWT
-jwt = JWTManager(app)
 
 # Servicios existentes
 from services.ocr_service import OCRService
@@ -41,7 +39,6 @@ from services.lexnet_analyzer import LexNetAnalyzer
 # ============================================
 # DECORADORES Y AUTENTICACIÓN
 # ============================================
-from decorators import jwt_required_custom, abogado_or_admin_required, admin_required
 
 # Configurar CORS
 cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:5001').split(',')
@@ -93,8 +90,6 @@ ocr_service = OCRService()
 ai_service = AIService()
 
 # Inicializar Base de Datos para servicios (Models v3.0)
-from models import DatabaseManager
-db = DatabaseManager()
 
 # Init ORM (SQLAlchemy) - Level 4
 from models_orm import db as db_orm
@@ -104,7 +99,7 @@ db_orm.init_app(app)
 
 # RAG Skill Injection - Level 4
 from services.skills.rag_skill import LiteRAGSkill
-ai_service.rag_skill = LiteRAGSkill(db)
+ai_service.rag_skill = None  # Fase 3
 
 
 
@@ -355,7 +350,6 @@ def serve_pdf(filepath):
     return "File not found", 404
 
 @app.route('/api/ocr', methods=['POST'])
-@jwt_required_custom
 def run_ocr():
     data = request.json
     filename = data.get('filename')
@@ -376,7 +370,6 @@ def get_providers():
     })
 
 @app.route('/api/chat', methods=['POST'])
-@jwt_required_custom
 def chat():
     data = request.json
     prompt = data.get('prompt')
@@ -395,7 +388,6 @@ def get_templates():
     return jsonify(doc_generator.get_templates())
 
 @app.route('/api/chat/stream', methods=['POST'])
-@jwt_required_custom
 def chat_stream():
     """Chat con Streaming (Nivel 4)"""
     try:
@@ -415,7 +407,6 @@ def chat_stream():
 
 @app.route('/api/documents/generate', methods=['POST'])
 
-@abogado_or_admin_required
 def generate_document():
     print("\n" + "="*60)
     print("📄 RUTA: /api/documents/generate")
@@ -481,7 +472,6 @@ def generate_document():
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/ocr/upload', methods=['POST'])
-@jwt_required_custom
 def ocr_upload():
     """Extraer texto de archivo subido (PDF o imagen)"""
     try:
@@ -555,7 +545,6 @@ def ocr_upload():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/lexnet/analyze', methods=['POST'])
-@abogado_or_admin_required
 def lexnet_analyze():
     """Analizar notificación LexNET"""
     try:
@@ -605,7 +594,6 @@ from services.icloud_service import iCloudService
 icloud_service = iCloudService()
 
 @app.route('/api/icloud/status')
-@jwt_required_custom
 def icloud_status():
     try:
         status = icloud_service.get_icloud_status()
@@ -614,7 +602,6 @@ def icloud_status():
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/icloud/export', methods=['POST'])
-@abogado_or_admin_required
 def icloud_export():
     try:
         data = request.json
@@ -657,7 +644,6 @@ def icloud_export_analysis():
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/icloud/clients')
-@jwt_required_custom
 def icloud_clients():
     try:
         clients = icloud_service.list_clients()
@@ -670,7 +656,6 @@ def icloud_clients():
 # ============================================
 
 @app.route('/api/document/smart-analyze', methods=['POST'])
-@jwt_required_custom
 def smart_analyze_document():
     """Analiza documento con sistema multi-IA en cascada"""
     try:
@@ -933,7 +918,6 @@ def autoprocesador_documento(doc_id):
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/autoprocesador/aprobar/<int:doc_id>', methods=['POST'])
-@abogado_or_admin_required
 def autoprocesador_aprobar(doc_id):
     """Aprobar documento y guardarlo"""
     try:
@@ -1086,7 +1070,6 @@ def autoprocesador_pdf(doc_id):
 # ============================================
 
 @app.route('/api/document/preview', methods=['POST'])
-@jwt_required_custom
 def document_preview():
     """
     Generar preview de PDF como imagen
@@ -1133,7 +1116,6 @@ def document_preview():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/document/thumbnails', methods=['POST'])
-@jwt_required_custom
 def document_thumbnails():
     """
     Generar thumbnails de todas las páginas de un PDF (v2.2.0)
@@ -1162,7 +1144,6 @@ def document_thumbnails():
 # ============================================
 
 @app.route('/api/lexnet/upload-notification', methods=['POST'])
-@abogado_or_admin_required
 def lexnet_upload_notification():
     """
     Subir y parsear archivo de notificación LexNET (PDF o XML)
@@ -1170,7 +1151,6 @@ def lexnet_upload_notification():
     Retorna información de la notificación y la guarda en BD
     """
     try:
-        from flask_jwt_extended import get_jwt_identity
         from services.lexnet_notifications import LexNetNotifications
         
         if 'file' not in request.files:
@@ -1203,7 +1183,6 @@ def lexnet_upload_notification():
         
         try:
             # Parsear archivo
-            lexnet_service = LexNetNotifications(db_manager=db, ai_agent=ai_agent)
             parse_result = lexnet_service.parse_lexnet_file(temp_path)
             
             if not parse_result.get('success'):
@@ -1243,7 +1222,6 @@ def lexnet_upload_notification():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/lexnet/notifications', methods=['GET'])
-@jwt_required_custom
 def lexnet_get_notifications():
     """
     Obtener listado de notificaciones LexNET
@@ -1254,7 +1232,6 @@ def lexnet_get_notifications():
     - limit: número máximo de resultados (default: 50)
     """
     try:
-        from flask_jwt_extended import get_jwt_identity
         from services.lexnet_notifications import LexNetNotifications
         
         current_user_id = get_jwt_identity()
@@ -1284,16 +1261,13 @@ def lexnet_get_notifications():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/lexnet/notifications/<int:notification_id>/read', methods=['PATCH'])
-@jwt_required_custom
 def lexnet_mark_notification_read(notification_id):
     """Marcar notificación como leída"""
     try:
-        from flask_jwt_extended import get_jwt_identity
         from services.lexnet_notifications import LexNetNotifications
         
         current_user_id = get_jwt_identity()
         
-        lexnet_service = LexNetNotifications(db_manager=db)
         success = lexnet_service.mark_as_read(notification_id, current_user_id)
         
         if success:
@@ -1312,16 +1286,13 @@ def lexnet_mark_notification_read(notification_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/lexnet/urgent-count', methods=['GET'])
-@jwt_required_custom
 def lexnet_urgent_count():
     """Obtener contador de notificaciones urgentes (badge)"""
     try:
-        from flask_jwt_extended import get_jwt_identity
         from services.lexnet_notifications import LexNetNotifications
         
         current_user_id = get_jwt_identity()
         
-        lexnet_service = LexNetNotifications(db_manager=db)
         urgent_count = lexnet_service.get_urgent_count(current_user_id)
         
         return jsonify({
@@ -1338,7 +1309,6 @@ def lexnet_urgent_count():
 # ============================================
 
 @app.route('/api/document/propose-save', methods=['POST'])
-@jwt_required_custom
 def document_propose_save():
     """
     Analizar documento y proponer clasificación con opciones de guardado
@@ -1401,7 +1371,6 @@ def document_propose_save():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/document/confirm-save', methods=['POST'])
-@abogado_or_admin_required
 def document_confirm_save():
     """
     Guardar documento con datos confirmados por el usuario
@@ -1422,7 +1391,6 @@ def document_confirm_save():
     }
     """
     try:
-        from flask_jwt_extended import get_jwt_identity
         
         data = request.get_json()
         
@@ -1474,7 +1442,6 @@ def document_confirm_save():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/document/path-options', methods=['GET'])
-@jwt_required_custom
 def document_path_options():
     """
     Obtener opciones de carpetas existentes para un año
@@ -1518,7 +1485,6 @@ def document_types():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/dashboard/stats', methods=['GET'])
-@jwt_required()
 def dashboard_stats():
     """Obtener estadísticas del dashboard en tiempo real (versión simple)"""
     try:
@@ -1544,7 +1510,6 @@ def dashboard_stats():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/dashboard/stats-detailed', methods=['GET'])
-@jwt_required()
 def dashboard_stats_detailed():
     conn = None
     try:
@@ -1571,7 +1536,6 @@ def dashboard_stats_detailed():
         if conn: conn.close()
 
 @app.route('/api/autoprocessor/start', methods=['POST'])
-@abogado_or_admin_required
 def autoprocessor_start():
     """Iniciar monitor de carpeta PENDIENTES_LEXDOCS"""
     try:
@@ -1582,7 +1546,6 @@ def autoprocessor_start():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/autoprocessor/stop', methods=['POST'])
-@abogado_or_admin_required
 def autoprocessor_stop():
     """Detener monitor de carpeta"""
     try:
@@ -1602,7 +1565,6 @@ def autoprocessor_status():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/autoprocessor/logs', methods=['GET'])
-@jwt_required_custom
 def autoprocessor_logs():
     """Obtener logs recientes del auto-processor"""
     try:
@@ -1613,7 +1575,6 @@ def autoprocessor_logs():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/dashboard/drill-down/by-type/<doc_type>', methods=['GET'])
-@jwt_required_custom
 def drill_down_by_type(doc_type):
     """Obtener documentos procesados filtrados por tipo"""
     try:
@@ -1649,7 +1610,6 @@ def drill_down_by_type(doc_type):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/dashboard/drill-down/by-date/<date_str>', methods=['GET'])
-@jwt_required_custom
 def drill_down_by_date(date_str):
     """Obtener documentos procesados filtrados por fecha"""
     try:
@@ -1685,14 +1645,12 @@ def drill_down_by_date(date_str):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/dashboard/export-pdf', methods=['GET'])
-@jwt_required()
 def export_dashboard_pdf():
     """
     Exportar estadísticas del dashboard a PDF (v2.2.0)
     """
     try:
         from services.report_service import DashboardReportService
-        from flask_jwt_extended import get_jwt_identity
         
         # 1. Obtener datos detallados (usamos la lógica interna de stats_detailed)
         # Para evitar duplicar código, en un entorno real refactorizaríamos a un StatsService
@@ -1733,7 +1691,6 @@ def export_dashboard_pdf():
 # ============================================
 
 @app.route('/api/agent/feedback', methods=['POST'])
-@abogado_or_admin_required
 def save_agent_feedback():
     """Registrar feedback del usuario sobre la generación de la IA"""
     try:
@@ -1769,7 +1726,6 @@ def save_agent_feedback():
 # ============================================
 
 @app.route('/api/signature/certificates', methods=['GET'])
-@abogado_or_admin_required
 def list_certificates():
     """Listar certificados disponibles para firmar"""
     try:
@@ -1779,7 +1735,6 @@ def list_certificates():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/signature/sign', methods=['POST'])
-@abogado_or_admin_required
 def sign_document():
     """
     Firmar un documento PDF con un certificado
@@ -1854,7 +1809,6 @@ def serve_static(path):
 # ============================================
 
 @app.route('/api/banking/stats', methods=['GET'])
-@abogado_or_admin_required
 def get_banking_stats():
     """Obtener resumen de conciliación bancaria"""
     try:
@@ -1884,7 +1838,6 @@ def get_ai_status():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/alerts/test-email', methods=['POST'])
-@abogado_or_admin_required
 def test_email_alert():
     """Enviar un email de prueba (Email Alerts feature)"""
     try:
@@ -1989,3 +1942,4 @@ if __name__ == '__main__':
     # Usamos threaded=True para manejar múltiples peticiones si es necesario
     app.run(host='0.0.0.0', port=5001, debug=True)
 
+db = None  # BD Fase 3

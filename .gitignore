@@ -39,3 +39,7 @@ build/
 *.txt
 !requirements.txt
 !README.txt
+.venv312/
+*.db
+__pycache__/
+lexdocs.db
