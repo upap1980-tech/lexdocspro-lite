@@ -7,8 +7,9 @@ import os
 
 
 class DocumentGenerator:
-    def __init__(self, ai_service):
+    def __init__(self, ai_service, ai_agent_service=None):
         self.ai_service = ai_service
+        self.ai_agent = ai_agent_service
     
     def get_templates(self):
         """Retorna todos los templates disponibles"""
@@ -136,6 +137,50 @@ class DocumentGenerator:
             }
         }
     
+    def generate_with_context(self, expediente_id, doc_type, user_instructions="", provider='ollama'):
+        """Generar documento inyectando el contexto completo del expediente (v3.0.0)"""
+        if not self.ai_agent:
+            return self.generate(doc_type, {}, provider)
+
+        try:
+            # 1. Obtener contexto del agente
+            context = self.ai_agent.get_case_context(expediente_id)
+            
+            # 2. Construir prompt enriquecido
+            templates = self.get_templates()
+            template = templates.get(doc_type, {'name': doc_type})
+            
+            prompt = f"""Eres un Agente Legal experto. Genera un borrador de {template['name']} basado en el siguiente contexto del expediente.
+            
+CONTEXTO DEL EXPEDIENTE:
+{context}
+
+⚠️ INSTRUCCIONES CRÍTICAS DE ESTILO (BASADAS EN TU APRENDIZAJE PREVIO):
+Si el contexto anterior contiene la sección "DIRECTIVAS DE ESTILO APRENDIDAS", debes seguirlas estrictamente por encima de cualquier otra convención.
+
+INSTRUCCIONES ADICIONALES DEL ABOGADO:
+{user_instructions if user_instructions else "Redactar el documento siguiendo la práctica habitual española."}
+
+Estructura el documento de forma profesional, con encabezados claros y lenguaje jurídico preciso.
+Responde SOLO con el contenido del documento."""
+
+            # 3. Generar
+            result = self.ai_service.chat_cascade(prompt, mode='creative')
+            
+            if result.get('success'):
+                content = result.get('response', '')
+                return {
+                    'success': True,
+                    'content': content.strip(),
+                    'filename': f"{doc_type}_{expediente_id}_{datetime.now().strftime('%Y%m%d')}.txt",
+                    'provider': result.get('provider')
+                }
+            
+            return {'success': False, 'error': result.get('error', 'Error en cascada')}
+
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
     def generate(self, doc_type, data, provider='ollama'):
         """Generar documento usando IA"""
         try:

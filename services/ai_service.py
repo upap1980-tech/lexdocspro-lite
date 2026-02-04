@@ -27,24 +27,17 @@ class AIService:
              mode: str = 'standard') -> Dict:
         """
         Chat con IA seleccionada
-        
-        Args:
-            prompt: Pregunta del usuario
-            context: Contexto del documento (opcional)
-            provider: ollama, openai, perplexity, gemini, deepseek, groq
-            mode: standard, deep, research
         """
         provider_name = provider or self.default_provider
         
         if provider_name not in self.providers:
-            return {'error': f'Proveedor {provider_name} no disponible'}
+            return {'error': f'Proveedor {provider_name} no disponible', 'success': False}
         
         provider_instance = self.providers[provider_name]
-        
-        # Construir prompt según el modo
         full_prompt = self._build_prompt(prompt, context, mode)
         
         try:
+            print(f"🤖 Consultando IA: {provider_name} (modo: {mode})...")
             response = provider_instance.generate(full_prompt, mode)
             return {
                 'provider': provider_name,
@@ -53,11 +46,46 @@ class AIService:
                 'success': True
             }
         except Exception as e:
+            print(f"❌ Error en {provider_name}: {str(e)}")
             return {
                 'provider': provider_name,
                 'error': str(e),
                 'success': False
             }
+
+    def chat_cascade(self, prompt: str, context: str = '', mode: str = 'standard', 
+                    providers: List[str] = None) -> Dict:
+        """
+        Sistema de IA en Cascada (v2.3.0)
+        Intenta una serie de proveedores hasta obtener una respuesta válida.
+        
+        Default priority: ollama -> groq -> openai -> gemini
+        """
+        if not providers:
+            providers = ['ollama', 'groq', 'openai', 'gemini']
+            
+        last_error = "No hay proveedores disponibles"
+        
+        for provider_name in providers:
+            # Verificar si el proveedor está disponible/configurado antes de intentar
+            if provider_name not in self.providers or not self.providers[provider_name].is_available():
+                print(f"⏩ Saltando {provider_name} (no disponible)")
+                continue
+                
+            result = self.chat(prompt, context, provider_name, mode)
+            
+            if result.get('success'):
+                print(f"✅ Respuesta exitosa desde: {provider_name}")
+                return result
+            
+            last_error = result.get('error', 'Desconocido')
+            print(f"⚠️ Falló {provider_name}, intentando siguiente en la cascada...")
+            
+        return {
+            'success': False,
+            'error': f"Cascada agotada. Último error: {last_error}",
+            'providers_tried': providers
+        }
     
     def _build_prompt(self, prompt: str, context: str, mode: str) -> Dict:
         """Construir prompt según el modo de consulta"""

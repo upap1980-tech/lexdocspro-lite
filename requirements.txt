@@ -2,23 +2,36 @@
 flask==3.0.0
 flask-cors==4.0.0
 
+# Autenticación y Seguridad
+flask-jwt-extended==4.6.0
+bcrypt==4.1.2
+flask-limiter==3.5.0
+
 # PDF y OCR
 PyPDF2==3.0.1
 pdf2image==1.16.3
 pytesseract==0.3.10
 Pillow>=10.2.0
 
-# IAs
+# IAs (actualizadas)
 requests==2.31.0
-openai==1.12.0
-google-generativeai==0.3.2
-anthropic==0.18.0
+openai==1.56.0
+google-generativeai==0.8.0
+anthropic==0.40.0
 
 # Utilidades
 python-dotenv==1.0.0
 jinja2==3.1.3
 markdown==3.5.2
 
-# Groq (muy rápido)
+# Groq y otras IAs
 groq==0.4.2
 pymupdf
+
+# Monitor de carpetas
+watchdog==4.0.0
+
+# Firma Digital (v3.1.0)
+pyhanko==0.21.3
+cryptography==42.0.5
+pycryptodome==3.20.0

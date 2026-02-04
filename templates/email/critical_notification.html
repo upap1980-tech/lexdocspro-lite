@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: #dc2626;
+            color: #ffffff;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .urgency-badge {
+            display: inline-block;
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .notification-card {
+            background-color: #f9fafb;
+            border-left: 4px solid #dc2626;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        .notification-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #111827;
+        }
+        .detail-row {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #6b7280;
+            min-width: 120px;
+        }
+        .detail-value {
+            color: #1f2937;
+            text-align: right;
+        }
+        .deadline-highlight {
+            font-size: 22px;
+            color: #dc2626;
+            font-weight: 800;
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            border: 2px dashed #dc2626;
+            border-radius: 8px;
+        }
+        .footer {
+            background-color: #f3f4f6;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+        .btn {
+            display: block;
+            width: 200px;
+            margin: 30px auto;
+            padding: 15px;
+            background-color: #2563eb;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+        }
+        @media only screen and (max-width: 600px) {
+            .container {
+                margin: 0;
+                width: 100%;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 Alerta de Plazo Próximo</h1>
+        </div>
+        
+        <div class="content">
+            <div class="urgency-badge">⚠️ URGENCIA: {{ notification.urgency }}</div>
+            
+            <p>Hola,</p>
+            <p>Se ha detectado una notificación procesal de <strong>LexNET</strong> con un plazo de vencimiento crítico (menos de 24 horas).</p>
+            
+            <div class="notification-card">
+                <div class="notification-title">{{ notification.title }}</div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Procedimiento:</span>
+                    <span class="detail-value">{{ notification.procedure_number or 'No especificado' }}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Juzgado:</span>
+                    <span class="detail-value">{{ notification.court or 'No detectado' }}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Recibido:</span>
+                    <span class="detail-value">{{ notification.created_at }}</span>
+                </div>
+            </div>
+            
+            <p style="text-align: center; font-weight: bold;">FECHA LÍMITE DE VENCIMIENTO:</p>
+            <div class="deadline-highlight">
+                {{ notification.deadline or 'HOY' }}
+            </div>
+            
+            <p>Por favor, revise el expediente y realice las actuaciones necesarias con carácter de urgencia.</p>
+            
+            <a href="{{ dashboard_url }}" class="btn">Ver en Dashboard</a>
+        </div>
+        
+        <div class="footer">
+            <p>© {{ current_year }} LexDocsPro LITE - Sistema de Gestión Legal Inteligente</p>
+            <p>Este es un mensaje automático, por favor no responda a este email.</p>
+        </div>
+    </div>
+</body>
+</html>

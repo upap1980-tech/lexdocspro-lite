@@ -1,0 +1,236 @@
+/* LexNET Notifications Styles */
+
+/* Badge de notificaciones */
+.notification-badge-container {
+    position: relative;
+    display: inline-block;
+    margin-left: 8px;
+}
+
+.notification-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 2px 6px;
+    background: #ef4444;
+    color: white;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.notification-badge.urgent {
+    background: #dc2626;
+    animation: pulse-badge 2s infinite;
+}
+
+.notification-badge.hidden {
+    display: none;
+}
+
+@keyframes pulse-badge {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(1.1);
+    }
+}
+
+/* Modal de notificaciones */
+.notifications-modal {
+    max-width: 700px;
+    max-height: 85vh;
+}
+
+.notifications-list {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.no-notifications {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6b7280;
+    font-size: 16px;
+}
+
+/* Item de notificación */
+.notification-item {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.notification-item.critical {
+    border-left: 4px solid #dc2626;
+    background: #fef2f2;
+}
+
+.notification-item.urgent {
+    border-left: 4px solid #f59e0b;
+    background: #fffbeb;
+}
+
+.notification-item.warning {
+    border-left: 4px solid #eab308;
+    background: #fefce8;
+}
+
+.notification-item.normal {
+    border-left: 4px solid #10b981;
+    background: #f0fdf4;
+}
+
+.notification-item:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.notification-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.notification-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.notification-title {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 15px;
+}
+
+.notification-meta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.notification-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.notification-body {
+    font-size: 13px;
+    color: #374151;
+    line-height: 1.5;
+}
+
+.notification-days-left {
+    margin-top: 6px;
+}
+
+.days-left {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.days-left.expired {
+    background: #fecaca;
+    color: #991b1b;
+}
+
+.days-left.critical {
+    background: #fecaca;
+    color: #991b1b;
+    animation: blink 1.5s infinite;
+}
+
+.days-left.urgent {
+    background: #fed7aa;
+    color: #9a3412;
+}
+
+.days-left.warning {
+    background: #fef08a;
+    color: #854d0e;
+}
+
+.days-left.normal {
+    background: #bbf7d0;
+    color: #14532d;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+.notification-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+}
+
+.btn-icon {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background: #f3f4f6;
+    transform: scale(1.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .notifications-modal {
+        max-width: 95%;
+        margin: 10px auto;
+    }
+
+    .notifications-list {
+        max-height: 400px;
+    }
+
+    .notification-item {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .notification-actions {
+        flex-direction: row;
+        justify-content: flex-end;
+    }
+}

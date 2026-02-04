@@ -1,141 +1,1835 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LexDocsPro LITE v2.0</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>LexDocsPro LITE v2.3.1</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#007BFF">
+    <link rel="stylesheet" href="/static/css/sidebar-v2-3.css">
+    <style>
+        :root {
+            --primary: #007BFF;
+            --primary-light: #e7f1ff;
+            --primary-dark: #0056b3;
+            --success: #28A745;
+            --warning: #ffc107;
+            --danger: #DC3545;
+            --dark: #343A40;
+            --light: #F8F9FA;
+            --border: #dee2e6;
+            --text: #212529;
+            --bg: #F8F9FA;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--light) 0%, #f0f9ff 100%);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .main-container {
+            display: block;
+            /* Volver a flujo normal para que la sidebar sea fixed */
+            min-height: 100vh;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* SIDEBAR NAVIGATION */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary-dark) 0%, var(--primary) 100%);
+            color: white;
+            padding: 2rem 1rem;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-group-title {
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            opacity: 0.7;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-item.active {
+            background: white;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            font-size: 1.2rem;
+            width: 24px;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* MAIN CONTENT */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .content-area {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            background: #007BFF;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: white;
+            margin-left: 40px;
+            /* Space for burger */
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* TABS SYSTEM */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .tabs-container {
+            background: white;
+            border-bottom: 2px solid var(--border);
+            padding: 0 2rem;
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            padding: 1rem 1.5rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #6b7280;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            color: var(--primary);
+        }
+
+        .tab-button.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* CONTENT PANELS */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .panels-container {
+            flex: 1;
+            overflow: hidden;
+            background: var(--light);
+        }
+
+        .panel {
+            display: none;
+            height: 100%;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .panel.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* DASHBOARD PANEL */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .stat-card-title {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .stat-card-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-card-trend {
+            font-size: 0.875rem;
+            color: var(--success);
+        }
+
+        .stat-card.error .stat-card-value {
+            color: var(--danger);
+        }
+
+        .stat-card.warning .stat-card-value {
+            color: var(--warning);
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* DOCUMENTS TABLE */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .documents-section {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-input,
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            flex: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            background: var(--light);
+            font-weight: 600;
+        }
+
+        th,
+        td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.375rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge.success {
+            background: #d1fae5;
+            color: var(--success);
+        }
+
+        .badge.warning {
+            background: #fef3c7;
+            color: var(--warning);
+        }
+
+        .badge.error {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .badge.info {
+            background: #dbeafe;
+            color: var(--primary);
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* UPLOAD ZONE */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            margin-bottom: 2rem;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary);
+            background: #f0f9ff;
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--primary);
+            background: #f0f9ff;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-subtext {
+            font-size: 0.875rem;
+            color: #9ca3af;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* FORMS */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .form-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* BUTTONS */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .button,
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .button-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .button-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .button-secondary {
+            background: var(--light);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .button-secondary:hover {
+            background: white;
+        }
+
+        .button-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .button-danger:hover {
+            background: #b91c1c;
+        }
+
+        .button-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .button-success:hover {
+            background: #047857;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* MODALS & ALERTS */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .alert.error {
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+
+        .alert.warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .alert.info {
+            background: #dbeafe;
+            color: #0c4a6e;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* RESPONSIVE */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                display: none;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 280px;
+                height: 100vh;
+                z-index: 999;
+            }
+
+            .sidebar.mobile-visible {
+                display: flex;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
+
 <body>
-    <div class="container">
-        <header>
-            <h1>📚 LexDocsPro LITE <span class="version">v2.0</span></h1>
-            <p>Gestor de Documentos Legales con IA Multi-Proveedor</p>
+    <button class="sidebar-toggle-btn">☰</button>
+    <div class="sidebar-overlay"></div>
+
+    <aside class="sidebar-v2-3">
+        <div class="sidebar-header">
+            <span>LEXDOCSPRO LITE</span>
+            <span class="sidebar-close">×</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#dashboard" class="nav-item active" data-panel="dashboard">📊 Dashboard</a>
+            <a href="#autoprocesos" class="nav-item" data-panel="processor">📁 Auto-Procesos</a>
+            <a href="#ia-cascade" class="nav-item" data-panel="cascade">🤖 IA Cascade</a>
+            <a href="#pdf-preview" class="nav-item" data-panel="preview">🖼️ PDF Preview</a>
+            <a href="#email-alerts" class="nav-item" data-panel="email">📧 Email Alerts</a>
+            <a href="#firma" class="nav-item" data-panel="signature">✍️ Firma Digital</a>
+            <a href="#banking" class="nav-item" data-panel="banking">🏦 Banking</a>
+            <a href="#usuarios" class="nav-item" data-panel="users">👥 Usuarios</a>
+            <a href="#pwa" class="nav-item" data-panel="pwa">📱 PWA Status</a>
+            <a href="#ia-agent" class="nav-item" data-panel="agent">🔧 IA Agent</a>
+            <a href="#analytics" class="nav-item" data-panel="analytics">📈 Analytics</a>
+            <a href="#expedientes" class="nav-item" data-panel="expedientes">📂 Expedientes</a>
+            <a href="#lexnet" class="nav-item" data-panel="lexnet">🔔 LexNET</a>
+            <a href="#config" class="nav-item" data-panel="settings">⚙️ Configuración</a>
+            <a href="#deploy" class="nav-item" data-panel="deploy">🚀 Deploy</a>
+        </nav>
+    </aside>
+
+    <div class="main-container">
+        <!-- HEADER (RESTAURADO v2.0) -->
+        <header class="header">
+            <div class="header-title">LEXDOCSPRO LITE</div>
+            <div class="header-controls">
+                <button class="button" id="btnExportPDF" onclick="window.dashboardStats.exportToPDF()"
+                    style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                    📥 Exportar PDF
+                </button>
+                <div id="userMenu" style="margin-left: 15px; cursor: pointer;">
+                    👤 <small>Admin</small> ▼
+                </div>
+            </div>
         </header>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('consulta')">💬 Consultas</button>
-            <button class="tab-btn" onclick="switchTab('documentos')">📝 Generar Documentos</button>
-            <button class="tab-btn" onclick="switchTab('lexnet')">⚖️ Analizador LexNET</button>
-        </div>
+        <!-- TABS (Dynamic) -->
+        <div class="tabs-container" id="tabsContainer"></div>
 
-        <!-- TAB 1: CONSULTAS -->
-        <div id="tab-consulta" class="tab-content active">
-            <div class="main-layout">
-                <div class="panel explorer">
-                    <h2>📁 Expedientes</h2>
-                    <div id="currentPath" class="path"></div>
-                    <div id="fileTree" class="file-tree"></div>
-                    <button onclick="refreshFiles()" class="btn-refresh">🔄 Refrescar</button>
-                </div>
-                <div class="panel viewer">
-                    <h2>📄 Documento</h2>
-                    <div id="pdfViewer" class="pdf-container">
-                        <p class="placeholder">Selecciona un PDF para visualizar</p>
+        <!-- PANELS CONTAINER -->
+        <div class="panels-container">
+
+            <!-- DASHBOARD PANEL -->
+            <div class="panel active" id="panel-dashboard">
+                <div class="dashboard-grid" id="statsGrid"></div>
+
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; flex: 1;">
+                    <div class="documents-section">
+                        <div class="section-header">
+                            <div class="section-title">📤 Últimos Subidos</div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Archivo</th>
+                                        <th>Cliente</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lastUploadedTable"></tbody>
+                            </table>
+                        </div>
                     </div>
-                    <button id="btnOCR" onclick="runOCR()" class="btn-ocr" disabled>🔍 Ejecutar OCR</button>
+
+                    <div class="documents-section">
+                        <div class="section-header">
+                            <div class="section-title">⚠️ En Revisión</div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Archivo</th>
+                                        <th>Confianza</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pendingReviewTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-                <div class="panel chat">
-                    <h2>💬 Asistente IA</h2>
-                    <div class="ai-controls">
-                        <select id="aiProvider" class="select-provider"><option value="">Cargando...</option></select>
-                        <select id="aiMode" class="select-mode">
-                            <option value="standard">⚡ Consulta Rápida</option>
-                            <option value="deep">🔍 Análisis Profundo</option>
-                            <option value="research">📚 Investigación</option>
+            </div>
+
+            <!-- AUTO-PROCESSOR PANEL -->
+            <div class="panel" id="panel-processor">
+                <div class="documents-section">
+                    <div class="section-header">
+                        <div class="section-title">⚙️ Estado del Auto-Procesador</div>
+                        <button class="button button-primary" id="toggleProcessor">▶️ Iniciar Monitor</button>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div id="processorStatus"
+                            style="padding: 1rem; background: var(--light); border-radius: 6px; margin-bottom: 1rem;">
+                            Estado: <span id="processorState"
+                                style="font-weight: bold; color: var(--danger);">Detenido</span>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>⚙️ Configuración de Umbrales</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Umbral Auto (≥):</label>
+                                    <input type="number" id="thresholdAuto" min="0.5" max="1" step="0.05" value="0.85">
+                                    <small style="color: #6b7280;">Confianza mínima para procesamiento
+                                        automático</small>
+                                </div>
+                                <div class="form-group">
+                                    <label>Umbral Revisión (≥):</label>
+                                    <input type="number" id="thresholdReview" min="0.3" max="0.9" step="0.05"
+                                        value="0.60">
+                                    <small style="color: #6b7280;">Rango para enviar a revisión manual</small>
+                                </div>
+                            </div>
+                            <button class="button button-primary" onclick="saveProcessorSettings()">💾 Guardar
+                                Configuración</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IA CASCADE PANEL -->
+            <div class="panel" id="panel-cascade">
+                <div class="documents-section">
+                    <div class="section-header">
+                        <div class="section-title">🤖 IA Cascade Status</div>
+                    </div>
+                    <div id="aiCascadeStatus" style="padding: 2rem;">
+                        <!-- Dinámico -->
+                        Cargando estado de proveedores...
+                    </div>
+                </div>
+            </div>
+
+            <!-- PDF PREVIEW PANEL -->
+            <div class="panel" id="panel-preview">
+                <div id="pdfPreviewContainer" style="height: 100%; display: flex; flex-direction: column;">
+                    <iframe id="pdfPreviewIframe" style="flex: 1; border: none;"></iframe>
+                </div>
+            </div>
+
+            <!-- EMAIL ALERTS PANEL -->
+            <div class="panel" id="panel-email">
+                <div class="documents-section">
+                    <div class="section-header">
+                        <div class="section-title">📧 Email Alerts Configuration</div>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <button class="button button-primary" onclick="testEmail()">Test Critical Alert</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FIRMA DIGITAL PANEL -->
+            <div class="panel" id="panel-signature">
+                <div class="documents-section">
+                    <div class="section-header">
+                        <div class="section-title">✍️ Firma Digital PAdES</div>
+                    </div>
+                    <div id="signaturePanel" style="padding: 2rem;">
+                        <!-- Modal content integrated here or triggered -->
+                        <p>Seleccione un documento para firmar digitalmente.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BANKING PANEL -->
+            <div class="panel" id="panel-banking">
+                <div class="documents-section">
+                    <div class="section-header">
+                        <div class="section-title">🏦 Conciliación Bancaria (11 Bancos)</div>
+                    </div>
+                    <div id="bankingStats"
+                        style="padding: 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        <!-- Bank cards -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- USUARIOS PANEL -->
+            <div class="panel" id="panel-users">
+                <div class="documents-section">
+                    <div class="section-header">
+                        <div class="section-title">👥 Gestión de Usuarios</div>
+                    </div>
+                    <div id="usersList" style="padding: 2rem;">
+                        <!-- User list -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- PWA PANEL -->
+            <div class="panel" id="panel-pwa">
+                <div class="documents-section">
+                    <div class="section-header">
+                        <div class="section-title">📱 PWA / Mobile App Status</div>
+                    </div>
+                    <div style="padding: 2rem; text-align: center;">
+                        <p>LexDocsPro LITE ya es una PWA.</p>
+                        <button id="installPwaBtn" class="button button-success"
+                            style="display:none; margin-top: 1rem;">Instalar App</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IA AGENT PANEL -->
+            <div class="panel" id="panel-agent">
+                <div class="documents-section">
+                    <div class="section-header">
+                        <div class="section-title">🔧 IA Agent Coordinator</div>
+                    </div>
+                    <div id="aiAgentChat" style="padding: 2rem; height: 500px; display: flex; flex-direction: column;">
+                        <div id="agentMessages"
+                            style="flex: 1; overflow-y: auto; background: #f0f0f0; padding: 1rem; border-radius: 8px;">
+                        </div>
+                        <input type="text" id="agentInput" placeholder="Instrucción para el Agente..."
+                            style="margin-top: 1rem; padding: 12px;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ANALYTICS PANEL -->
+            <div class="panel" id="panel-analytics">
+                <div class="documents-section" style="padding: 2rem;">
+                    <h3>📈 Crecimiento y Rendimiento</h3>
+                    <canvas id="analyticsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- EXPEDIENTES PANEL -->
+            <div class="panel" id="panel-expedientes">
+                <div id="fileExplorerContainer" style="padding: 2rem;">
+                    <!-- File list from refreshFiles -->
+                    <div id="fileTree"></div>
+                </div>
+            </div>
+
+            <!-- LEXNET PANEL -->
+            <div class="panel" id="panel-lexnet">
+                <div class="documents-section">
+                    <div class="section-header">
+                        <div class="section-title">🔔 LexNET Notifications</div>
+                    </div>
+                    <!-- Lexnet content -->
+                </div>
+            </div>
+
+            <!-- DEPLOY PANEL -->
+            <div class="panel" id="panel-deploy">
+                <div class="documents-section">
+                    <div class="section-header">
+                        <div class="section-title">🚀 CI/CD & Deploy Status</div>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <p>Status: <span class="badge success">Production Ready</span></p>
+                        <small>Vercel / Render integration active.</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UPLOAD PANEL -->
+            <div class="panel" id="panel-upload">
+                <div class="form-section">
+                    <h3>📤 Subir y Clasificar Documentos</h3>
+
+                    <div class="upload-zone" id="uploadZone" ondrop="handleDrop(event)"
+                        ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📄</div>
+                        <div class="upload-text">Arrastra PDFs aquí o haz clic para seleccionar</div>
+                        <div class="upload-subtext">Máx. 50MB por archivo</div>
+                        <input type="file" id="fileInput" multiple accept=".pdf" style="display: none;">
+                    </div>
+
+                    <div id="uploadProgress" style="display: none;">
+                        <div style="margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span id="uploadFileName">-</span>
+                                <span id="uploadPercent">0%</span>
+                            </div>
+                            <div
+                                style="width: 100%; height: 6px; background: var(--light); border-radius: 3px; overflow: hidden;">
+                                <div id="uploadBar"
+                                    style="height: 100%; width: 0%; background: var(--primary); transition: width 0.3s;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="uploadResults" style="margin-top: 1.5rem; display: none;">
+                        <h4 style="margin-bottom: 1rem;">✅ Resultados del Análisis (Cola: <span
+                                id="queueCount">0</span>)</h4>
+                        <button class="button button-secondary" onclick="clearUploadQueue()"
+                            style="margin-bottom: 1rem;">🗑️ Limpiar Cola</button>
+                        <div id="uploadResultsContent" style="margin-top: 1rem;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REVIEW QUEUE PANEL -->
+            <div class="panel" id="panel-queue">
+                <div class="documents-section">
+                    <div class="section-header">
+                        <div class="section-title">⏳ Cola de Revisión (Confianza Media)</div>
+                        <button class="button button-secondary" onclick="refreshQueue()">🔄 Actualizar</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Archivo</th>
+                                    <th>Cliente</th>
+                                    <th>Tipo</th>
+                                    <th>Confianza</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="queueTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROCESSED PANEL -->
+            <div class="panel" id="panel-processed">
+                <div class="documents-section">
+                    <div class="section-header">
+                        <div class="section-title">✅ Documentos Procesados Hoy</div>
+                        <button class="button button-secondary" onclick="refreshProcessed()">🔄 Actualizar</button>
+                    </div>
+                    <div class="filter-bar" style="padding: 1.5rem;">
+                        <input type="text" class="filter-input" id="filterClient" placeholder="Buscar cliente...">
+                        <select class="filter-select" id="filterType">
+                            <option value="">- Tipo de Documento -</option>
+                            <option value="notificacion_lexnet">Notificación LexNET</option>
+                            <option value="auto">Auto</option>
+                            <option value="sentencia">Sentencia</option>
+                            <option value="demanda">Demanda</option>
                         </select>
                     </div>
-    <!-- CONSULTAS RÁPIDAS PREDEFINIDAS -->
-    <div class="consultas-rapidas" style="margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 8px;">
-        <h3 style="font-size: 14px; margin-bottom: 8px; color: #555;">⚡ Consultas Rápidas:</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <button onclick="cargarConsulta('Explica los elementos del delito de estafa según el Código Penal español')" class="btn-consulta-rapida" title="Análisis completo del delito de estafa">📋 Elementos delito estafa</button>
-            <button onclick="cargarConsulta('¿Cuáles son los plazos para recurrir una sentencia civil en España?')" class="btn-consulta-rapida" title="Plazos de recurso civil">⏰ Plazos procesales</button>
-            <button onclick="cargarConsulta('¿Qué requisitos formales debe cumplir una demanda civil según la LEC?')" class="btn-consulta-rapida" title="Requisitos formales de demanda">📄 Requisitos demanda</button>
-            <button onclick="cargarConsulta('Analiza este auto judicial y extrae: tipo, fecha, tribunal, partes y decisión')" class="btn-consulta-rapida" title="Análisis automático de auto LexNET">🔍 Análisis Auto LexNET</button>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Archivo</th>
+                                    <th>Cliente</th>
+                                    <th>Tipo</th>
+                                    <th>Fecha</th>
+                                    <th>Ruta</th>
+                                </tr>
+                            </thead>
+                            <tbody id="processedTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TEMPLATES PANEL -->
+            <div class="panel" id="panel-templates">
+                <div class="form-section">
+                    <h3>📑 Generar Documentos Legales</h3>
+
+                    <div class="form-group">
+                        <label>Selecciona Plantilla:</label>
+                        <select id="templateSelect" onchange="loadTemplateForm()" class="form-group">
+                            <option value="">- Selecciona una plantilla -</option>
+                            <option value="demanda">📋 Demanda</option>
+                            <option value="escrito">✍️ Escrito de Alegaciones</option>
+                            <option value="recurso">📤 Recurso de Apelación</option>
+                            <option value="notificacion">📬 Notificación</option>
+                            <option value="acta">📝 Acta de Reunión</option>
+                        </select>
+                    </div>
+
+                    <div id="templateForm" style="margin-top: 1.5rem; display: none;"></div>
+                </div>
+            </div>
+
+            <!-- LEXNET ANALYSIS PANEL -->
+            <div class="panel" id="panel-lexnet">
+                <div class="form-section">
+                    <h3>🔗 Análisis Inteligente de Notificaciones LexNET</h3>
+
+                    <div class="upload-zone" id="lexnetUploadZone" ondrop="handleLexnetDrop(event)"
+                        ondragover="handleDragOver(event)">
+                        <div class="upload-icon">📧</div>
+                        <div class="upload-text">Sube notificaciones LexNET para análisis automático</div>
+                        <div class="upload-subtext">Archivos PDF o TXT</div>
+                        <input type="file" id="lexnetFileInput" multiple accept=".pdf,.txt" style="display: none;">
+                    </div>
+
+                    <div id="lexnetResults"
+                        style="margin-top: 1.5rem; display: none; background: white; padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border);">
+                        <h4>📊 Resultado del Análisis</h4>
+                        <div id="lexnetResultsContent"
+                            style="margin-top: 1rem; white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; background: var(--light); padding: 1rem; border-radius: 6px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SETTINGS PANEL -->
+            <div class="panel" id="panel-settings">
+                <div class="form-section">
+                    <h3>⚙️ Configuración del Sistema</h3>
+
+                    <div class="form-group">
+                        <label>Proveedor de IA Principal:</label>
+                        <select id="aiProvider">
+                            <option value="ollama">🏠 Ollama Local</option>
+                            <option value="groq">⚡ Groq</option>
+                            <option value="perplexity">🔮 Perplexity</option>
+                            <option value="openai">🤖 OpenAI</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>URL Base (Ollama):</label>
+                        <input type="text" id="ollamaUrl" value="http://localhost:11434"
+                            placeholder="http://localhost:11434">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Modelo Local:</label>
+                        <input type="text" id="ollamaModel" value="lexdocs-legal" placeholder="lexdocs-legal">
+                    </div>
+
+                    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+                        <h4>📁 Directorios</h4>
+                        <div class="form-group">
+                            <label>Carpeta de Expedientes:</label>
+                            <input type="text" id="expedientesDir" placeholder="~/Desktop/EXPEDIENTES_LEXDOCS" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Carpeta de Pendientes:</label>
+                            <input type="text" id="pendientesDir" placeholder="~/Desktop/PENDIENTES_LEXDOCS" readonly>
+                        </div>
+                    </div>
+
+                    <button class="button button-primary" onclick="saveSettings()">💾 Guardar Configuración</button>
+                </div>
+            </div>
+
+            <!-- LOGS PANEL -->
+            <div class="panel" id="panel-logs">
+                <div class="documents-section">
+                    <div class="section-header">
+                        <div class="section-title">📋 Logs del Sistema</div>
+                        <button class="button button-secondary" onclick="refreshLogs()">🔄 Actualizar</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Nivel</th>
+                                    <th>Origen</th>
+                                    <th>Mensaje</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
-                    <div id="chatMessages" class="chat-messages"></div>
-                    <div class="chat-input">
-                        <textarea id="chatPrompt" placeholder="Escribe tu consulta legal..." rows="3"></textarea>
-                        <button onclick="sendMessage()" class="btn-send">Enviar</button>
-                    </div>
-                </div>
+    </div>
+
+    <!-- MODALS -->
+    <div class="modal" id="documentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📄 Detalles del Documento</h3>
+                <button style="background: none; border: none; font-size: 1.5rem; cursor: pointer;"
+                    onclick="closeModal('documentModal')">✕</button>
+            </div>
+            <div class="modal-body" id="documentModalBody"></div>
+            <div class="modal-footer">
+                <button class="button button-success" id="approveBtn" onclick="approveDocument()">✅ Aprobar</button>
+                <button class="button button-danger" id="rejectBtn" onclick="rejectDocument()">❌ Rechazar</button>
+                <button class="button button-secondary" onclick="closeModal('documentModal')">Cerrar</button>
             </div>
         </div>
+    </div>
 
-        <!-- TAB 2: GENERADOR DE DOCUMENTOS -->
-        <div id="tab-documentos" class="tab-content">
-            <div class="doc-generator">
-                <div class="doc-sidebar">
-                    <h2>📋 Tipo de Documento</h2>
-                    <div id="docTypes" class="doc-types"></div>
+    <div class="modal" id="editDocumentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Revisar y Editar Documento</h3>
+                <button style="background: none; border: none; font-size: 1.5rem; cursor: pointer;"
+                    onclick="closeModal('editDocumentModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Cliente:</label>
+                    <select id="editClientSelect"></select>
                 </div>
-                <div class="doc-form">
-                    <h2 id="docFormTitle">Selecciona un tipo de documento</h2>
-                    <p id="docFormDesc" class="doc-description"></p>
-                    <form id="documentForm" class="hidden">
-                        <div id="formFields"></div>
-                        <div class="form-actions">
-                            <select id="docProvider" class="select-provider"><option value="ollama">Ollama</option></select>
-                            <button type="button" onclick="generateDocument()" class="btn-generate">✨ Generar Documento</button>
-                        </div>
-                    </form>
-                    <div id="generatedDoc" class="generated-doc hidden">
-                        <h3>📄 Documento Generado</h3>
-                        <div class="doc-actions">
-                            <button onclick="copyDocument()" class="btn-copy">📋 Copiar</button>
-                            <button onclick="downloadDocument()" class="btn-download">💾 Descargar</button>
-                            <button onclick="resetGenerator()" class="btn-reset">🔄 Nuevo</button>
-                        </div>
-                        <pre id="docContent" class="doc-content"></pre>
-                    </div>
+                <div class="form-group">
+                    <label>Tipo de Documento:</label>
+                    <select id="editDocType">
+                        <option value="notificacion_lexnet">Notificación LexNET</option>
+                        <option value="auto">Auto</option>
+                        <option value="sentencia">Sentencia</option>
+                        <option value="demanda">Demanda</option>
+                        <option value="diligencias_urgentes">Diligencias Urgentes</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Fecha del Documento:</label>
+                    <input type="text" id="editDocDate" placeholder="DD/MM/AAAA">
+                </div>
+                <div style="padding: 1rem; background: var(--light); border-radius: 6px; margin-top: 1rem;">
+                    <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.5rem;">📋 Vista Previa</p>
+                    <div id="editDocPreview" style="font-size: 0.9rem;"></div>
                 </div>
             </div>
+            <div class="modal-footer">
+                <button class="button button-success" onclick="saveEditedDocument()">💾 Guardar Cambios</button>
+                <button class="button button-secondary" onclick="closeModal('editDocumentModal')">Cancelar</button>
+            </div>
         </div>
+    </div>
 
-        <!-- TAB 3: ANALIZADOR LEXNET -->
-        <div id="tab-lexnet" class="tab-content">
-            <div class="lexnet-analyzer">
-                <div class="lexnet-upload">
-                    <h2>📤 Subir Documentos</h2>
-                    <p class="lexnet-instructions">
-                        Sube uno o más archivos PDF/imágenes. Mínimo 1 archivo requerido.
-                    </p>
-                    
-                    <div class="upload-zone-simple" onclick="document.getElementById('filesMultiple').click()">
-                        <div class="upload-icon-big">📎</div>
-                        <p class="upload-prompt"><strong>Haz clic para seleccionar archivos</strong></p>
-                        <p class="upload-hint">PDF, JPG, PNG, DOCX... | Uno o varios archivos</p>
-                        <input type="file" id="filesMultiple" multiple accept="*/*" onchange="handleMultipleFilesLexNet()" style="display: none;">
+    <!-- ALERTS CONTAINER -->
+    <div id="alertsContainer" style="position: fixed; top: 2rem; right: 2rem; max-width: 400px; z-index: 2000;"></div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════
+        // STATE & CONFIGURATION
+        // ═══════════════════════════════════════════════════════════
+
+        const APP_STATE = {
+            currentPanel: 'dashboard',
+            processorRunning: false,
+            selectedDocument: null,
+            currentUploadId: null,
+            stats: {},
+            config: {
+                aiProvider: 'ollama',
+                ollamaUrl: 'http://localhost:11434',
+                ollamaModel: 'lexdocs-legal',
+                thresholdAuto: 0.85,
+                thresholdReview: 0.60
+            }
+        };
+
+        const API_BASE = 'http://localhost:5011/api';
+
+        // ═══════════════════════════════════════════════════════════
+        // NAVIGATION & PANELS
+        // ═══════════════════════════════════════════════════════════
+
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function () {
+                const panelName = this.dataset.panel;
+                switchPanel(panelName);
+            });
+        });
+
+        function switchPanel(panelName) {
+            // Update nav
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-panel="${panelName}"]`).classList.add('active');
+
+            // Update header
+            const titles = {
+                'dashboard': '📊 Dashboard',
+                'processor': '⚙️ Auto-Procesador',
+                'upload': '📤 Subir & Clasificar',
+                'queue': '⏳ Cola de Revisión',
+                'processed': '✅ Procesados Hoy',
+                'templates': '📑 Generador de Documentos',
+                'lexnet': '🔗 Análisis LexNET',
+                'settings': '⚙️ Configuración',
+                'logs': '📋 Logs del Sistema'
+            };
+            document.getElementById('headerTitle').textContent = titles[panelName] || panelName;
+
+            // Update panels
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(`panel-${panelName}`).classList.add('active');
+
+            // Load panel data
+            loadPanelData(panelName);
+
+            APP_STATE.currentPanel = panelName;
+        }
+
+        function loadPanelData(panelName) {
+            switch (panelName) {
+                case 'dashboard':
+                    loadDashboard();
+                    break;
+                case 'queue':
+                    loadQueue();
+                    break;
+                case 'processed':
+                    loadProcessed();
+                    break;
+                case 'logs':
+                    loadLogs();
+                    break;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // DASHBOARD
+        // ═══════════════════════════════════════════════════════════
+
+        function loadDashboard() {
+            fetch(`${API_BASE}/autoprocesador/stats`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        renderStats(data.stats);
+                    }
+                })
+                .catch(e => console.error('Error loading stats:', e));
+        }
+
+        function renderStats(stats) {
+            const statsGrid = document.getElementById('statsGrid');
+            const statCards = [
+                { title: 'Procesados Hoy', value: stats.automaticos, type: 'success', icon: '✅' },
+                { title: 'En Revisión', value: stats.en_revision, type: 'warning', icon: '⚠️' },
+                { title: 'Errores', value: stats.errores, type: 'error', icon: '❌' },
+                { title: 'Tasa Automática', value: `${stats.porcentaje_auto || 0}%`, type: 'info', icon: '📊' }
+            ];
+
+            statsGrid.innerHTML = statCards.map(card => `
+                <div class="stat-card ${card.type}">
+                    <div style="font-size: 1.5rem;">${card.icon}</div>
+                    <div class="stat-card-title">${card.title}</div>
+                    <div class="stat-card-value">${card.value}</div>
+                </div>
+            `).join('');
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // FILE UPLOAD
+        // ═══════════════════════════════════════════════════════════
+
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files));
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            handleFileSelect(e.dataTransfer.files);
+        }
+
+        const UPLOAD_QUEUE = [];
+        let uploadCounter = 0;
+
+        function handleFileSelect(files) {
+            Array.from(files).forEach(file => {
+                UPLOAD_QUEUE.push({ file, id: ++uploadCounter, status: 'pending' });
+            });
+            processUploadQueue();
+        }
+
+        function processUploadQueue() {
+            const pending = UPLOAD_QUEUE.find(u => u.status === 'pending');
+            if (!pending) return;
+
+            uploadDocument(pending.file, pending.id);
+        }
+
+        function uploadDocument(file, uploadId) {
+            const queueItem = UPLOAD_QUEUE.find(u => u.id === uploadId);
+            if (!queueItem) return;
+
+            queueItem.status = 'analyzing';
+            const formData = new FormData();
+            formData.append('file', file);
+
+            showAlert(`📤 ${uploadId}/${UPLOAD_QUEUE.length} Analizando ${file.name}...`, 'info');
+
+            fetch(`${API_BASE}/document/smart-analyze`, {
+                method: 'POST',
+                body: formData
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        queueItem.status = 'analyzed';
+                        queueItem.data = data;
+                        showAlert(`✅ ${file.name} analizado (Confianza: ${data.metadata.confianza})`, 'success');
+                        displayUploadResult(data, uploadId);
+
+                        // Si confianza es alta, guardar automáticamente
+                        if (data.metadata.confianza === 'alta') {
+                            setTimeout(() => autoSaveDocument(uploadId), 500);
+                        }
+                    } else {
+                        queueItem.status = 'error';
+                        showAlert(`❌ Error: ${data.error}`, 'error');
+                    }
+                    processUploadQueue();
+                })
+                .catch(e => {
+                    queueItem.status = 'error';
+                    showAlert(`❌ Error: ${e.message}`, 'error');
+                    processUploadQueue();
+                });
+        }
+
+        function displayUploadResult(data, uploadId) {
+            const resultsDiv = document.getElementById('uploadResults');
+            const content = document.getElementById('uploadResultsContent');
+
+            const confidenceColor = data.metadata.confianza === 'alta' ? '#059669' :
+                data.metadata.confianza === 'media' ? '#d97706' : '#dc2626';
+
+            const resultHTML = `
+                <div style="background: var(--light); padding: 1.5rem; border-radius: 6px; border-left: 4px solid ${confidenceColor}; margin-bottom: 1rem;">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                        <div>
+                            <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">📂 Cliente</p>
+                            <p style="font-weight: bold; color: var(--text);">${data.cliente_propuesto.nombre}</p>
+                        </div>
+                        <div>
+                            <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">📋 Tipo</p>
+                            <p style="font-weight: bold; color: var(--text);">${data.metadata.tipo_documento.replace(/_/g, ' ')}</p>
+                        </div>
+                        <div>
+                            <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">📅 Fecha</p>
+                            <p style="font-weight: bold; color: var(--text);">${data.metadata.fecha_documento || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.25rem;">⚡ Confianza</p>
+                            <p style="font-weight: bold; color: ${confidenceColor};">${data.metadata.confianza.toUpperCase()}</p>
+                        </div>
                     </div>
-                    
-                    <div class="files-list-simple" id="filesListLexNet"></div>
-                    
-                    <div class="lexnet-controls">
-                        <select id="lexnetProvider" class="select-provider"><option value="ollama">🏠 Ollama</option></select>
-                        <button onclick="analyzeLexNetMultiple()" class="btn-analyze" id="btnAnalyzeLexNet" disabled>
-                            🔍 Analizar Notificación
+                    <div style="background: white; padding: 0.75rem; border-radius: 4px; font-size: 0.85rem; color: #6b7280; margin-bottom: 1rem;">
+                        📁 ${data.cliente_propuesto.carpeta}
+                    </div>
+                    <div style="display: flex; gap: 0.75rem;">
+                        <button class="button button-success" style="flex: 1; padding: 0.6rem;" onclick="autoSaveDocument(${uploadId})">
+                            ✅ Guardar Automáticamente
+                        </button>
+                        <button class="button button-secondary" style="flex: 1; padding: 0.6rem;" onclick="editAndSaveDocument(${uploadId})">
+                            ✏️ Revisar y Editar
                         </button>
                     </div>
                 </div>
-                
-                <div class="lexnet-result">
-                    <h2>📊 Análisis LexNET</h2>
-                    <div id="lexnetContent" class="lexnet-content">
-                        <p class="placeholder">Sube al menos 1 documento y presiona "Analizar Notificación"</p>
-                    </div>
-                    <div class="lexnet-actions hidden" id="lexnetActions">
-                        <button onclick="copyLexNetAnalysis()" class="btn-copy">📋 Copiar</button>
-                        <button onclick="downloadLexNetAnalysis()" class="btn-download">💾 Descargar TXT</button>
-                        <button onclick="resetLexNetMultiple()" class="btn-reset">🔄 Nuevo</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+            `;
 
-        <footer><span id="status">Listo</span></footer>
-    </div>
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+            if (!resultsDiv.innerHTML.includes('uploadResultsContent')) {
+                content.innerHTML = resultHTML;
+            } else {
+                content.innerHTML += resultHTML;
+            }
+            resultsDiv.style.display = 'block';
+        }
+
+        function autoSaveDocument(uploadId) {
+            const queueItem = UPLOAD_QUEUE.find(u => u.id === uploadId);
+            if (!queueItem || !queueItem.data) return;
+
+            const data = queueItem.data;
+            showAlert(`💾 Guardando automáticamente en: ${data.cliente_propuesto.carpeta}...`, 'info');
+
+            fetch(`${API_BASE}/document/save-organized`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    temp_file_path: data.temp_file_path,
+                    dest_path: data.ruta_completa
+                })
+            })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.success) {
+                        queueItem.status = 'saved';
+                        showAlert(`✅ Guardado: ${data.cliente_propuesto.nombre} / ${data.metadata.tipo_documento}`, 'success');
+                        setTimeout(() => loadProcessed(), 1000);
+                    } else {
+                        showAlert(`❌ Error al guardar: ${result.error}`, 'error');
+                    }
+                })
+                .catch(e => showAlert(`❌ Error: ${e.message}`, 'error'));
+        }
+
+        function editAndSaveDocument(uploadId) {
+            const queueItem = UPLOAD_QUEUE.find(u => u.id === uploadId);
+            if (!queueItem || !queueItem.data) return;
+
+            const data = queueItem.data;
+            const modal = document.getElementById('editDocumentModal');
+
+            document.getElementById('editClientSelect').innerHTML = `
+                <option value="${data.cliente_propuesto.codigo}">${data.cliente_propuesto.nombre}</option>
+            `;
+            document.getElementById('editDocType').value = data.metadata.tipo_documento;
+            document.getElementById('editDocDate').value = data.metadata.fecha_documento || '';
+
+            APP_STATE.currentUploadId = uploadId;
+            showModal('editDocumentModal');
+        }
+
+        function saveEditedDocument() {
+            const uploadId = APP_STATE.currentUploadId;
+            const queueItem = UPLOAD_QUEUE.find(u => u.id === uploadId);
+            if (!queueItem) return;
+
+            const data = queueItem.data;
+            showAlert('💾 Guardando documento editado...', 'info');
+
+            fetch(`${API_BASE}/document/save-organized`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    temp_file_path: data.temp_file_path,
+                    dest_path: data.ruta_completa
+                })
+            })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.success) {
+                        queueItem.status = 'saved';
+                        showAlert('✅ Documento guardado', 'success');
+                        closeModal('editDocumentModal');
+                        setTimeout(() => loadProcessed(), 1000);
+                    } else {
+                        showAlert(`❌ Error: ${result.error}`, 'error');
+                    }
+                });
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // QUEUE & DOCUMENTS
+        // ═══════════════════════════════════════════════════════════
+
+        function loadQueue() {
+            fetch(`${API_BASE}/autoprocesador/cola-revision`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        renderQueue(data.documentos);
+                    }
+                })
+                .catch(e => console.error('Error:', e));
+        }
+
+        function renderQueue(docs) {
+            const table = document.getElementById('queueTable');
+            table.innerHTML = docs.map(doc => `
+                <tr>
+                    <td>${doc.id}</td>
+                    <td>${doc.archivo_original}</td>
+                    <td>${doc.cliente_detectado || 'N/A'}</td>
+                    <td>${doc.tipo_documento}</td>
+                    <td><span class="badge warning">${(doc.confianza_ia * 100).toFixed(0)}%</span></td>
+                    <td>
+                        <button class="button button-success" style="padding: 0.5rem;" onclick="openDocumentModal(${doc.id})">👁️</button>
+                        <button class="button button-danger" style="padding: 0.5rem;" onclick="rejectQueuedDoc(${doc.id})">❌</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function loadProcessed() {
+            fetch(`${API_BASE}/autoprocesador/procesados-hoy`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        renderProcessed(data.documentos);
+                    }
+                })
+                .catch(e => console.error('Error:', e));
+        }
+
+        function renderProcessed(docs) {
+            const table = document.getElementById('processedTable');
+            table.innerHTML = docs.map(doc => `
+                <tr>
+                    <td>${doc.archivo_original}</td>
+                    <td>${doc.cliente_detectado}</td>
+                    <td><span class="badge success">${doc.tipo_documento}</span></td>
+                    <td>${doc.fecha_documento}</td>
+                    <td style="font-size: 0.85rem; color: #6b7280;">${doc.ruta_definitiva}</td>
+                </tr>
+            `).join('');
+        }
+
+        function refreshQueue() {
+            loadQueue();
+            showAlert('🔄 Cola actualizada', 'success');
+        }
+
+        function refreshProcessed() {
+            loadProcessed();
+            showAlert('🔄 Documentos actualizados', 'success');
+        }
+
+        function loadLogs() {
+            // Load logs implementation
+        }
+
+        function refreshLogs() {
+            loadLogs();
+            showAlert('🔄 Logs actualizados', 'success');
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // MODALS & ALERTS
+        // ═══════════════════════════════════════════════════════════
+
+        function openDocumentModal(docId) {
+            APP_STATE.selectedDocument = docId;
+            // Load and display document details
+            showModal('documentModal');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function showModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function approveDocument() {
+            const docId = APP_STATE.selectedDocument;
+            if (!docId) return;
+
+            showAlert('✅ Aprobando documento...', 'info');
+            fetch(`${API_BASE}/autoprocesador/aprobar/${docId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario_modifico: false })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert(`✅ ${data.mensaje}`, 'success');
+                        closeModal('documentModal');
+                        loadQueue();
+                    } else {
+                        showAlert(`❌ Error: ${data.error}`, 'error');
+                    }
+                });
+        }
+
+        function rejectDocument() {
+            const docId = APP_STATE.selectedDocument;
+            if (!docId) return;
+
+            const motivo = prompt('Motivo del rechazo:');
+            if (!motivo) return;
+
+            showAlert('❌ Rechazando documento...', 'info');
+            fetch(`${API_BASE}/autoprocesador/rechazar/${docId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ motivo })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('✅ Documento rechazado', 'success');
+                        closeModal('documentModal');
+                        loadQueue();
+                    } else {
+                        showAlert(`❌ Error: ${data.error}`, 'error');
+                    }
+                });
+        }
+
+        function showAlert(message, type = 'info') {
+            const container = document.getElementById('alertsContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert ${type}`;
+            alert.innerHTML = `<span>${message}</span>`;
+            container.appendChild(alert);
+
+            setTimeout(() => {
+                alert.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => alert.remove(), 300);
+            }, 3000);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // PROCESSOR CONTROL
+        // ═══════════════════════════════════════════════════════════
+
+        document.getElementById('toggleProcessor').addEventListener('click', function () {
+            APP_STATE.processorRunning = !APP_STATE.processorRunning;
+            const state = document.getElementById('processorState');
+            if (APP_STATE.processorRunning) {
+                state.textContent = 'Activo ▶️';
+                state.style.color = '#059669';
+                this.textContent = '⏸️ Detener Monitor';
+                showAlert('✅ Monitor iniciado', 'success');
+            } else {
+                state.textContent = 'Detenido ⏹️';
+                state.style.color = '#dc2626';
+                this.textContent = '▶️ Iniciar Monitor';
+                showAlert('⏹️ Monitor detenido', 'warning');
+            }
+        });
+
+        function saveProcessorSettings() {
+            APP_STATE.config.thresholdAuto = parseFloat(document.getElementById('thresholdAuto').value);
+            APP_STATE.config.thresholdReview = parseFloat(document.getElementById('thresholdReview').value);
+            showAlert('💾 Configuración guardada', 'success');
+        }
+
+        function saveSettings() {
+            APP_STATE.config.aiProvider = document.getElementById('aiProvider').value;
+            APP_STATE.config.ollamaUrl = document.getElementById('ollamaUrl').value;
+            APP_STATE.config.ollamaModel = document.getElementById('ollamaModel').value;
+            showAlert('💾 Configuración guardada', 'success');
+        }
+
+        function loadTemplateForm() {
+            const template = document.getElementById('templateSelect').value;
+            const form = document.getElementById('templateForm');
+            if (!template) {
+                form.style.display = 'none';
+                return;
+            }
+            form.style.display = 'block';
+
+            const templates = {
+                demanda: {
+                    title: '📋 Demanda',
+                    fields: [
+                        { name: 'demandante', label: 'Demandante' },
+                        { name: 'demandado', label: 'Demandado' },
+                        { name: 'hechos', label: 'Hechos Relevantes', type: 'textarea' },
+                        { name: 'petitorio', label: 'Petitorio', type: 'textarea' }
+                    ]
+                },
+                escrito: {
+                    title: '✍️ Escrito de Alegaciones',
+                    fields: [
+                        { name: 'parte', label: 'Parte' },
+                        { name: 'tema', label: 'Tema' },
+                        { name: 'alegaciones', label: 'Alegaciones', type: 'textarea' }
+                    ]
+                }
+            };
+
+            const tpl = templates[template];
+            if (!tpl) return;
+
+            let html = `<h4>${tpl.title}</h4>`;
+            tpl.fields.forEach(field => {
+                const inputType = field.type === 'textarea' ?
+                    `<textarea name="${field.name}" placeholder="${field.label}..."></textarea>` :
+                    `<input type="text" name="${field.name}" placeholder="${field.label}">`;
+                html += `
+                    <div class="form-group">
+                        <label>${field.label}:</label>
+                        ${inputType}
+                    </div>
+                `;
+            });
+            html += `<button class="button button-primary" onclick="generateDocument('${template}')">📄 Generar ${tpl.title}</button>`;
+            form.innerHTML = html;
+        }
+
+        function generateDocument(template) {
+            const form = document.getElementById('templateForm');
+            const inputs = form.querySelectorAll('input, textarea');
+            const data = {};
+            inputs.forEach(input => {
+                if (input.name) data[input.name] = input.value;
+            });
+
+            showAlert('📝 Generando documento con IA...', 'info');
+
+            fetch(`${API_BASE}/documents/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: template,
+                    data: data,
+                    provider: APP_STATE.config.aiProvider
+                })
+            })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.success) {
+                        showAlert(`✅ Documento generado: ${result.filename}`, 'success');
+                        document.getElementById('templateForm').innerHTML = '';
+                        document.getElementById('templateSelect').value = '';
+                    } else {
+                        showAlert(`❌ Error: ${result.error}`, 'error');
+                    }
+                })
+                .catch(e => showAlert(`❌ Error: ${e.message}`, 'error'));
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // INIT
+        // ═══════════════════════════════════════════════════════════
+
+        function updateQueueDisplay() {
+            const queueCount = UPLOAD_QUEUE.length;
+            document.getElementById('queueCount').textContent = queueCount;
+            if (queueCount > 0) {
+                document.getElementById('uploadResults').style.display = 'block';
+            }
+        }
+
+        function clearUploadQueue() {
+            UPLOAD_QUEUE.length = 0;
+            uploadCounter = 0;
+            document.getElementById('uploadResultsContent').innerHTML = '';
+            document.getElementById('uploadResults').style.display = 'none';
+            showAlert('🗑️ Cola limpiada', 'info');
+        }
+
+        function rejectQueuedDoc(docId) {
+            const motivo = prompt('Motivo del rechazo:');
+            if (!motivo) return;
+
+            fetch(`${API_BASE}/autoprocesador/rechazar/${docId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ motivo })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('✅ Documento rechazado y movido a revisión manual', 'success');
+                        loadQueue();
+                    } else {
+                        showAlert(`❌ Error: ${data.error}`, 'error');
+                    }
+                });
+        }
+
+        window.addEventListener('load', () => {
+            loadDashboard();
+            updateServerStatus();
+            setInterval(updateServerStatus, 5000);
+            setInterval(updateQueueDisplay, 1000);
+        });
+
+        function updateServerStatus() {
+            fetch(`${API_BASE}/autoprocesador/stats`, { signal: AbortSignal.timeout(3000) })
+                .then(() => {
+                    document.getElementById('serverStatus').innerHTML = '🟢 Conectado';
+                })
+                .catch(() => {
+                    document.getElementById('serverStatus').innerHTML = '🔴 Desconectado';
+                });
+        }
+    </script>
+    <!-- SCRIPTS CORE -->
+    <script src="/static/js/sidebar-v2-3.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/dashboard-stats.js"></script>
 </body>
+
 </html>

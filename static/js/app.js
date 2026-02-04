@@ -18,13 +18,13 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshFiles();
     loadAIProviders();
     addMessage('system', '¡Bienvenido a LexDocsPro LITE v2.0! Ahora con múltiples IAs y generación de documentos.');
-    
+
     // Inicializar generador de documentos
     loadDocumentTemplates();
-    
+
     // Inicializar drag & drop para LexNET
     initializeLexNetUploader();
-    
+
     // Event listener para Enter en chat
     const promptInput = document.getElementById('chatPrompt');
     if (promptInput) {
@@ -44,13 +44,104 @@ function switchTab(tabName) {
     // Desactivar todos los tabs
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-    
+
     // Activar tab seleccionado
-    const clickedBtn = event.target;
-    clickedBtn.classList.add('active');
-    document.getElementById(`tab-${tabName}`).classList.add('active');
-    
-    updateStatus(`Pestaña: ${tabName === 'consulta' ? 'Consultas' : tabName === 'documentos' ? 'Generador de Documentos' : 'Analizador LexNET'}`);
+    const clickedBtn = event ? event.target : null;
+    if (clickedBtn && clickedBtn.classList.contains('tab-btn')) {
+        clickedBtn.classList.add('active');
+    }
+
+    const content = document.getElementById(`tab-${tabName}`);
+    if (content) content.classList.add('active');
+
+    updateStatus(`Pestaña: ${tabName}`);
+}
+
+// Compatibilidad con Sidebar v2.3.1
+window.switchPanel = function (panelId) {
+    console.log(`Cambiando a panel: ${panelId}`);
+
+    // Ocultar todos los paneles
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+
+    // Mostrar el seleccionado
+    const panel = document.getElementById(`panel-${panelId}`);
+    if (panel) {
+        panel.classList.add('active');
+
+        // Actualizar título del header
+        const headerTitle = document.getElementById('headerTitle');
+        if (headerTitle) {
+            const navItem = document.querySelector(`.nav-item[data-panel="${panelId}"]`);
+            headerTitle.textContent = navItem ? navItem.innerText.trim() : panelId.charAt(0).toUpperCase() + panelId.slice(1);
+        }
+    } else {
+        // Si el panel no existe en la estructura de index.html, intentar switchTab si es una feature antigua
+        switchTab(panelId);
+    }
+
+    // Triggers de carga dinámica por panel
+    if (panelId === 'cascade') loadAiStatus();
+    if (panelId === 'banking') loadBankingStats();
+    if (panelId === 'analytics') updateAnalytics();
+    if (panelId === 'agent') initializeAgentCoordinator();
+};
+
+async function loadAiStatus() {
+    const container = document.getElementById('aiCascadeStatus');
+    if (!container) return;
+    try {
+        const res = await fetch('/api/ai/status');
+        const data = await res.json();
+        if (data.success) {
+            container.innerHTML = Object.entries(data.status).map(([p, s]) => `
+                <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee;">
+                    <span><strong>${p.toUpperCase()}</strong></span>
+                    <span class="badge ${s === 'Online' ? 'success' : 'danger'}">${s}</span>
+                </div>
+            `).join('');
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function loadBankingStats() {
+    const container = document.getElementById('bankingStats');
+    if (!container) return;
+    try {
+        const res = await fetch('/api/banking/stats');
+        const data = await res.json();
+        if (data.success) {
+            container.innerHTML = `
+                <div class="kpi-card">
+                    <div class="kpi-value">${data.stats.bancos_activos}</div>
+                    <div class="kpi-label">Bancos Conectados</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value">${data.stats.pendientes_conciliar}</div>
+                    <div class="kpi-label">Pendientes</div>
+                </div>
+            `;
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function testEmail() {
+    updateStatus('📧 Enviando email de prueba...');
+    try {
+        const res = await fetch('/api/alerts/test-email', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) updateStatus('✅ Email enviado con éxito');
+        else updateStatus('❌ Error al enviar email');
+    } catch (e) { updateStatus('❌ Error de conexión'); }
+}
+
+function updateAnalytics() {
+    console.log("Analytics panel activated - Loading Chart.js...");
+    // Renderizado de gráficas (Chart.js ya debería estar disponible si se incluyó)
+}
+
+function initializeAgentCoordinator() {
+    console.log("IA Agent Coordinator initialized.");
 }
 
 // ============================================
@@ -60,14 +151,14 @@ async function loadAIProviders() {
     try {
         const response = await fetch('/api/ai/providers');
         const data = await response.json();
-        
+
         availableProviders = data.providers;
         const selects = [
             document.getElementById('aiProvider'),
             document.getElementById('docProvider'),
             document.getElementById('lexnetProvider')
         ];
-        
+
         const providerNames = {
             'ollama': '🏠 Ollama (Local)',
             'groq': '⚡ Groq (Ultra Rápido)',
@@ -76,7 +167,7 @@ async function loadAIProviders() {
             'gemini': '💎 Gemini (Google)',
             'deepseek': '🌊 DeepSeek'
         };
-        
+
         selects.forEach(select => {
             if (select) {
                 select.innerHTML = '';
@@ -91,11 +182,11 @@ async function loadAIProviders() {
                 });
             }
         });
-        
+
         if (availableProviders.length > 0) {
             addMessage('system', `✅ Proveedores disponibles: ${availableProviders.map(p => providerNames[p]).join(', ')}`);
         }
-        
+
     } catch (error) {
         console.error('Error loading providers:', error);
         addMessage('system', '⚠️ No se pudieron cargar los proveedores de IA');
@@ -121,12 +212,12 @@ async function refreshFiles(path = '') {
 function renderFileTree(data) {
     const tree = document.getElementById('fileTree');
     const pathDiv = document.getElementById('currentPath');
-    
+
     if (!tree) return;
-    
+
     pathDiv.textContent = data.current_path || 'Raíz';
     tree.innerHTML = '';
-    
+
     if (data.current_path) {
         const upBtn = document.createElement('div');
         upBtn.className = 'folder';
@@ -137,7 +228,7 @@ function renderFileTree(data) {
         };
         tree.appendChild(upBtn);
     }
-    
+
     data.folders.forEach(folder => {
         const div = document.createElement('div');
         div.className = 'folder';
@@ -145,7 +236,7 @@ function renderFileTree(data) {
         div.onclick = () => refreshFiles(folder.path);
         tree.appendChild(div);
     });
-    
+
     data.files.forEach(file => {
         const div = document.createElement('div');
         div.className = 'file';
@@ -153,7 +244,7 @@ function renderFileTree(data) {
         div.onclick = () => selectFile(file);
         tree.appendChild(div);
     });
-    
+
     if (data.folders.length === 0 && data.files.length === 0) {
         tree.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Carpeta vacía</p>';
     }
@@ -180,21 +271,21 @@ function loadPDF(path) {
 // ============================================
 async function runOCR() {
     if (!currentFile) return;
-    
+
     try {
         updateStatus('🔍 Ejecutando OCR...');
         const btnOCR = document.getElementById('btnOCR');
         btnOCR.disabled = true;
         btnOCR.innerHTML = '<span class="loading"></span> Procesando...';
-        
+
         const response = await fetch('/api/ocr', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ filename: currentFile.path })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.text) {
             ocrText = data.text;
             addMessage('system', `✅ OCR completado: ${data.text.length} caracteres extraídos`);
@@ -204,7 +295,7 @@ async function runOCR() {
             addMessage('system', '⚠️ No se pudo extraer texto del documento');
             updateStatus('⚠️ OCR sin resultados');
         }
-        
+
     } catch (error) {
         console.error('Error:', error);
         addMessage('system', '❌ Error al ejecutar OCR');
@@ -222,24 +313,24 @@ async function runOCR() {
 async function sendMessage() {
     const promptInput = document.getElementById('chatPrompt');
     const prompt = promptInput.value.trim();
-    
+
     if (!prompt) return;
-    
+
     const provider = document.getElementById('aiProvider').value;
     const mode = document.getElementById('aiMode').value;
-    
+
     addMessage('user', prompt);
     promptInput.value = '';
-    
+
     const modeNames = {
         'standard': '⚡ Rápida',
         'deep': '🔍 Profunda',
         'research': '📚 Investigación'
     };
-    
+
     const loadingId = addMessage('assistant', `<span class="loading"></span> ${modeNames[mode]} con ${provider}...`);
     updateStatus(`💬 Consultando ${provider} (${modeNames[mode]})...`);
-    
+
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
@@ -251,9 +342,9 @@ async function sendMessage() {
                 mode: mode
             })
         });
-        
+
         const data = await response.json();
-        
+
         const loadingMsg = document.getElementById(loadingId);
         if (loadingMsg) {
             if (data.success) {
@@ -263,9 +354,9 @@ async function sendMessage() {
                 loadingMsg.classList.add('error');
             }
         }
-        
+
         updateStatus('Listo');
-        
+
     } catch (error) {
         console.error('Error:', error);
         const loadingMsg = document.getElementById(loadingId);
@@ -279,17 +370,17 @@ async function sendMessage() {
 function addMessage(type, text) {
     const container = document.getElementById('chatMessages');
     if (!container) return;
-    
+
     const msgId = 'msg-' + Date.now();
-    
+
     const div = document.createElement('div');
     div.id = msgId;
     div.className = `message ${type}`;
     div.innerHTML = text;
-    
+
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
-    
+
     return msgId;
 }
 
@@ -300,12 +391,12 @@ async function loadDocumentTemplates() {
     try {
         const response = await fetch('/api/documents/templates');
         const templates = await response.json();
-        
+
         const container = document.getElementById('docTypes');
         if (!container) return;
-        
+
         container.innerHTML = '';
-        
+
         Object.entries(templates).forEach(([type, template]) => {
             const btn = document.createElement('button');
             btn.className = 'doc-type-btn';
@@ -316,7 +407,7 @@ async function loadDocumentTemplates() {
             `;
             container.appendChild(btn);
         });
-        
+
     } catch (error) {
         console.error('Error loading templates:', error);
     }
@@ -324,26 +415,26 @@ async function loadDocumentTemplates() {
 
 function selectDocType(type, template) {
     currentDocType = type;
-    
+
     document.querySelectorAll('.doc-type-btn').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
-    
+
     document.getElementById('docFormTitle').textContent = template.name;
     document.getElementById('docFormDesc').textContent = template.description;
     document.getElementById('documentForm').classList.remove('hidden');
     document.getElementById('generatedDoc').classList.add('hidden');
-    
+
     const fieldsContainer = document.getElementById('formFields');
     fieldsContainer.innerHTML = '';
-    
+
     template.fields.forEach(field => {
         const group = document.createElement('div');
         group.className = 'form-group';
-        
+
         const label = document.createElement('label');
         label.textContent = field.label;
         group.appendChild(label);
-        
+
         let input;
         if (field.type === 'textarea') {
             input = document.createElement('textarea');
@@ -360,11 +451,11 @@ function selectDocType(type, template) {
             input = document.createElement('input');
             input.type = field.type;
         }
-        
+
         input.name = field.name;
         input.id = `field-${field.name}`;
         group.appendChild(input);
-        
+
         fieldsContainer.appendChild(group);
     });
 }
@@ -483,25 +574,25 @@ function resetGenerator() {
 // ============================================
 function initializeLexNetUploader() {
     const uploadZone = document.getElementById('uploadZone');
-    
+
     if (uploadZone) {
         uploadZone.addEventListener('click', () => {
             document.getElementById('fileMultiple').click();
         });
-        
+
         uploadZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             uploadZone.classList.add('dragover');
         });
-        
+
         uploadZone.addEventListener('dragleave', () => {
             uploadZone.classList.remove('dragover');
         });
-        
+
         uploadZone.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadZone.classList.remove('dragover');
-            
+
             const files = Array.from(e.dataTransfer.files);
             addFiles(files);
         });
@@ -521,7 +612,7 @@ function addFiles(files) {
             addFileToList(file);
         }
     });
-    
+
     updateAnalyzeButton();
     classifyFiles();
 }
@@ -529,14 +620,14 @@ function addFiles(files) {
 function addFileToList(file) {
     const filesList = document.getElementById('filesList');
     if (!filesList) return;
-    
+
     const fileItem = document.createElement('div');
     fileItem.className = 'file-item';
     fileItem.id = `file-${uploadedFiles.length - 1}`;
-    
+
     const icon = getFileIcon(file.name);
     const size = formatFileSize(file.size);
-    
+
     fileItem.innerHTML = `
         <div class="file-info">
             <span class="file-icon">${icon}</span>
@@ -552,7 +643,7 @@ function addFileToList(file) {
             🗑️ Quitar
         </button>
     `;
-    
+
     filesList.appendChild(fileItem);
 }
 
@@ -596,9 +687,9 @@ function analyzeLexNetFlexible() {
     alert('Función en desarrollo');
 }
 
-function copyLexNetAnalysis() {}
-function downloadLexNetAnalysis() {}
-function exportToiCloud() {}
+function copyLexNetAnalysis() { }
+function downloadLexNetAnalysis() { }
+function exportToiCloud() { }
 function resetLexNet() {
     uploadedFiles = [];
     document.getElementById('filesList').innerHTML = '';
@@ -633,13 +724,13 @@ let lexnetTexts = {
 function handleLexNetFile(type) {
     const fileInput = document.getElementById(`file${type.charAt(0).toUpperCase() + type.slice(1)}`);
     const statusSpan = document.getElementById(`status${type.charAt(0).toUpperCase() + type.slice(1)}`);
-    
+
     const file = fileInput.files[0];
     if (file) {
         lexnetFiles[type] = file;
         statusSpan.textContent = file.name;
         statusSpan.classList.add('uploaded');
-        
+
         updateStatus(`📄 ${file.name} cargado`);
         checkLexNetReady();
     }
@@ -647,7 +738,7 @@ function handleLexNetFile(type) {
 
 function checkLexNetReady() {
     const btnAnalyze = document.getElementById('btnAnalyzeLexNet');
-    
+
     // Requerir al menos resumen y principal
     if (lexnetFiles.resumen && lexnetFiles.principal) {
         btnAnalyze.disabled = false;
@@ -659,31 +750,31 @@ function checkLexNetReady() {
 async function analyzeLexNet() {
     const provider = document.getElementById('lexnetProvider').value;
     const btnAnalyze = document.getElementById('btnAnalyzeLexNet');
-    
+
     btnAnalyze.disabled = true;
     btnAnalyze.innerHTML = '<span class="loading"></span> Analizando...';
-    
+
     updateStatus('🔍 Extrayendo texto con OCR...');
-    
+
     try {
         // Extraer texto de cada PDF
         if (lexnetFiles.resumen) {
             updateStatus('📋 Procesando RESUMEN...');
             lexnetTexts.resumen = await extractTextFromUploadedFile(lexnetFiles.resumen);
         }
-        
+
         if (lexnetFiles.caratula) {
             updateStatus('📄 Procesando CARATULA...');
             lexnetTexts.caratula = await extractTextFromUploadedFile(lexnetFiles.caratula);
         }
-        
+
         if (lexnetFiles.principal) {
             updateStatus('⚖️ Procesando resolución principal...');
             lexnetTexts.principal = await extractTextFromUploadedFile(lexnetFiles.principal);
         }
-        
+
         updateStatus('🤖 Analizando con IA...');
-        
+
         // Enviar a analizar
         const response = await fetch('/api/lexnet/analyze', {
             method: 'POST',
@@ -693,22 +784,22 @@ async function analyzeLexNet() {
                 provider: provider
             })
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
             currentAnalysis = result.analisis;
-            
+
             // Mostrar análisis
             document.getElementById('lexnetContent').textContent = result.analisis;
             document.getElementById('lexnetActions').classList.remove('hidden');
-            
+
             updateStatus(`✅ Análisis completado: ${result.filename}`);
         } else {
             alert(`Error: ${result.error}`);
             updateStatus('❌ Error en análisis');
         }
-        
+
     } catch (error) {
         console.error('Error:', error);
         alert('Error al analizar la notificación');
@@ -723,20 +814,20 @@ async function extractTextFromUploadedFile(file) {
     try {
         const formData = new FormData();
         formData.append('file', file);
-        
+
         const response = await fetch('/api/ocr/upload', {
             method: 'POST',
             body: formData
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
             return result.text;
         } else {
             throw new Error(result.error);
         }
-        
+
     } catch (error) {
         console.error('Error extrayendo texto:', error);
         return '';
@@ -765,23 +856,23 @@ function resetLexNet() {
     lexnetFiles = { resumen: null, caratula: null, principal: null };
     lexnetTexts = { resumen: '', caratula: '', principal: '' };
     currentAnalysis = '';
-    
+
     // Reset UI
     document.getElementById('fileResumen').value = '';
     document.getElementById('fileCaratula').value = '';
     document.getElementById('filePrincipal').value = '';
-    
+
     document.getElementById('statusResumen').textContent = 'Ningún archivo';
     document.getElementById('statusCaratula').textContent = 'Ningún archivo';
     document.getElementById('statusPrincipal').textContent = 'Ningún archivo';
-    
+
     document.getElementById('statusResumen').classList.remove('uploaded');
     document.getElementById('statusCaratula').classList.remove('uploaded');
     document.getElementById('statusPrincipal').classList.remove('uploaded');
-    
+
     document.getElementById('lexnetContent').innerHTML = '<p class="placeholder">Sube al menos RESUMEN.pdf y Resolución Principal, luego presiona "Analizar Notificación"</p>';
     document.getElementById('lexnetActions').classList.add('hidden');
-    
+
     checkLexNetReady();
     updateStatus('Listo para nuevo análisis');
 }
@@ -819,14 +910,14 @@ let lexnetMultipleFiles = [];
 function handleMultipleFilesLexNet() {
     const fileInput = document.getElementById('filesMultiple');
     const files = Array.from(fileInput.files);
-    
+
     // Añadir nuevos archivos
     files.forEach(file => {
         if (!lexnetMultipleFiles.find(f => f.name === file.name && f.size === file.size)) {
             lexnetMultipleFiles.push(file);
         }
     });
-    
+
     renderFilesListLexNet();
     updateAnalyzeLexNetButton();
 }
@@ -834,25 +925,25 @@ function handleMultipleFilesLexNet() {
 function renderFilesListLexNet() {
     const container = document.getElementById('filesListLexNet');
     container.innerHTML = '';
-    
+
     if (lexnetMultipleFiles.length === 0) {
         return;
     }
-    
+
     lexnetMultipleFiles.forEach((file, index) => {
         const item = document.createElement('div');
         item.className = 'file-item-simple';
-        
+
         const icon = getFileIcon(file.name);
-        
+
         item.innerHTML = `
             <span>${icon} <span class="file-name-simple">${file.name}</span></span>
             <button class="file-remove-simple" onclick="removeFileLexNet(${index})">Quitar</button>
         `;
-        
+
         container.appendChild(item);
     });
-    
+
     updateStatus(`${lexnetMultipleFiles.length} archivo(s) listo(s) para analizar`);
 }
 
@@ -870,20 +961,20 @@ function updateAnalyzeLexNetButton() {
 async function analyzeLexNetMultiple() {
     const provider = document.getElementById('lexnetProvider').value;
     const btn = document.getElementById('btnAnalyzeLexNet');
-    
+
     btn.disabled = true;
     btn.innerHTML = '<span class="loading"></span> Analizando...';
-    
+
     try {
         // Procesar todos los archivos
         const textos = {};
-        
+
         for (let i = 0; i < lexnetMultipleFiles.length; i++) {
             const file = lexnetMultipleFiles[i];
-            updateStatus(`📄 Procesando ${i+1}/${lexnetMultipleFiles.length}: ${file.name}...`);
-            
+            updateStatus(`📄 Procesando ${i + 1}/${lexnetMultipleFiles.length}: ${file.name}...`);
+
             const text = await extractTextFromUploadedFile(file);
-            
+
             // Clasificar automáticamente
             const name = file.name.toLowerCase();
             if (name.includes('resumen') || name.includes('acuse')) {
@@ -899,14 +990,14 @@ async function analyzeLexNetMultiple() {
                 textos.adjuntos.push(text);
             }
         }
-        
+
         // Si no hay principal, usar el primer archivo
         if (!textos.principal && lexnetMultipleFiles.length > 0) {
             textos.principal = await extractTextFromUploadedFile(lexnetMultipleFiles[0]);
         }
-        
+
         updateStatus('🤖 Analizando con IA...');
-        
+
         // Enviar a analizar
         const response = await fetch('/api/lexnet/analyze', {
             method: 'POST',
@@ -917,9 +1008,9 @@ async function analyzeLexNetMultiple() {
                 archivos: lexnetMultipleFiles.map(f => ({ nombre: f.name }))
             })
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
             currentAnalysis = result.analisis;
             document.getElementById('lexnetContent').textContent = result.analisis;
@@ -929,7 +1020,7 @@ async function analyzeLexNetMultiple() {
             alert(`Error: ${result.error}`);
             updateStatus('❌ Error en análisis');
         }
-        
+
     } catch (error) {
         console.error('Error:', error);
         alert('Error al analizar: ' + error.message);
@@ -968,19 +1059,19 @@ oldLexnetFunctions.forEach(fname => {
 async function extractTextFromUploadedFile(file) {
     try {
         console.log(`📄 Extrayendo texto de: ${file.name} (${file.size} bytes)`);
-        
+
         const formData = new FormData();
         formData.append('file', file);
-        
+
         const response = await fetch('/api/ocr/upload', {
             method: 'POST',
             body: formData
         });
-        
+
         const result = await response.json();
-        
+
         console.log('OCR resultado:', result);
-        
+
         if (result.success) {
             console.log(`✅ Texto extraído: ${result.text.length} caracteres`);
             return result.text;
@@ -988,7 +1079,7 @@ async function extractTextFromUploadedFile(file) {
             console.error('❌ Error OCR:', result.error);
             throw new Error(result.error);
         }
-        
+
     } catch (error) {
         console.error('❌ Error extrayendo texto:', error);
         return `[Error procesando ${file.name}: ${error.message}]`;
@@ -1005,11 +1096,11 @@ const DOCUMENT_TYPES = {
         icon: '⚖️',
         desc: 'Demanda completa para juicio ordinario o verbal',
         fields: [
-            {name: 'juzgado', label: 'Juzgado', type: 'text', placeholder: 'Juzgado de Primera Instancia nº...'},
-            {name: 'demandante', label: 'Demandante', type: 'text', placeholder: 'Nombre completo'},
-            {name: 'demandado', label: 'Demandado', type: 'text', placeholder: 'Nombre completo'},
-            {name: 'hechos', label: 'Hechos', type: 'textarea', placeholder: 'Narración de los hechos...'},
-            {name: 'petitorio', label: 'Petitorio', type: 'textarea', placeholder: 'Se solicita que...'}
+            { name: 'juzgado', label: 'Juzgado', type: 'text', placeholder: 'Juzgado de Primera Instancia nº...' },
+            { name: 'demandante', label: 'Demandante', type: 'text', placeholder: 'Nombre completo' },
+            { name: 'demandado', label: 'Demandado', type: 'text', placeholder: 'Nombre completo' },
+            { name: 'hechos', label: 'Hechos', type: 'textarea', placeholder: 'Narración de los hechos...' },
+            { name: 'petitorio', label: 'Petitorio', type: 'textarea', placeholder: 'Se solicita que...' }
         ]
     },
     contestacion_demanda: {
@@ -1017,11 +1108,11 @@ const DOCUMENT_TYPES = {
         icon: '🛡️',
         desc: 'Respuesta formal a demanda civil',
         fields: [
-            {name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento ordinario nº...'},
-            {name: 'demandado', label: 'Demandado (quien contesta)', type: 'text', placeholder: 'Nombre completo'},
-            {name: 'hechos_propios', label: 'Hechos propios', type: 'textarea', placeholder: 'Versión de los hechos...'},
-            {name: 'excepciones', label: 'Excepciones y defensas', type: 'textarea', placeholder: 'Defensas jurídicas...'},
-            {name: 'suplica', label: 'Súplica', type: 'textarea', placeholder: 'Se solicita la desestimación...'}
+            { name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento ordinario nº...' },
+            { name: 'demandado', label: 'Demandado (quien contesta)', type: 'text', placeholder: 'Nombre completo' },
+            { name: 'hechos_propios', label: 'Hechos propios', type: 'textarea', placeholder: 'Versión de los hechos...' },
+            { name: 'excepciones', label: 'Excepciones y defensas', type: 'textarea', placeholder: 'Defensas jurídicas...' },
+            { name: 'suplica', label: 'Súplica', type: 'textarea', placeholder: 'Se solicita la desestimación...' }
         ]
     },
     recurso_apelacion: {
@@ -1029,10 +1120,10 @@ const DOCUMENT_TYPES = {
         icon: '🔄',
         desc: 'Recurso contra sentencia de primera instancia',
         fields: [
-            {name: 'sentencia', label: 'Sentencia a recurrir', type: 'text', placeholder: 'Sentencia nº... de fecha...'},
-            {name: 'recurrente', label: 'Recurrente', type: 'text', placeholder: 'Nombre completo'},
-            {name: 'fundamentos', label: 'Fundamentos de Derecho', type: 'textarea', placeholder: 'Infracciones cometidas...'},
-            {name: 'suplica', label: 'Súplica', type: 'textarea', placeholder: 'Se suplica la revocación...'}
+            { name: 'sentencia', label: 'Sentencia a recurrir', type: 'text', placeholder: 'Sentencia nº... de fecha...' },
+            { name: 'recurrente', label: 'Recurrente', type: 'text', placeholder: 'Nombre completo' },
+            { name: 'fundamentos', label: 'Fundamentos de Derecho', type: 'textarea', placeholder: 'Infracciones cometidas...' },
+            { name: 'suplica', label: 'Súplica', type: 'textarea', placeholder: 'Se suplica la revocación...' }
         ]
     },
     recurso_reposicion: {
@@ -1040,10 +1131,10 @@ const DOCUMENT_TYPES = {
         icon: '🔁',
         desc: 'Recurso contra autos y providencias',
         fields: [
-            {name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento nº...'},
-            {name: 'resolucion', label: 'Resolución recurrida', type: 'text', placeholder: 'Auto/Providencia de fecha...'},
-            {name: 'recurrente', label: 'Recurrente', type: 'text', placeholder: 'Nombre completo'},
-            {name: 'motivos', label: 'Motivos del recurso', type: 'textarea', placeholder: 'Fundamentos del recurso...'}
+            { name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento nº...' },
+            { name: 'resolucion', label: 'Resolución recurrida', type: 'text', placeholder: 'Auto/Providencia de fecha...' },
+            { name: 'recurrente', label: 'Recurrente', type: 'text', placeholder: 'Nombre completo' },
+            { name: 'motivos', label: 'Motivos del recurso', type: 'textarea', placeholder: 'Fundamentos del recurso...' }
         ]
     },
     escrito_alegaciones: {
@@ -1051,9 +1142,9 @@ const DOCUMENT_TYPES = {
         icon: '📝',
         desc: 'Respuesta a trámite de alegaciones',
         fields: [
-            {name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento nº...'},
-            {name: 'parte', label: 'En nombre de', type: 'text', placeholder: 'Nombre de la parte'},
-            {name: 'alegaciones', label: 'Alegaciones', type: 'textarea', placeholder: 'Contenido de las alegaciones...'}
+            { name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento nº...' },
+            { name: 'parte', label: 'En nombre de', type: 'text', placeholder: 'Nombre de la parte' },
+            { name: 'alegaciones', label: 'Alegaciones', type: 'textarea', placeholder: 'Contenido de las alegaciones...' }
         ]
     },
     desistimiento: {
@@ -1061,9 +1152,9 @@ const DOCUMENT_TYPES = {
         icon: '🚫',
         desc: 'Escrito de desistimiento del procedimiento',
         fields: [
-            {name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento nº...'},
-            {name: 'parte', label: 'Parte que desiste', type: 'text', placeholder: 'Nombre completo'},
-            {name: 'motivo', label: 'Motivo (opcional)', type: 'textarea', placeholder: 'Por convenir a mis intereses...'}
+            { name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento nº...' },
+            { name: 'parte', label: 'Parte que desiste', type: 'text', placeholder: 'Nombre completo' },
+            { name: 'motivo', label: 'Motivo (opcional)', type: 'textarea', placeholder: 'Por convenir a mis intereses...' }
         ]
     },
     personacion: {
@@ -1071,10 +1162,10 @@ const DOCUMENT_TYPES = {
         icon: '👤',
         desc: 'Primera comparecencia en autos',
         fields: [
-            {name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento nº...'},
-            {name: 'parte', label: 'En nombre de', type: 'text', placeholder: 'Nombre del representado'},
-            {name: 'procurador', label: 'Procurador', type: 'text', placeholder: 'Nombre del procurador'},
-            {name: 'abogado', label: 'Abogado', type: 'text', placeholder: 'Nombre del abogado'}
+            { name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento nº...' },
+            { name: 'parte', label: 'En nombre de', type: 'text', placeholder: 'Nombre del representado' },
+            { name: 'procurador', label: 'Procurador', type: 'text', placeholder: 'Nombre del procurador' },
+            { name: 'abogado', label: 'Abogado', type: 'text', placeholder: 'Nombre del abogado' }
         ]
     },
     poder_procesal: {
@@ -1082,10 +1173,10 @@ const DOCUMENT_TYPES = {
         icon: '📜',
         desc: 'Otorgamiento de poder procesal',
         fields: [
-            {name: 'poderdante', label: 'Poderdante', type: 'text', placeholder: 'Nombre completo'},
-            {name: 'apoderado', label: 'Apoderado (Procurador)', type: 'text', placeholder: 'Nombre del procurador'},
-            {name: 'dni_poderdante', label: 'DNI Poderdante', type: 'text', placeholder: '12345678A'},
-            {name: 'ambito', label: 'Ámbito del poder', type: 'text', placeholder: 'General o específico'}
+            { name: 'poderdante', label: 'Poderdante', type: 'text', placeholder: 'Nombre completo' },
+            { name: 'apoderado', label: 'Apoderado (Procurador)', type: 'text', placeholder: 'Nombre del procurador' },
+            { name: 'dni_poderdante', label: 'DNI Poderdante', type: 'text', placeholder: '12345678A' },
+            { name: 'ambito', label: 'Ámbito del poder', type: 'text', placeholder: 'General o específico' }
         ]
     },
     escrito_prueba: {
@@ -1093,10 +1184,10 @@ const DOCUMENT_TYPES = {
         icon: '🔬',
         desc: 'Escrito de proposición de medios de prueba',
         fields: [
-            {name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento nº...'},
-            {name: 'parte', label: 'Parte que propone', type: 'text', placeholder: 'Nombre de la parte'},
-            {name: 'hechos', label: 'Hechos a probar', type: 'textarea', placeholder: 'Hechos controvertidos...'},
-            {name: 'pruebas', label: 'Medios de prueba', type: 'textarea', placeholder: 'Documental, testifical, pericial...'}
+            { name: 'procedimiento', label: 'Nº Procedimiento', type: 'text', placeholder: 'Procedimiento nº...' },
+            { name: 'parte', label: 'Parte que propone', type: 'text', placeholder: 'Nombre de la parte' },
+            { name: 'hechos', label: 'Hechos a probar', type: 'textarea', placeholder: 'Hechos controvertidos...' },
+            { name: 'pruebas', label: 'Medios de prueba', type: 'textarea', placeholder: 'Documental, testifical, pericial...' }
         ]
     },
     burofax: {
@@ -1104,10 +1195,10 @@ const DOCUMENT_TYPES = {
         icon: '📮',
         desc: 'Comunicación fehaciente por burofax',
         fields: [
-            {name: 'remitente', label: 'Remitente', type: 'text', placeholder: 'Nombre y dirección completa'},
-            {name: 'destinatario', label: 'Destinatario', type: 'text', placeholder: 'Nombre y dirección completa'},
-            {name: 'asunto', label: 'Asunto', type: 'text', placeholder: 'Resumen del asunto'},
-            {name: 'contenido', label: 'Contenido', type: 'textarea', placeholder: 'Texto del burofax...'}
+            { name: 'remitente', label: 'Remitente', type: 'text', placeholder: 'Nombre y dirección completa' },
+            { name: 'destinatario', label: 'Destinatario', type: 'text', placeholder: 'Nombre y dirección completa' },
+            { name: 'asunto', label: 'Asunto', type: 'text', placeholder: 'Resumen del asunto' },
+            { name: 'contenido', label: 'Contenido', type: 'textarea', placeholder: 'Texto del burofax...' }
         ]
     },
     requerimiento: {
@@ -1115,10 +1206,10 @@ const DOCUMENT_TYPES = {
         icon: '⚠️',
         desc: 'Requerimiento previo a reclamación judicial',
         fields: [
-            {name: 'requirente', label: 'Requirente', type: 'text', placeholder: 'Quien requiere'},
-            {name: 'requerido', label: 'Requerido', type: 'text', placeholder: 'Destinatario'},
-            {name: 'objeto', label: 'Objeto del requerimiento', type: 'textarea', placeholder: 'Contenido del requerimiento...'},
-            {name: 'plazo', label: 'Plazo', type: 'text', placeholder: 'Ej: 10 días hábiles'}
+            { name: 'requirente', label: 'Requirente', type: 'text', placeholder: 'Quien requiere' },
+            { name: 'requerido', label: 'Requerido', type: 'text', placeholder: 'Destinatario' },
+            { name: 'objeto', label: 'Objeto del requerimiento', type: 'textarea', placeholder: 'Contenido del requerimiento...' },
+            { name: 'plazo', label: 'Plazo', type: 'text', placeholder: 'Ej: 10 días hábiles' }
         ]
     },
     querella: {
@@ -1126,11 +1217,11 @@ const DOCUMENT_TYPES = {
         icon: '⚔️',
         desc: 'Escrito de querella penal',
         fields: [
-            {name: 'querellante', label: 'Querellante', type: 'text', placeholder: 'Nombre completo'},
-            {name: 'querellado', label: 'Querellado', type: 'text', placeholder: 'Nombre completo'},
-            {name: 'hechos', label: 'Hechos denunciados', type: 'textarea', placeholder: 'Narración cronológica...'},
-            {name: 'delito', label: 'Delito/s', type: 'text', placeholder: 'Ej: Estafa (art. 248 CP)'},
-            {name: 'pruebas', label: 'Pruebas', type: 'textarea', placeholder: 'Medios probatorios...'}
+            { name: 'querellante', label: 'Querellante', type: 'text', placeholder: 'Nombre completo' },
+            { name: 'querellado', label: 'Querellado', type: 'text', placeholder: 'Nombre completo' },
+            { name: 'hechos', label: 'Hechos denunciados', type: 'textarea', placeholder: 'Narración cronológica...' },
+            { name: 'delito', label: 'Delito/s', type: 'text', placeholder: 'Ej: Estafa (art. 248 CP)' },
+            { name: 'pruebas', label: 'Pruebas', type: 'textarea', placeholder: 'Medios probatorios...' }
         ]
     }
 };
@@ -1144,7 +1235,7 @@ function initDocumentGenerator() {
 function renderDocumentTypes() {
     const container = document.getElementById('docTypes');
     if (!container) return;
-    
+
     let html = '';
     for (const [key, doc] of Object.entries(DOCUMENT_TYPES)) {
         html += `
@@ -1160,11 +1251,11 @@ function renderDocumentTypes() {
 function selectDocumentType(type) {
     currentDocType = type;
     const doc = DOCUMENT_TYPES[type];
-    
+
     // Actualizar título y descripción
     document.getElementById('docFormTitle').textContent = `${doc.icon} ${doc.name}`;
     document.getElementById('docFormDesc').textContent = doc.desc;
-    
+
     // Generar campos del formulario
     let fieldsHtml = '';
     doc.fields.forEach(field => {
@@ -1194,11 +1285,11 @@ function selectDocumentType(type) {
             `;
         }
     });
-    
+
     document.getElementById('formFields').innerHTML = fieldsHtml;
     document.getElementById('documentForm').classList.remove('hidden');
     document.getElementById('generatedDoc').classList.add('hidden');
-    
+
     // Marcar tipo seleccionado
     document.querySelectorAll('.doc-type').forEach(el => el.classList.remove('active'));
     event.target.closest('.doc-type').classList.add('active');
@@ -1208,15 +1299,15 @@ function resetGenerator() {
     currentDocType = null;
     generatedContent = null;
     generatedFilename = null;
-    
+
     document.getElementById('documentForm').reset();
     document.getElementById('documentForm').classList.add('hidden');
     document.getElementById('generatedDoc').classList.add('hidden');
     document.getElementById('docFormTitle').textContent = 'Selecciona un tipo de documento';
     document.getElementById('docFormDesc').textContent = '';
-    
+
     document.querySelectorAll('.doc-type').forEach(el => el.classList.remove('active'));
-    
+
     updateStatus('Listo');
 }
 
@@ -1236,7 +1327,7 @@ async function checkiCloudStatus() {
     try {
         const response = await fetch('/api/icloud/status');
         const status = await response.json();
-        
+
         if (status.available) {
             console.log('✅ iCloud Drive disponible');
             return true;
@@ -1263,16 +1354,16 @@ async function exportDocumentToiCloud(content, filename, year, clientName, subfo
                 subfolder: subfolder
             })
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
             alert(`✅ Exportado a iCloud:\n${result.filepath}`);
             updateStatus(`✅ Exportado a iCloud`);
         } else {
             alert(`❌ Error: ${result.error}`);
         }
-        
+
     } catch (error) {
         console.error('Error:', error);
         alert('Error al exportar a iCloud');
@@ -1281,11 +1372,11 @@ async function exportDocumentToiCloud(content, filename, year, clientName, subfo
 
 async function exportAnalysisToClient() {
     const clientName = prompt('Nombre del cliente:');
-    
+
     if (!clientName) {
         return;
     }
-    
+
     try {
         const response = await fetch('/api/icloud/export-analysis', {
             method: 'POST',
@@ -1295,15 +1386,15 @@ async function exportAnalysisToClient() {
                 client_name: clientName
             })
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
             alert(`✅ Análisis exportado a iCloud para ${clientName}:\n${result.filepath}`);
         } else {
             alert(`❌ Error: ${result.error}`);
         }
-        
+
     } catch (error) {
         console.error('Error:', error);
         alert('Error al exportar análisis');
@@ -1314,12 +1405,12 @@ async function getiCloudClients() {
     try {
         const response = await fetch('/api/icloud/clients');
         const result = await response.json();
-        
+
         if (result.success) {
             return result.clients;
         }
         return [];
-        
+
     } catch (error) {
         console.error('Error:', error);
         return [];
@@ -1334,21 +1425,21 @@ function exportToiCloud() {
 // Botón de exportación para documentos generados
 async function exportGeneratedDocToiCloud() {
     const clients = await getiCloudClients();
-    
+
     let clientName;
-    
+
     if (clients.length > 0) {
         const clientList = clients.join('\n');
         clientName = prompt(`Clientes existentes:\n${clientList}\n\nNombre del cliente (nuevo o existente):`);
     } else {
         clientName = prompt('Nombre del cliente:');
     }
-    
+
     if (!clientName) return;
-    
+
     const timestamp = new Date().getTime();
     const filename = `${currentDocType}_${timestamp}.txt`;
-    
+
     await exportDocumentToiCloud(
         generatedDocContent,
         filename,
@@ -1367,14 +1458,14 @@ function cargarConsulta(texto) {
     if (textarea) {
         textarea.value = texto;
         textarea.focus();
-        
+
         // Efecto visual
         textarea.style.background = '#e3f2fd';
         textarea.style.transition = 'background 0.3s ease';
         setTimeout(() => {
             textarea.style.background = '';
         }, 1000);
-        
+
         // Scroll al textarea
         textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else {
@@ -1423,7 +1514,7 @@ function showValidationError(message) {
             formActions.parentNode.insertBefore(errorDiv, formActions);
         }
     }
-    
+
     errorDiv.innerHTML = `
         <div class="error-content">
             <span class="error-icon">⚠️</span>
@@ -1431,9 +1522,225 @@ function showValidationError(message) {
         </div>
     `;
     errorDiv.style.display = 'block';
-    
+
     setTimeout(() => {
         errorDiv.style.display = 'none';
     }, 5000);
 }
 
+
+// ============================================
+// AUTO-PROCESADOR FUNCTIONS
+// ============================================
+
+let currentDocumentId = null;
+let autoProcesadorData = { stats: {}, documents: [], clientes: [] };
+
+// Hook en switchTab EXISTENTE sin modificarlo
+(function () {
+    const originalSwitchTab = window.switchTab;
+    if (typeof originalSwitchTab === 'function') {
+        window.switchTab = function (tabName) {
+            originalSwitchTab.call(this, tabName);
+            if (tabName === 'autoprocesador') {
+                setTimeout(() => loadAutoProcesadorData(), 100);
+            }
+        };
+    }
+})();
+
+async function loadAutoProcesadorData() {
+    try {
+        const [statsRes, docsRes, clientesRes] = await Promise.all([
+            fetch('/api/autoprocesador/stats'),
+            fetch('/api/autoprocesador/cola-revision'),
+            fetch('/api/autoprocesador/clientes')
+        ]);
+
+        const statsData = await statsRes.json();
+        const docsData = await docsRes.json();
+        const clientesData = await clientesRes.json();
+
+        if (statsData.success) {
+            autoProcesadorData.stats = statsData.stats;
+            updateStatsDisplay();
+        }
+
+        if (docsData.success) {
+            autoProcesadorData.documents = docsData.documentos;
+            updateDocumentsList();
+        }
+
+        if (clientesData.success) {
+            autoProcesadorData.clientes = clientesData.clientes;
+            updateClientesSelect();
+        }
+    } catch (error) {
+        console.error('Error cargando auto-procesador:', error);
+    }
+}
+
+function updateStatsDisplay() {
+    const s = autoProcesadorData.stats;
+    document.getElementById('stat-total').textContent = s.total_hoy || 0;
+    document.getElementById('stat-auto').textContent = s.automaticos || 0;
+    document.getElementById('stat-revision').textContent = s.en_revision || 0;
+    document.getElementById('stat-error').textContent = s.errores || 0;
+    document.getElementById('percent-auto').textContent = (s.porcentaje_auto || 0) + '%';
+    document.getElementById('percent-revision').textContent = (s.porcentaje_revision || 0) + '%';
+    document.getElementById('percent-error').textContent = (s.porcentaje_errores || 0) + '%';
+}
+
+function updateDocumentsList() {
+    const container = document.getElementById('documentsList');
+    const docs = autoProcesadorData.documents;
+
+    if (docs.length === 0) {
+        container.innerHTML = '<p class="placeholder">No hay documentos en cola</p>';
+        return;
+    }
+
+    container.innerHTML = docs.map(doc => `
+        <div class="document-item" onclick="selectDocument(${doc.id})">
+            <div class="document-item-header">
+                <span class="document-item-name">${doc.archivo_original}</span>
+                <span class="document-item-badge badge-${doc.estado}">⚠️ Revisión</span>
+            </div>
+            <div class="document-item-info">
+                <div>👤 ${doc.cliente_detectado || 'Sin detectar'}</div>
+                <div>📋 ${doc.tipo_documento || 'Sin clasificar'}</div>
+                <div>🎯 ${Math.round((doc.confianza || 0) * 100)}%</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateClientesSelect() {
+    const select = document.getElementById('detail-cliente-select');
+    select.innerHTML = '<option value="">-- Seleccionar --</option>' +
+        autoProcesadorData.clientes.map(c => `<option value="${c.codigo}">${c.nombre}</option>`).join('');
+}
+
+async function selectDocument(docId) {
+    currentDocumentId = docId;
+    document.querySelectorAll('.document-item').forEach(i => i.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+
+    try {
+        const res = await fetch(`/api/autoprocesador/documento/${docId}`);
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error);
+
+        const doc = data.documento;
+        document.getElementById('noDocumentSelected').classList.add('hidden');
+        document.getElementById('documentDetails').classList.remove('hidden');
+        document.getElementById('detail-filename').value = doc.archivo_original;
+        document.getElementById('detail-cliente').value = doc.cliente_detectado || '';
+        document.getElementById('detail-cliente-select').value = doc.cliente_codigo || '';
+        document.getElementById('detail-tipo').value = doc.tipo_documento || 'Otros';
+        document.getElementById('detail-fecha').value = doc.fecha_documento || 'N/A';
+        document.getElementById('detail-carpeta').value = doc.carpeta_sugerida || 'N/A';
+
+        const confianza = Math.round((doc.confianza || 0) * 100);
+        document.getElementById('detail-confianza-bar').style.width = confianza + '%';
+        document.getElementById('detail-confianza-text').textContent = confianza + '%';
+
+        document.getElementById('autoProcesadorPdfViewer').innerHTML =
+            `<embed src="/api/autoprocesador/pdf/${docId}" type="application/pdf" width="100%" height="100%">`;
+    } catch (error) {
+        console.error('Error:', error);
+        showStatus('❌ Error: ' + error.message, 'error');
+    }
+}
+
+async function aprobarDocumento() {
+    if (!currentDocumentId || !confirm('¿Aprobar documento?')) return;
+
+    try {
+        const res = await fetch(`/api/autoprocesador/aprobar/${currentDocumentId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                usuario_modifico: true,
+                cliente_codigo: document.getElementById('detail-cliente-select').value,
+                tipo_documento: document.getElementById('detail-tipo').value
+            })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            showStatus('✅ Documento aprobado', 'success');
+            await loadAutoProcesadorData();
+            currentDocumentId = null;
+            document.getElementById('documentDetails').classList.add('hidden');
+            document.getElementById('noDocumentSelected').classList.remove('hidden');
+            document.getElementById('autoProcesadorPdfViewer').innerHTML = '<p class="placeholder">Selecciona un documento</p>';
+        } else throw new Error(data.error);
+    } catch (error) {
+        console.error('Error:', error);
+        showStatus('❌ Error: ' + error.message, 'error');
+    }
+}
+
+async function rechazarDocumento() {
+    if (!currentDocumentId) return;
+    const motivo = prompt('¿Por qué rechazas?', 'Ilegible');
+    if (!motivo) return;
+
+    try {
+        const res = await fetch(`/api/autoprocesador/rechazar/${currentDocumentId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ motivo })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            showStatus('⚠️ Documento rechazado', 'warning');
+            await loadAutoProcesadorData();
+            currentDocumentId = null;
+            document.getElementById('documentDetails').classList.add('hidden');
+            document.getElementById('noDocumentSelected').classList.remove('hidden');
+            document.getElementById('autoProcesadorPdfViewer').innerHTML = '<p class="placeholder">Selecciona un documento</p>';
+        } else throw new Error(data.error);
+    } catch (error) {
+        console.error('Error:', error);
+        showStatus('❌ Error: ' + error.message, 'error');
+    }
+}
+
+function refreshAutoProcesadorStats() {
+    loadAutoProcesadorData();
+    showStatus('🔄 Actualizado', 'success');
+}
+
+async function showAllProcessed() {
+    try {
+        const res = await fetch('/api/autoprocesador/procesados-hoy');
+        const data = await res.json();
+        if (!data.success) return;
+
+        const docs = data.documentos;
+        const container = document.getElementById('documentsList');
+
+        if (docs.length === 0) {
+            container.innerHTML = '<p class="placeholder">Sin documentos procesados hoy</p>';
+            return;
+        }
+
+        container.innerHTML = docs.map(doc => `
+            <div class="document-item">
+                <div class="document-item-header">
+                    <span class="document-item-name">${doc.archivo_original}</span>
+                    <span class="document-item-badge badge-${doc.estado}">✅ ${doc.estado}</span>
+                </div>
+                <div class="document-item-info">
+                    <div>👤 ${doc.cliente_detectado || 'N/A'}</div>
+                    <div>📋 ${doc.tipo_documento || 'N/A'}</div>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
