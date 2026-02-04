@@ -3,25 +3,16 @@ import os
 import re
 import shutil
 from datetime import datetime, timedelta
-from flask import Flask, render_template, jsonify, request, send_file, send_from_directory
+from flask import Flask, render_template, jsonify, request, send_file, send_from_directory, make_response
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 import requests
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
 load_dotenv()
 
-# Servicios existentes
-from services.ocr_service import OCRService
-from services.ai_service import AIService
-from services.document_generator import DocumentGenerator
-from services.lexnet_analyzer import LexNetAnalyzer
-
-# Importar decoradores de autorización
-from decorators import jwt_required_custom, abogado_or_admin_required, admin_required
-
-# Crear app Flask
+# Crear app Flask PRIMERO
 app = Flask(__name__)
 
 # ============================================
@@ -32,10 +23,28 @@ app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'CAMBIAR-ESTO-EN-PROD
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(seconds=int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 3600)))
 app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(seconds=int(os.getenv('JWT_REFRESH_TOKEN_EXPIRES', 2592000)))
 
+# ⭐ COOKIES JWT CONFIG
+app.config['JWT_TOKEN_LOCATION'] = ['cookies']
+app.config['JWT_COOKIE_SECURE'] = False
+app.config['JWT_COOKIE_CSRF_PROTECT'] = False
+app.config['JWT_COOKIE_NAME'] = 'access_token_cookie'
+
+# Inicializar JWT
 jwt = JWTManager(app)
 
-# Configurar CORS de forma segura
-cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:5011').split(',')
+# Servicios existentes
+from services.ocr_service import OCRService
+from services.ai_service import AIService
+from services.document_generator import DocumentGenerator
+from services.lexnet_analyzer import LexNetAnalyzer
+
+# ============================================
+# DECORADORES Y AUTENTICACIÓN
+# ============================================
+from decorators import jwt_required_custom, abogado_or_admin_required, admin_required
+
+# Configurar CORS
+cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:5001').split(',')
 CORS(app, resources={
     r"/api/*": {
         "origins": cors_origins,
@@ -45,15 +54,17 @@ CORS(app, resources={
     }
 })
 
-# Registrar blueprint de autenticación
-from auth_blueprint import auth_bp
-app.register_blueprint(auth_bp)
+# Registrar blueprint de autenticación (opcional)
+try:
+    from auth_blueprint import auth_bp
+    app.register_blueprint(auth_bp)
+except ImportError:
+    print("⚠️  auth_blueprint no encontrado (opcional)")
 
 print("✅ Sistema de autenticación JWT configurado")
 print(f"⏱️  Duración access token: {app.config['JWT_ACCESS_TOKEN_EXPIRES']}")
 print(f"⏱️  Duración refresh token: {app.config['JWT_REFRESH_TOKEN_EXPIRES']}")
-
-print(f"⏱️  Duración refresh token: {app.config['JWT_REFRESH_TOKEN_EXPIRES']}")
+print(f"🔐 JWT Token Location: {app.config['JWT_TOKEN_LOCATION']}")
 
 # ============================================
 # CONFIGURACIÓN MULTI-IA
@@ -1454,7 +1465,7 @@ def document_types():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/dashboard/stats', methods=['GET'])
-@jwt_required_custom
+@jwt_required()
 def dashboard_stats():
     """Obtener estadísticas del dashboard en tiempo real (versión simple)"""
     try:
@@ -1480,7 +1491,7 @@ def dashboard_stats():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/dashboard/stats-detailed', methods=['GET'])
-@jwt_required_custom
+@jwt_required()
 def dashboard_stats_detailed():
     """
     Obtener estadísticas detalladas del dashboard con métricas avanzadas
@@ -1738,7 +1749,7 @@ def drill_down_by_date(date_str):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/dashboard/export-pdf', methods=['GET'])
-@jwt_required_custom
+@jwt_required()
 def export_dashboard_pdf():
     """
     Exportar estadísticas del dashboard a PDF (v2.2.0)
@@ -1942,6 +1953,78 @@ def test_email_alert():
         return jsonify({'success': success})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ==================== LOGIN ENDPOINT ====================
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.json.get('email')
+        password = request.json.get('password')
+        
+        if email == 'admin@lexdocs.com' and password == 'admin123':
+            access_token = create_access_token(identity=email)
+            response = make_response({'success': True, 'token': access_token})
+            response.set_cookie('access_token_cookie', access_token, max_age=3600)
+            return response, 200
+        else:
+            return {'error': 'Credenciales inválidas'}, 401
+    
+    # GET - Mostrar formulario login
+    return '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>LexDocsPro LITE - Login</title>
+        <style>
+            body { font-family: Arial; background: #007bff; display: flex; 
+                   justify-content: center; align-items: center; height: 100vh; margin: 0; }
+            .login-box { background: white; padding: 40px; border-radius: 8px; 
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 300px; }
+            h1 { color: #007bff; text-align: center; margin-top: 0; }
+            input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; 
+                   border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+            button { width: 100%; padding: 12px; margin-top: 20px; background: #007bff; 
+                    color: white; border: none; border-radius: 4px; cursor: pointer; 
+                    font-size: 16px; font-weight: bold; }
+            button:hover { background: #0056b3; }
+            .error { color: red; text-align: center; margin-top: 10px; display: none; }
+        </style>
+    </head>
+    <body>
+        <div class="login-box">
+            <h1>🔒 LexDocsPro LITE</h1>
+            <form id="loginForm">
+                <input type="email" id="email" placeholder="Email" value="admin@lexdocs.com" required>
+                <input type="password" id="password" placeholder="Contraseña" value="admin123" required>
+                <button type="submit">Login</button>
+                <div class="error" id="error"></div>
+            </form>
+        </div>
+        
+        <script>
+            document.getElementById('loginForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                const res = await fetch('/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email, password})
+                });
+                
+                if (res.ok) {
+                    window.location.href = '/';
+                } else {
+                    document.getElementById('error').textContent = 'Credenciales inválidas';
+                    document.getElementById('error').style.display = 'block';
+                }
+            };
+        </script>
+    </body>
+    </html>
+    ''', 200
+
 
 # ============================================
 # INICIAR SERVIDOR

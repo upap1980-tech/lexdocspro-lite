@@ -32,6 +32,6 @@ pymupdf
 watchdog==4.0.0
 
 # Firma Digital (v3.1.0)
-pyhanko==0.21.3
+pyhanko
 cryptography==42.0.5
 pycryptodome==3.20.0
