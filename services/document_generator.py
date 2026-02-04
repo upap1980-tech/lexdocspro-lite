@@ -9,6 +9,8 @@ import os
 class DocumentGenerator:
     def __init__(self, ai_service):
         self.ai_service = ai_service
+        from services.skills.forensic_skill import ForensicStyleSkill
+        self.forensic_skill = ForensicStyleSkill()
     
     def get_templates(self):
         """Retorna todos los templates disponibles"""
@@ -147,7 +149,8 @@ class DocumentGenerator:
             template = templates[doc_type]
             
             # Construir prompt según el tipo
-            prompt = self._build_prompt(doc_type, template, data)
+            raw_prompt = self._build_prompt(doc_type, template, data)
+            prompt = self.forensic_skill.enhance_prompt(raw_prompt)
             
             # Generar con IA (usar método correcto)
             if hasattr(self.ai_service, 'chat'):

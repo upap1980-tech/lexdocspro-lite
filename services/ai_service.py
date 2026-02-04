@@ -58,7 +58,36 @@ class AIService:
                 'error': str(e),
                 'success': False
             }
-    
+
+            
+    def stream_chat(self, prompt: str, context: str = '', provider: str = None, mode: str = 'standard'):
+        """Generador para streaming"""
+        provider_name = provider or self.default_provider
+        
+        if provider_name not in self.providers:
+            yield f"Error: Proveedor {provider_name} no disponible"
+            return
+            
+        provider_instance = self.providers[provider_name]
+        full_prompt = self._build_prompt(prompt, context, mode)
+        
+        # Intentar usar RAG Skill si estamos en modo research
+        if mode == 'research' and hasattr(self, 'rag_skill'):
+             rag_context = self.rag_skill.retrieve_context(prompt)
+             if rag_context:
+                 full_prompt['user'] += f"\n\nCONTEXTO RAG ADICIONAL:\n{rag_context}"
+        
+        try:
+            # Check if provider supports streaming
+            if hasattr(provider_instance, 'generate_stream'):
+                for chunk in provider_instance.generate_stream(full_prompt, mode):
+                    yield chunk
+            else:
+                # Fallback to sync
+                response = provider_instance.generate(full_prompt, mode)
+                yield response
+        except Exception as e:
+            yield f"Error: {str(e)}"
     def _build_prompt(self, prompt: str, context: str, mode: str) -> Dict:
         """Construir prompt según el modo de consulta"""
         
@@ -175,6 +204,35 @@ class OllamaProvider:
             return response.status_code == 200
         except:
             return False
+
+    def generate_stream(self, prompt_dict: Dict, mode: str):
+        # Ollama Streaming
+        try:
+            response = requests.post(
+                f'{self.base_url}/api/generate',
+                json={
+                    'model': self.model,
+                    'prompt': f"{prompt_dict['system']}\n\n{prompt_dict['user']}",
+                    'stream': True,
+                    'options': {
+                        'temperature': 0.3 if mode == 'standard' else 0.5
+                    }
+                },
+                stream=True,
+                timeout=120
+            )
+            
+            for line in response.iter_lines():
+                if line:
+                    import json
+                    try:
+                        json_resp = json.loads(line)
+                        if 'response' in json_resp:
+                            yield json_resp['response']
+                    except:
+                        pass
+        except Exception as e:
+            yield f"Error streaming: {str(e)}"
 
 
 class OpenAIProvider:

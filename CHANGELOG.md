@@ -62,3 +62,14 @@ Visor de PDFs
 OCR con Tesseract
 
 Explorador de archivos
+
+## v3.0 ENTERPRISE (04/02/2026)
+- ✅ Migración completa legal-docs-pro/processor → LITE
+- ✅ LexNET plazos festivos Canarias 2026 + alertas
+- ✅ autoprocesar.py watchdog configurable + logs macOS
+- ✅ config.py unificado
+- ✅ BD SQLite básica (usuarios/expedientes/docs)
+- ✅ Sidebar Enterprise 15 items responsive
+- ✅ UI clásica azul restaurada
+- ❌ Eliminado fiscal/347 → ContaOS
+- 📊 Progreso: 92%

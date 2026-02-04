@@ -1,0 +1,49 @@
+        <!-- TAB 3: ANALIZADOR LEXNET (FLEXIBLE) -->
+        <div id="tab-lexnet" class="tab-content">
+            <div class="lexnet-analyzer">
+                <div class="lexnet-upload">
+                    <h2>📤 Subir Documentos</h2>
+                    <p class="lexnet-instructions">
+                        Sube uno o más archivos PDF/imágenes. Mínimo 1 archivo requerido.
+                    </p>
+                    
+                    <!-- Uploader múltiple simplificado -->
+                    <div class="upload-zone-simple" onclick="document.getElementById('filesMultiple').click()">
+                        <div class="upload-icon-big">📎</div>
+                        <p class="upload-prompt">
+                            <strong>Haz clic para seleccionar archivos</strong>
+                        </p>
+                        <p class="upload-hint">
+                            PDF, JPG, PNG, DOCX... | Uno o varios archivos
+                        </p>
+                        <input type="file" id="filesMultiple" multiple accept="*/*" onchange="handleMultipleFilesLexNet()" style="display: none;">
+                    </div>
+                    
+                    <!-- Lista de archivos -->
+                    <div class="files-list-simple" id="filesListLexNet"></div>
+                    
+                    <div class="lexnet-controls">
+                        <select id="lexnetProvider" class="select-provider">
+                            <option value="ollama">🏠 Ollama (Local)</option>
+                        </select>
+                        
+                        <button onclick="analyzeLexNetMultiple()" class="btn-analyze" id="btnAnalyzeLexNet" disabled>
+                            🔍 Analizar Notificación
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="lexnet-result" id="lexnetResult">
+                    <h2>📊 Análisis LexNET</h2>
+                    <div id="lexnetContent" class="lexnet-content">
+                        <p class="placeholder">Sube al menos 1 documento y presiona "Analizar Notificación"</p>
+                    </div>
+                    
+                    <div class="lexnet-actions hidden" id="lexnetActions">
+                        <button onclick="copyLexNetAnalysis()" class="btn-copy">📋 Copiar</button>
+                        <button onclick="downloadLexNetAnalysis()" class="btn-download">💾 Descargar TXT</button>
+                        <button onclick="resetLexNetMultiple()" class="btn-reset">🔄 Nuevo Análisis</button>
+                    </div>
+                </div>
+            </div>
+        </div>

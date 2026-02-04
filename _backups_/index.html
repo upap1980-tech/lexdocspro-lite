@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LexDocsPro LITE v2.0</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 LexDocsPro LITE <span class="version">v2.0</span></h1>
+            <p>Gestor de Documentos Legales con IA Multi-Proveedor</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('consulta')">💬 Consultas</button>
+            <button class="tab-btn" onclick="switchTab('documentos')">📝 Generar Documentos</button>
+            <button class="tab-btn" onclick="switchTab('lexnet')">⚖️ Analizador LexNET</button>
+            <button class="tab-btn" onclick="switchTab('autoprocesador')">🤖 Auto-Procesador</button>
+        </div>
+
+        <!-- TAB 1: CONSULTAS -->
+        <div id="tab-consulta" class="tab-content active">
+            <div class="main-layout">
+                <div class="panel explorer">
+                    <h2>📁 Expedientes</h2>
+                    <div id="currentPath" class="path"></div>
+                    <div id="fileTree" class="file-tree"></div>
+                    <button onclick="refreshFiles()" class="btn-refresh">🔄 Refrescar</button>
+                </div>
+                <div class="panel viewer">
+                    <h2>📄 Documento</h2>
+                    <div id="pdfViewer" class="pdf-container">
+                        <p class="placeholder">Selecciona un PDF para visualizar</p>
+                    </div>
+                    <button id="btnOCR" onclick="runOCR()" class="btn-ocr" disabled>🔍 Ejecutar OCR</button>
+                </div>
+                <div class="panel chat">
+                    <h2>💬 Asistente IA</h2>
+                    <div class="ai-controls">
+                        <select id="aiProvider" class="select-provider"><option value="">Cargando...</option></select>
+                        <select id="aiMode" class="select-mode">
+                            <option value="standard">⚡ Consulta Rápida</option>
+                            <option value="deep">🔍 Análisis Profundo</option>
+                            <option value="research">📚 Investigación</option>
+                        </select>
+                    </div>
+    <!-- CONSULTAS RÁPIDAS PREDEFINIDAS -->
+    <div class="consultas-rapidas" style="margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+        <h3 style="font-size: 14px; margin-bottom: 8px; color: #555;">⚡ Consultas Rápidas:</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <button onclick="cargarConsulta('Explica los elementos del delito de estafa según el Código Penal español')" class="btn-consulta-rapida" title="Análisis completo del delito de estafa">📋 Elementos delito estafa</button>
+            <button onclick="cargarConsulta('¿Cuáles son los plazos para recurrir una sentencia civil en España?')" class="btn-consulta-rapida" title="Plazos de recurso civil">⏰ Plazos procesales</button>
+            <button onclick="cargarConsulta('¿Qué requisitos formales debe cumplir una demanda civil según la LEC?')" class="btn-consulta-rapida" title="Requisitos formales de demanda">📄 Requisitos demanda</button>
+            <button onclick="cargarConsulta('Analiza este auto judicial y extrae: tipo, fecha, tribunal, partes y decisión')" class="btn-consulta-rapida" title="Análisis automático de auto LexNET">🔍 Análisis Auto LexNET</button>
+        </div>
+    </div>
+                    <div id="chatMessages" class="chat-messages"></div>
+                    <div class="chat-input">
+                        <textarea id="chatPrompt" placeholder="Escribe tu consulta legal..." rows="3"></textarea>
+                        <button onclick="sendMessage()" class="btn-send">Enviar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: GENERADOR DE DOCUMENTOS -->
+        <div id="tab-documentos" class="tab-content">
+            <div class="doc-generator">
+                <div class="doc-sidebar">
+                    <h2>📋 Tipo de Documento</h2>
+                    <div id="docTypes" class="doc-types"></div>
+                </div>
+                <div class="doc-form">
+                    <h2 id="docFormTitle">Selecciona un tipo de documento</h2>
+                    <p id="docFormDesc" class="doc-description"></p>
+                    <form id="documentForm" class="hidden">
+                        <div id="formFields"></div>
+                        <div class="form-actions">
+                            <select id="docProvider" class="select-provider"><option value="ollama">Ollama</option></select>
+                            <button type="button" onclick="generateDocument()" class="btn-generate">✨ Generar Documento</button>
+                        </div>
+                    </form>
+                    <div id="generatedDoc" class="generated-doc hidden">
+                        <h3>📄 Documento Generado</h3>
+                        <div class="doc-actions">
+                            <button onclick="copyDocument()" class="btn-copy">📋 Copiar</button>
+                            <button onclick="downloadDocument()" class="btn-download">💾 Descargar</button>
+                            <button onclick="resetGenerator()" class="btn-reset">🔄 Nuevo</button>
+                        </div>
+                        <pre id="docContent" class="doc-content"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: ANALIZADOR LEXNET -->
+        <div id="tab-lexnet" class="tab-content">
+            <div class="lexnet-analyzer">
+                <div class="lexnet-upload">
+                    <h2>📤 Subir Documentos</h2>
+                    <p class="lexnet-instructions">
+                        Sube uno o más archivos PDF/imágenes. Mínimo 1 archivo requerido.
+                    </p>
+                    
+                    <div class="upload-zone-simple" onclick="document.getElementById('filesMultiple').click()">
+                        <div class="upload-icon-big">📎</div>
+                        <p class="upload-prompt"><strong>Haz clic para seleccionar archivos</strong></p>
+                        <p class="upload-hint">PDF, JPG, PNG, DOCX... | Uno o varios archivos</p>
+                        <input type="file" id="filesMultiple" multiple accept="*/*" onchange="handleMultipleFilesLexNet()" style="display: none;">
+                    </div>
+                    
+                    <div class="files-list-simple" id="filesListLexNet"></div>
+                    
+                    <div class="lexnet-controls">
+                        <select id="lexnetProvider" class="select-provider"><option value="ollama">🏠 Ollama</option></select>
+                        <button onclick="analyzeLexNetMultiple()" class="btn-analyze" id="btnAnalyzeLexNet" disabled>
+                            🔍 Analizar Notificación
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="lexnet-result">
+                    <h2>📊 Análisis LexNET</h2>
+                    <div id="lexnetContent" class="lexnet-content">
+                        <p class="placeholder">Sube al menos 1 documento y presiona "Analizar Notificación"</p>
+                    </div>
+                    <div class="lexnet-actions hidden" id="lexnetActions">
+                        <button onclick="copyLexNetAnalysis()" class="btn-copy">📋 Copiar</button>
+                        <button onclick="downloadLexNetAnalysis()" class="btn-download">💾 Descargar TXT</button>
+                        <button onclick="resetLexNetMultiple()" class="btn-reset">🔄 Nuevo</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- TAB 4: AUTO-PROCESADOR -->
+        <div id="tab-autoprocesador" class="tab-content">
+            <div class="autoprocesador-layout">
+                <!-- Panel Izquierdo -->
+                <div class="panel autoprocesador-stats">
+                    <h2>📊 Dashboard Auto-Procesador</h2>
+                    <div class="stats-cards">
+                        <div class="stat-card stat-total">
+                            <div class="stat-icon">📁</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="stat-total">0</div>
+                                <div class="stat-label">Total Hoy</div>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-auto">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="stat-auto">0</div>
+                                <div class="stat-label">Automáticos</div>
+                                <div class="stat-percent" id="percent-auto">0%</div>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-revision">
+                            <div class="stat-icon">⚠️</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="stat-revision">0</div>
+                                <div class="stat-label">En Revisión</div>
+                                <div class="stat-percent" id="percent-revision">0%</div>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-error">
+                            <div class="stat-icon">❌</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="stat-error">0</div>
+                                <div class="stat-label">Errores</div>
+                                <div class="stat-percent" id="percent-error">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stats-actions">
+                        <button onclick="refreshAutoProcesadorStats()" class="btn-refresh">🔄 Actualizar</button>
+                        <button onclick="showAllProcessed()" class="btn-secondary">📋 Ver Todos</button>
+                    </div>
+                    <h3 style="margin-top: 20px;">⏳ Cola de Revisión</h3>
+                    <div id="documentsList" class="documents-list">
+                        <p class="placeholder">Cargando documentos...</p>
+                    </div>
+                </div>
+                
+                <!-- Panel Central -->
+                <div class="panel autoprocesador-viewer">
+                    <h2>👁️ Vista Previa</h2>
+                    <div id="autoProcesadorPdfViewer" class="pdf-container">
+                        <p class="placeholder">Selecciona un documento</p>
+                    </div>
+                </div>
+                
+                <!-- Panel Derecho -->
+                <div class="panel autoprocesador-actions">
+                    <h2>📝 Detalles</h2>
+                    <div id="documentDetails" class="document-details hidden">
+                        <div class="detail-group">
+                            <label>📄 Archivo:</label>
+                            <input type="text" id="detail-filename" readonly class="detail-input">
+                        </div>
+                        <div class="detail-group">
+                            <label>👤 Cliente:</label>
+                            <input type="text" id="detail-cliente" class="detail-input editable">
+                            <select id="detail-cliente-select" class="detail-select">
+                                <option value="">-- Seleccionar --</option>
+                            </select>
+                        </div>
+                        <div class="detail-group">
+                            <label>📋 Tipo:</label>
+                            <select id="detail-tipo" class="detail-select editable">
+                                <option value="Contrato">Contrato</option>
+                                <option value="Factura">Factura</option>
+                                <option value="Escritura">Escritura</option>
+                                <option value="Sentencia">Sentencia</option>
+                                <option value="Demanda">Demanda</option>
+                                <option value="Otros">Otros</option>
+                            </select>
+                        </div>
+                        <div class="detail-group">
+                            <label>📅 Fecha:</label>
+                            <input type="text" id="detail-fecha" readonly class="detail-input">
+                        </div>
+                        <div class="detail-group">
+                            <label>📁 Carpeta:</label>
+                            <input type="text" id="detail-carpeta" readonly class="detail-input">
+                        </div>
+                        <div class="detail-group">
+                            <label>🎯 Confianza:</label>
+                            <div class="confidence-bar">
+                                <div id="detail-confianza-bar" class="confidence-fill"></div>
+                                <span id="detail-confianza-text" class="confidence-text">0%</span>
+                            </div>
+                        </div>
+                        <div class="alert-info">
+                            <strong>💡 Nota:</strong> Modifica antes de aprobar
+                        </div>
+                        <div class="action-buttons">
+                            <button onclick="aprobarDocumento()" class="btn-approve">✅ Aprobar</button>
+                            <button onclick="rechazarDocumento()" class="btn-reject">❌ Rechazar</button>
+                        </div>
+                    </div>
+                    <div id="noDocumentSelected" class="no-selection">
+                        <div class="no-selection-icon">📄</div>
+                        <p>Selecciona un documento</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer><span id="status">Listo</span></footer>
+    </div>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
