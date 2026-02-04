@@ -1838,3 +1838,561 @@ function loadTab(tab) {
         });
     }
 }
+
+function initTrendChart(labels, values) {
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Documentos Procesados',
+                data: values,
+                borderColor: '#007BFF',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                fill: True,
+                tension: 0.4
+            }]
+        },
+        options: { responsive: True, plugins: { legend: { display: False } } }
+    });
+}
+
+// Cargar datos detallados al entrar al dashboard
+async function refreshDashboard() {
+    const r = await fetch('/api/dashboard/stats-detailed');
+    const data = await r.json();
+    if(data.success) {
+        document.getElementById('kpi-today').innerText = data.kpis.today;
+        document.getElementById('kpi-week').innerText = data.kpis.week;
+        document.getElementById('kpi-month').innerText = data.kpis.month;
+        
+        initTrendChart(data.trends.labels, data.trends.values);
+        
+        const list = document.getElementById('recent-list');
+        list.innerHTML = data.recent_docs.map(doc => `
+            <div style='padding:10px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;'>
+                <span>📄 ${doc.name}</span>
+                <small style='color:#888;'>${doc.time}</small>
+            </div>
+        `).join('');
+    }
+}
+window.onload = refreshDashboard;
+
+async function refreshLogs() {
+    const section = document.getElementById('autoprocesos');
+    if (!section || !section.classList.contains('active')) return;
+
+    try {
+        const r = await fetch('/api/autoprocesos/logs');
+        const data = await r.json();
+        const consoleDiv = document.getElementById('log-console');
+        if (data.logs) {
+            consoleDiv.innerHTML = data.logs.map(line => 
+                `<div><span style='color:#569cd6;'>[${new Date().toLocaleTimeString()}]</span> ${line}</div>`
+            ).join('');
+            consoleDiv.scrollTop = consoleDiv.scrollHeight; // Auto-scroll al final
+        }
+    } catch(e) { console.error("Error cargando logs"); }
+}
+
+async function controlWatchdog(action) {
+    const r = await fetch('/api/autoprocesos/toggle', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action: action})
+    });
+    const data = await r.json();
+    const label = document.getElementById('watchdog-status-label');
+    if (data.status === 'running') {
+        label.innerText = '● ACTIVO';
+        label.style.color = 'green';
+    } else {
+        label.innerText = '● PAUSADO';
+        label.style.color = '#ff4757';
+    }
+}
+
+// Iniciar polling de logs
+setInterval(refreshLogs, 5000);
+
+async function enviarConsultaIA() {
+    const input = document.getElementById('ia-prompt-input');
+    const chatWindow = document.getElementById('ia-chat-window');
+    const provider = document.getElementById('ia-provider-select').value;
+    const prompt = input.value;
+
+    if(!prompt) return;
+
+    // Añadir mensaje del usuario
+    chatWindow.innerHTML += `<div style='margin-bottom:15px; text-align:right;'><span style='background:#e3f2fd; padding:8px 12px; border-radius:15px; display:inline-block;'>${prompt}</span></div>`;
+    input.value = '';
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+
+    try {
+        const r = await fetch('/api/ia/consultar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({prompt: prompt, provider: provider})
+        });
+        const data = await r.json();
+        
+        // Añadir respuesta de la IA
+        chatWindow.innerHTML += `<div style='margin-bottom:15px;'><span style='background:#f1f1f1; padding:10px 15px; border-radius:15px; display:inline-block; border-left:4px solid var(--primary-blue);'><strong>${data.provider.toUpperCase()}:</strong><br>${data.respuesta}</span></div>`;
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    } catch(e) {
+        chatWindow.innerHTML += `<div style='color:red;'>Error al conectar con el motor de IA</div>`;
+    }
+}
+
+// Permitir enviar con Enter
+document.getElementById('ia-prompt-input')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') enviarConsultaIA();
+});
+
+async function loadPdfPreview() {
+    const section = document.getElementById('pdf-preview');
+    if (!section || !section.classList.contains('active')) return;
+
+    try {
+        const r = await fetch('/api/pdf/preview-data');
+        const data = await r.json();
+        
+        if (data.success) {
+            document.getElementById('pdf-current-name').innerText = data.filename;
+            const container = document.getElementById('thumbs-container');
+            
+            container.innerHTML = data.thumbnails.map(thumb => `
+                <div onclick='changePdfPage(${thumb.page})' style='cursor:pointer; margin-bottom:15px; text-align:center;'>
+                    <img src='${thumb.url}' style='width:120px; border: 1px solid #ddd; border-radius:4px; transition:0.2s;' onmouseover='this.style.borderColor=\"#007BFF\"' onmouseout='this.style.borderColor=\"#ddd\"'>
+                    <div style='font-size:0.75rem; color:#666; margin-top:4px;'>Pág. ${thumb.page}</div>
+                </div>
+            `).join('');
+            
+            // Cargar página 1 por defecto
+            changePdfPage(1);
+        }
+    } catch(e) { console.error("Error cargando PDF Preview"); }
+}
+
+function changePdfPage(page) {
+    const view = document.getElementById('active-page-view');
+    view.innerHTML = `Página ${page} del Expediente`;
+    view.style.color = "#333";
+    console.log(`Cambiando a página ${page}`);
+}
+
+// Escuchar cambios de pestaña para cargar el PDF
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        if(item.innerText.includes('PDF Preview')) setTimeout(loadPdfPreview, 100);
+    });
+});
+
+async function saveAlertEmail() {
+    const email = document.getElementById('alert-email-input').value;
+    if(!email) return alert("Introduce un email válido");
+
+    try {
+        const r = await fetch('/api/alerts/config', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email: email})
+        });
+        const data = await r.json();
+        if(data.success) alert(data.message);
+    } catch(e) { console.error("Error al guardar email"); }
+}
+
+async function loadAlertHistory() {
+    const section = document.getElementById('email-alerts');
+    if (!section || !section.classList.contains('active')) return;
+
+    try {
+        const r = await fetch('/api/alerts/history');
+        const data = await r.json();
+        const table = document.getElementById('alerts-history-table');
+        
+        table.innerHTML = data.history.map(item => `
+            <tr style='border-bottom: 1px solid #eee;'>
+                <td style='padding: 12px;'><span style='background: ${item.tipo === "CRÍTICA" ? "#f8d7da" : "#e2e3e5"}; color: ${item.tipo === "CRÍTICA" ? "#721c24" : "#383d41"}; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;'>${item.tipo}</span></td>
+                <td style='padding: 12px;'>${item.asunto}</td>
+                <td style='padding: 12px; color: #666; font-size: 0.85rem;'>${item.fecha}</td>
+                <td style='padding: 12px; text-align: center; color: green;'>✅ ${item.estado}</td>
+            </tr>
+        `).join('');
+    } catch(e) { console.error("Error al cargar historial"); }
+}
+
+// Cargar historial al entrar a la pestaña
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        if(item.innerText.includes('Email Alerts')) setTimeout(loadAlertHistory, 150);
+    });
+});
+
+async function loadFirmaStatus() {
+    const section = document.getElementById('firma-digital');
+    if (!section || !section.classList.contains('active')) return;
+
+    try {
+        const r = await fetch('/api/firma/status');
+        const data = await r.json();
+        if(data.success) {
+            document.getElementById('cert-name').innerText = `✅ ${data.ultimo_certificado} (Expira: ${data.expira})`;
+        }
+    } catch(e) { console.error("Error al cargar status de firma"); }
+}
+
+async function firmarDocumentoTest() {
+    const btn = event.target;
+    btn.innerText = "Firmando...";
+    btn.disabled = true;
+
+    try {
+        const r = await fetch('/api/firma/ejecutar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({doc_id: "test-doc-123"})
+        });
+        const data = await r.json();
+        
+        if(data.success) {
+            const resultDiv = document.getElementById('firma-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `<strong>${data.message}</strong><br><small>Hash: ${data.hash}</small><br><small>Timestamp: ${data.timestamp}</small>`;
+            btn.innerText = "FIRMAr OTRO";
+            btn.disabled = false;
+        }
+    } catch(e) { alert("Error en el proceso de firma"); }
+}
+
+// Cargar status al entrar a la pestaña
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        if(item.innerText.includes('Firma Digital')) setTimeout(loadFirmaStatus, 150);
+    });
+});
+
+async function loadBankingData() {
+    const section = document.getElementById('banking');
+    if (!section || !section.classList.contains('active')) return;
+
+    try {
+        const r1 = await fetch('/api/banking/institutions');
+        const d1 = await r1.json();
+        const grid = document.getElementById('banking-grid');
+        grid.innerHTML = d1.banks.map(bank => `
+            <div style='background: white; border: 1px solid #eee; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02);'>
+                <div style='font-weight: bold; margin-bottom: 5px;'>${bank.name}</div>
+                <div style='font-size: 0.8rem; color: ${bank.status === "Sincronizado" ? "green" : "#888"};'>● ${bank.status}</div>
+                <div style='font-size: 1.1rem; font-weight: bold; margin-top: 10px;'>${bank.balance}</div>
+            </div>
+        `).join('');
+
+        const r2 = await fetch('/api/banking/transactions');
+        const d2 = await r2.json();
+        const table = document.getElementById('banking-transactions-table');
+        table.innerHTML = d2.transactions.map(t => `
+            <tr style='border-bottom: 1px solid #eee;'>
+                <td style='padding: 12px; font-size: 0.9rem;'>${t.date}</td>
+                <td style='padding: 12px; font-size: 0.8rem; color: #666;'>${t.bank}</td>
+                <td style='padding: 12px;'>${t.concept}</td>
+                <td style='padding: 12px; text-align: right; font-weight: bold; color: ${t.amount > 0 ? "green" : "red"};'>${t.amount.toFixed(2)}€</td>
+            </tr>
+        `).join('');
+    } catch(e) { console.error("Error al cargar datos bancarios"); }
+}
+
+// Cargar banking al entrar a la pestaña
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        if(item.innerText.includes('Banking')) setTimeout(loadBankingData, 150);
+    });
+});
+
+async function loadEquipoDespacho() {
+    const section = document.getElementById('usuarios');
+    if (!section || !section.classList.contains('active')) return;
+
+    try {
+        const r = await fetch('/api/usuarios/equipo');
+        const data = await r.json();
+        const container = document.getElementById('equipo-list');
+        
+        container.innerHTML = data.usuarios.map(user => `
+            <div style='display: flex; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee;'>
+                <div style='width: 45px; height: 45px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;'>${user.nombre.charAt(0)}</div>
+                <div style='flex-grow: 1;'>
+                    <div style='font-weight: bold;'>${user.nombre}</div>
+                    <div style='font-size: 0.8rem; color: #666;'>${user.rol}</div>
+                </div>
+                <div style='text-align: right;'>
+                    <div style='font-size: 0.8rem; color: ${user.status === "Online" ? "green" : "#888"}; font-weight: bold;'>● ${user.status}</div>
+                    <div style='font-size: 0.75rem; color: #999;'>${user.actividad}</div>
+                </div>
+                <button style='margin-left: 20px; background: none; border: none; color: #ff4757; cursor: pointer;'>✕</button>
+            </div>
+        `).join('');
+    } catch(e) { console.error("Error al cargar equipo"); }
+}
+
+function invitarUsuario() {
+    const nombre = prompt("Nombre del nuevo miembro:");
+    if(nombre) {
+        fetch('/api/usuarios/registrar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({nombre: nombre})
+        }).then(r => r.json()).then(data => alert(data.message));
+    }
+}
+
+// Cargar equipo al entrar a la pestaña
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        if(item.innerText.includes('Usuarios')) setTimeout(loadEquipoDespacho, 150);
+    });
+});
+
+// Registro del Service Worker para PWA
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+    .then(reg => console.log('Service Worker Registrado ✅'))
+    .catch(err => console.log('Error en SW ❌', err));
+}
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const installBtn = document.getElementById('pwa-install-btn');
+    if (installBtn) installBtn.style.display = 'inline-flex';
+});
+
+async function installPWAApp() {
+    if (!deferredPrompt) {
+        alert("Para instalar en iOS: Pulsa 'Compartir' y luego 'Añadir a pantalla de inicio' 📲");
+        return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+        console.log('Usuario instaló la App');
+    }
+    deferredPrompt = null;
+}
+
+document.getElementById('pwa-install-btn')?.addEventListener('click', installPWAApp);
+
+async function ejecutarAgente() {
+    const task = document.getElementById('agent-task-input').value;
+    if(!task) return;
+
+    const thoughtDiv = document.getElementById('agent-thought-process');
+    const stepsLog = document.getElementById('agent-steps-log');
+    const finalResult = document.getElementById('agent-final-result');
+
+    thoughtDiv.style.display = 'block';
+    finalResult.style.display = 'none';
+    stepsLog.innerHTML = "> Iniciando Agente Autónomo...<br>";
+
+    try {
+        const r = await fetch('/api/ia/agent-task', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({task: task})
+        });
+        const data = await r.json();
+
+        // Mostrar pasos con delay para simular pensamiento
+        for (const step of data.steps) {
+            await new Promise(resolve => setTimeout(resolve, 800));
+            stepsLog.innerHTML += `> ${step}<br>`;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+        finalResult.innerText = data.result;
+        finalResult.style.display = 'block';
+    } catch(e) {
+        stepsLog.innerHTML += "<span style='color:red;'>! Error en la conexión con el motor cognitivo.</span>";
+    }
+}
+
+async function loadAnalyticsData() {
+    const section = document.getElementById('analytics');
+    if (!section || !section.classList.contains('active')) return;
+
+    try {
+        const r = await fetch('/api/analytics/detailed');
+        const data = await r.json();
+        
+        if(data.success) {
+            document.getElementById('ana-winrate').innerText = data.performance.win_rate + '%';
+            document.getElementById('ana-hours').innerText = data.performance.ahorro_horas_mes + 'h';
+
+            // Gráfica de Tarta (Distribución)
+            new Chart(document.getElementById('anaPieChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: data.expedientes_por_tipo.labels,
+                    datasets: [{
+                        data: data.expedientes_por_tipo.values,
+                        backgroundColor: ['#007BFF', '#6610f2', '#6f42c1', '#e83e8c']
+                    }]
+                },
+                options: { plugins: { legend: { position: 'bottom' } } }
+            });
+
+            // Gráfica de Barras (ROI)
+            new Chart(document.getElementById('anaBarChart'), {
+                type: 'bar',
+                data: {
+                    labels: data.roi_data.labels,
+                    datasets: [{
+                        label: 'Euros Ahorrados',
+                        data: data.roi_data.ahorro_euro,
+                        backgroundColor: '#28a745'
+                    }]
+                }
+            });
+        }
+    } catch(e) { console.error("Error al cargar analytics"); }
+}
+
+// Escuchar entrada a la sección
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        if(item.innerText.includes('Analytics')) setTimeout(loadAnalyticsData, 150);
+    });
+});
+
+async function loadExpedientes() {
+    const section = document.getElementById('expedientes');
+    if (!section || !section.classList.contains('active')) return;
+
+    try {
+        const r = await fetch('/api/expedientes/listar');
+        const data = await r.json();
+        if(data.success) {
+            document.getElementById('current-path-display').innerText = data.current_path;
+            const tableBody = document.getElementById('expedientes-table-body');
+            
+            tableBody.innerHTML = data.files.map(file => `
+                <tr style='border-bottom: 1px solid #eee;' onmouseover='this.style.background=\"#fcfcfc\"' onmouseout='this.style.background=\"transparent\"'>
+                    <td style='padding:12px; text-align:center;'>${file.is_dir ? '📂' : '📄'}</td>
+                    <td style='padding:12px; font-weight:${file.is_dir ? '600' : '400'}; color:${file.is_dir ? 'var(--dark-blue)' : '#333'};'>${file.name}</td>
+                    <td style='padding:12px; color:#888; font-size:0.85rem;'>${file.size}</td>
+                    <td style='padding:12px; color:#888; font-size:0.85rem;'>${file.mtime}</td>
+                    <td style='padding:12px; text-align:center;'>
+                        <button onclick='alert(\"Abriendo ${file.name}...\")' style='padding:4px 8px; background:none; border:1px solid #ddd; border-radius:4px; cursor:pointer;'>👁️</button>
+                        <button style='padding:4px 8px; background:none; border:1px solid #ddd; border-radius:4px; cursor:pointer;'>⬇️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    } catch(e) { console.error("Error al listar expedientes"); }
+}
+
+// Escuchar entrada a la sección
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        if(item.innerText.includes('Expedientes')) setTimeout(loadExpedientes, 150);
+    });
+});
+
+async function simularAnalisisLexnet() {
+    const btn = event.target;
+    btn.innerText = "Calculando plazos...";
+    btn.disabled = true;
+
+    try {
+        const r = await fetch('/api/lexnet/analizar-plazo', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({dias: 20}) // Simula un plazo de 20 días (ej: Ordinario)
+        });
+        const data = await r.json();
+
+        if(data.success) {
+            document.getElementById('lexnet-results-panel').style.display = 'block';
+            document.getElementById('lex-fecha-not').innerText = data.fecha_notificacion;
+            document.getElementById('lex-dias').innerText = data.dias_habiles;
+            document.getElementById('lex-fecha-venc').innerText = data.fecha_limite;
+            
+            btn.innerText = "ANÁLISIS COMPLETADO";
+            btn.style.background = "green";
+        }
+    } catch(e) { alert("Error al procesar la notificación"); }
+}
+
+async function loadConfig() {
+    const section = document.getElementById('config');
+    if (!section || !section.classList.contains('active')) return;
+
+    try {
+        const r = await fetch('/api/config/get');
+        const data = await r.json();
+        if(data.success) {
+            document.getElementById('conf-ollama').value = data.config.ollama_model;
+            document.getElementById('conf-pending').value = data.config.pendientes_dir;
+            document.getElementById('conf-fallback').checked = data.config.ia_fallback;
+        }
+    } catch(e) { console.error("Error al cargar configuración"); }
+}
+
+async function saveConfig() {
+    const btn = event.target;
+    btn.innerText = "Guardando...";
+    
+    const payload = {
+        ollama_model: document.getElementById('conf-ollama').value,
+        ia_fallback: document.getElementById('conf-fallback').checked
+    };
+
+    try {
+        const r = await fetch('/api/config/save', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const data = await r.json();
+        if(data.success) {
+            alert(data.message);
+            btn.innerText = "GUARDAR CAMBIOS";
+        }
+    } catch(e) { alert("Error al guardar"); }
+}
+
+// Cargar config al entrar a la pestaña
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        if(item.innerText.includes('Configuración')) setTimeout(loadConfig, 150);
+    });
+});
+
+async function loadDeployStatus() {
+    const section = document.getElementById('deploy');
+    if (!section || !section.classList.contains('active')) return;
+
+    try {
+        const r = await fetch('/api/deploy/status');
+        const data = await r.json();
+        if(data.success) {
+            document.getElementById('svc-db').innerText = data.services.database;
+            document.getElementById('svc-ia').innerText = data.services.ollama;
+            document.getElementById('svc-storage').innerText = data.services.storage;
+            document.getElementById('svc-pwa').innerText = data.services.pwa;
+            document.getElementById('svc-uptime').innerText = data.uptime;
+            document.getElementById('svc-last').innerText = data.last_deploy;
+        }
+    } catch(e) { console.error("Error al cargar status de deploy"); }
+}
+
+// Escuchar entrada a la sección
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        if(item.innerText.includes('Deploy Status')) setTimeout(loadDeployStatus, 150);
+    });
+});

@@ -70,31 +70,72 @@
     </section>
 
     <!-- LEXNET (IMPLEMENTADO) -->
-    <section id="lexnet" class="section">
-        <h1>Analizador LexNET Pro</h1>
-        <div class="card">
-            <p>Estado del Calendario Judicial 2026: <strong>Activo</strong></p>
-            <div style="padding: 40px; border: 2px dashed #007BFF; text-align: center; border-radius: 15px;">
-                <input type="file" id="lexfile" style="display:none">
-                <button onclick="document.getElementById('lexfile').click()" style="padding: 15px 30px; background: var(--primary); color:white; border:none; border-radius:8px; cursor:pointer;">Seleccionar Notificación</button>
-                <p>O arrastra el archivo aquí para calcular plazos.</p>
+    
+    <section id='lexnet' class='section'>
+        <h1 style='color:var(--dark-blue);'>⚖️ Analizador LexNET (Control de Plazos)</h1>
+        <div class='card'>
+            <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 25px;'>
+                <-la Analizador -->
+                <div style='border-right: 1px solid #eee; padding-right: 25px;'>
+                    <h3>Nueva Notificación</h3>
+                    <div style='border: 2px dashed #ff4757; padding: 20px; border-radius: 10px; text-align: center; background: #fff5f5;'>
+                        <p>Sube la notificación PDF de LexNET para calcular el plazo legal.</p>
+                        <button onclick='simularAnalisisLexnet()' style='padding: 10px 20px; background: #ff4757; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;'>ANALIZAR PLAZO</button>
+                    </div>
+                    <div style='margin-top: 15px;'>
+                        <small>Calendario activo: <strong>Canarias 2026</strong> (ICALPA/ICATF)</small>
+                    </div>
+                </div>
+
+                <-la Resultado -->
+                <div id='lexnet-results-panel' style='display: none;'>
+                    <h3 id='lexnet-urgencia-label' style='color: #ff4757;'>⚠️ PLAZO URGENTE DETECTADO</h3>
+                    <div class='kpi-card' style='text-align: left; padding: 15px; background: #fafafa;'>
+                        <div style='margin-bottom: 10px;'>📅 <strong>Notificado:</strong> <span id='lex-fecha-not'>--</span></div>
+                        <div style='margin-bottom: 10px;'>⏳ <strong>Días Hábiles:</strong> <span id='lex-dias'>--</span></div>
+                        <div style='font-size: 1.2rem; border-top: 1px solid #ddd; padding-top: 10px;'>
+                            🚩 <strong>VENCIMIENTO:</strong> <span id='lex-fecha-venc' style='color: red; font-weight: bold;'>--</span>
+                        </div>
+                    </div>
+                    <button style='width: 100%; margin-top: 15px; padding: 10px; background: var(--dark-blue); color: white; border: none; border-radius: 6px;'>Añadir al Calendario</button>
+                </div>
             </div>
         </div>
     </section>
 
+
     <!-- EXPEDIENTES (IMPLEMENTADO) -->
-    <section id="expedientes" class="section">
-        <h1>Gestión de Expedientes</h1>
-        <div class="card">
-            <div style="background:#f9f9f9; padding:20px; border-radius:10px;">
-                <strong>Ruta:</strong> ~/Desktop/EXPEDIENTES_LEXDOCS <br><br>
-                <ul id="file-list">
-                    <li>📄 Demanda_Ejecutiva_001.pdf</li>
-                    <li>📄 Sentencia_Final_V1.pdf</li>
-                </ul>
+    
+    <section id='expedientes' class='section'>
+        <div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;'>
+            <h1 style='color:var(--dark-blue); margin:0;'>📁 Gestor de Expedientes</h1>
+            <div style='display:flex; gap:10px;'>
+                <button onclick='loadExpedientes()' style='padding:8px 15px; background:#f8f9fa; border:1px solid #ddd; border-radius:5px; cursor:pointer;'>🔄 Refrescar</button>
+                <button style='padding:8px 15px; background:var(--primary-blue); color:white; border:none; border-radius:5px; cursor:pointer;'>+ Nuevo Expediente</button>
             </div>
         </div>
+        
+        <div class='card' style='padding:0; overflow:hidden;'>
+            <div style='background:#f1f3f5; padding:10px 20px; border-bottom:1px solid #eee; font-size:0.85rem; color:#666;'>
+                Ruta actual: <span id='current-path-display'>/EXPEDIENTES_LEXDOCS</span>
+            </div>
+            <table style='width: 100%; border-collapse: collapse; background: white;'>
+                <thead>
+                    <tr style='background: #f8f9fa; border-bottom: 2px solid #eee;'>
+                        <th style='padding:12px; text-align: left; width:40px;'></th>
+                        <th style='padding:12px; text-align: left;'>Nombre del Archivo / Carpeta</th>
+                        <th style='padding:12px; text-align: left;'>Tamaño</th>
+                        <th style='padding:12px; text-align: left;'>Última Modificación</th>
+                        <th style='padding:12px; text-align: center;'>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id='expedientes-table-body'>
+                    <-la Contenido Dinámico -->
+                </tbody>
+            </table>
+        </div>
     </section>
+
 
     <!-- PENDIENTES (FALLBACK AUTOMÁTICO) -->
     
@@ -264,14 +305,29 @@
 </script>
 </body>
 </html>
-<section id="ia-agent" class="section">
-    <h1>🧠 IA Agent Autónomo</h1>
-    <div class="card">
-        <p>Instrucciones para el Agente:</p>
-        <input type="text" placeholder="Ej: 'Revisa el expediente 402 y redacta la contestación'" style="width:80%; padding:10px; border-radius:5px; border:1px solid #ddd;">
-        <button style="padding:10px; background:var(--dark); color:white; border:none; border-radius:5px;">Ejecutar Tarea</button>
-        <div style="margin-top:20px; background:#f4f4f4; padding:15px; border-radius:10px; font-family:monospace; font-size:0.8rem;">
-            > Agent Status: Esperando instrucciones...
+
+    <section id='ia-agent' class='section'>
+        <h1 style='color:var(--dark-blue);'>🧠 IA Agent Autónomo (Legal Expert)</h1>
+        <div class='card'>
+            <div style='background: #eef2f7; padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
+                <strong>Misión:</strong> El agente puede realizar tareas complejas de redacción y análisis. 
+                <i>Ejemplo: "Redacta una demanda de juicio verbal por reclamación de 3000€ basándote en la factura de ayer".</i>
+            </div>
+            
+            <div style='display: flex; gap: 10px; margin-bottom: 25px;'>
+                <input type='text' id='agent-task-input' placeholder='¿Qué tarea legal debo ejecutar?' style='flex-grow: 1; padding: 15px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem;'>
+                <button onclick='ejecutarAgente()' style='padding: 10px 30px; background: var(--dark-blue); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;'>EJECUTAR</button>
+            </div>
+
+            <div id='agent-thought-process' style='display: none;'>
+                <h4>Proceso de Razonamiento:</h4>
+                <div id='agent-steps-log' style='background: #1e1e1e; color: #a9dc76; padding: 20px; border-radius: 8px; font-family: monospace; font-size: 0.9rem; line-height: 1.6;'>
+                    <-la Pasos dinámicos -->
+                </div>
+                <div id='agent-final-result' style='margin-top: 20px; padding: 15px; background: #d4edda; border-radius: 8px; color: #155724; border: 1px solid #c3e6cb; display: none;'>
+                    <-la Resultado final -->
+                </div>
+            </div>
         </div>
-    </div>
-</section>
+    </section>
+
