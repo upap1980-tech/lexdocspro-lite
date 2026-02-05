@@ -1,16 +1,22 @@
 import unittest
-import requests
+import run
 
 class TestEnterprise(unittest.TestCase):
-    BASE_URL = 'http://localhost:5001'
+    @classmethod
+    def setUpClass(cls):
+        cls.client = run.app.test_client()
 
     def test_lexnet_plazos(self):
-        r = requests.post(f'{self.BASE_URL}/api/lexnet-analyze', json={'textos': {'test': 'demanda 04/02/2026'}})
-        self.assertIn('20 días hábiles', r.json()['analisis'])
+        r = self.client.post('/api/lexnet/analizar-plazo', json={'dias': 20})
+        self.assertLess(r.status_code, 500)
+        data = r.get_json()
+        self.assertTrue(data.get('success'))
+        self.assertIn('fecha_limite', data)
 
     def test_autoprocesar_status(self):
-        r = requests.get(f'{self.BASE_URL}/api/watchdog-status')
-        self.assertIn('status', r.json())
+        r = self.client.get('/api/watchdog-status')
+        self.assertLess(r.status_code, 500)
+        self.assertIn('status', r.get_json())
 
 if __name__ == '__main__':
     unittest.main()
