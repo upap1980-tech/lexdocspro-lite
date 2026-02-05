@@ -1,0 +1,881 @@
+{
+  "summary": {
+    "P2": {
+      "OK": 26,
+      "PARCIAL": 0,
+      "SIN CORRESPONDENCIA": 0
+    },
+    "P1": {
+      "OK": 39,
+      "PARCIAL": 0,
+      "SIN CORRESPONDENCIA": 0
+    },
+    "P0": {
+      "OK": 21,
+      "PARCIAL": 0,
+      "SIN CORRESPONDENCIA": 0
+    }
+  },
+  "rows": [
+    {
+      "phase": "P0",
+      "module": "AutoProcessor v2",
+      "endpoint": "/api/autoprocessor/log",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "AutoProcessor v2",
+      "endpoint": "/api/autoprocessor/reset",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "AutoProcessor v2",
+      "endpoint": "/api/autoprocessor/scan",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "AutoProcessor v2",
+      "endpoint": "/api/autoprocessor/start",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "AutoProcessor v2",
+      "endpoint": "/api/autoprocessor/status",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "AutoProcessor v2",
+      "endpoint": "/api/autoprocessor/stop",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "Dashboard",
+      "endpoint": "/api/dashboard/drill-down/by-date/<date_str>",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "Dashboard",
+      "endpoint": "/api/dashboard/export-pdf",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "Dashboard",
+      "endpoint": "/api/dashboard/stats",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "Dashboard",
+      "endpoint": "/api/dashboard/stats-detailed",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "IA Cascade",
+      "endpoint": "/api/ia-cascade/health",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "IA Cascade",
+      "endpoint": "/api/ia-cascade/providers",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "IA Cascade",
+      "endpoint": "/api/ia-cascade/providers-public",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "IA Cascade",
+      "endpoint": "/api/ia-cascade/query",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "IA Cascade",
+      "endpoint": "/api/ia-cascade/reset-stats",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "IA Cascade",
+      "endpoint": "/api/ia-cascade/stats",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "IA Cascade",
+      "endpoint": "/api/ia-cascade/stats-public",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "IA Cascade",
+      "endpoint": "/api/ia-cascade/status",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "IA Cascade",
+      "endpoint": "/api/ia-cascade/test",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "IA Cascade",
+      "endpoint": "/api/ia-cascade/toggle-provider",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P0",
+      "module": "IA Cascade",
+      "endpoint": "/api/ia-cascade/update-key",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "AutoProcesador legacy",
+      "endpoint": "/api/autoprocesador/aprobar/<int:doc_id>",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "AutoProcesador legacy",
+      "endpoint": "/api/autoprocesador/clientes",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "AutoProcesador legacy",
+      "endpoint": "/api/autoprocesador/cola-revision",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "AutoProcesador legacy",
+      "endpoint": "/api/autoprocesador/documento/<int:doc_id>",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "AutoProcesador legacy",
+      "endpoint": "/api/autoprocesador/pdf/<int:doc_id>",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "AutoProcesador legacy",
+      "endpoint": "/api/autoprocesador/procesados-hoy",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "AutoProcesador legacy",
+      "endpoint": "/api/autoprocesador/rechazar/<int:doc_id>",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "AutoProcesador legacy",
+      "endpoint": "/api/autoprocesador/stats",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "AutoProcesador legacy",
+      "endpoint": "/api/autoprocesos/logs",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "AutoProcesador legacy",
+      "endpoint": "/api/autoprocesos/toggle",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "AutoProcesador legacy",
+      "endpoint": "/api/watchdog-status",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "Documentos",
+      "endpoint": "/api/document/confirm-save",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "Documentos",
+      "endpoint": "/api/document/path-options",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "Documentos",
+      "endpoint": "/api/document/preview",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "Documentos",
+      "endpoint": "/api/document/propose-save",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "Documentos",
+      "endpoint": "/api/document/save-organized",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "Documentos",
+      "endpoint": "/api/document/saved",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "Documentos",
+      "endpoint": "/api/document/saved/<int:doc_id>",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "Documentos",
+      "endpoint": "/api/document/smart-analyze",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "Documentos",
+      "endpoint": "/api/document/thumbnails",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "Documentos",
+      "endpoint": "/api/document/types",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "Documentos",
+      "endpoint": "/api/documents/generate",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "Documentos",
+      "endpoint": "/api/documents/templates",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "LexNET",
+      "endpoint": "/api/lexnet-urgent",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "LexNET",
+      "endpoint": "/api/lexnet/analizar-plazo",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "LexNET",
+      "endpoint": "/api/lexnet/analyze",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "LexNET",
+      "endpoint": "/api/lexnet/notifications",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "LexNET",
+      "endpoint": "/api/lexnet/notifications/<int:notification_id>/read",
+      "methods": "PATCH",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "LexNET",
+      "endpoint": "/api/lexnet/upload-notification",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "LexNET",
+      "endpoint": "/api/lexnet/urgent-count",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "OCR/PDF/Files",
+      "endpoint": "/api/files",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "OCR/PDF/Files",
+      "endpoint": "/api/ocr",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "OCR/PDF/Files",
+      "endpoint": "/api/ocr/upload",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "OCR/PDF/Files",
+      "endpoint": "/api/pdf/<path:filepath>",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "OCR/PDF/Files",
+      "endpoint": "/api/pdf/preview-data",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "iCloud",
+      "endpoint": "/api/icloud/clients",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "iCloud",
+      "endpoint": "/api/icloud/export",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "iCloud",
+      "endpoint": "/api/icloud/export-analysis",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P1",
+      "module": "iCloud",
+      "endpoint": "/api/icloud/status",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Alertas",
+      "endpoint": "/api/alerts/config",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Alertas",
+      "endpoint": "/api/alerts/history",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Alertas",
+      "endpoint": "/api/alerts/test-email",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Analytics/Expedientes",
+      "endpoint": "/api/analytics/detailed",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Analytics/Expedientes",
+      "endpoint": "/api/expedientes/listar",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Banking",
+      "endpoint": "/api/banking/institutions",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Banking",
+      "endpoint": "/api/banking/stats",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Banking",
+      "endpoint": "/api/banking/transactions",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Business skills",
+      "endpoint": "/api/business/jurisdictions",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Business skills",
+      "endpoint": "/api/business/strategy",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Business skills",
+      "endpoint": "/api/business/templates",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Config/Deploy",
+      "endpoint": "/api/config/get",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Config/Deploy",
+      "endpoint": "/api/config/save",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Config/Deploy",
+      "endpoint": "/api/deploy/status",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Firma digital",
+      "endpoint": "/api/firma/ejecutar",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Firma digital",
+      "endpoint": "/api/firma/status",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Firma digital",
+      "endpoint": "/api/signature/certificates",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Firma digital",
+      "endpoint": "/api/signature/sign",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "IA general/Chat",
+      "endpoint": "/api/agent/feedback",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "IA general/Chat",
+      "endpoint": "/api/ai/providers",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "IA general/Chat",
+      "endpoint": "/api/ai/status",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "IA general/Chat",
+      "endpoint": "/api/chat",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "IA general/Chat",
+      "endpoint": "/api/ia/agent-task",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "IA general/Chat",
+      "endpoint": "/api/ia/consultar",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Usuarios",
+      "endpoint": "/api/usuarios/equipo",
+      "methods": "GET",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    },
+    {
+      "phase": "P2",
+      "module": "Usuarios",
+      "endpoint": "/api/usuarios/registrar",
+      "methods": "POST",
+      "status": "OK",
+      "owner": "QA+Frontend",
+      "file": "templates/index.html",
+      "action": "Mantener cobertura visual activa y añadir test funcional."
+    }
+  ]
+}

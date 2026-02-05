@@ -1,0 +1,79 @@
+{
+  "ollama": {
+    "total_calls": 1,
+    "successful_calls": 0,
+    "failed_calls": 1,
+    "total_time": 0.0,
+    "avg_time": 0.0,
+    "last_call": "2026-02-05T14:17:20.325614",
+    "last_error": "No se pudo conectar con Ollama (¿está ejecutándose?)",
+    "tokens_used": 0,
+    "uptime_percentage": 0.0
+  },
+  "groq": {
+    "total_calls": 1,
+    "successful_calls": 0,
+    "failed_calls": 1,
+    "total_time": 0.0,
+    "avg_time": 0.0,
+    "last_call": "2026-02-05T14:17:20.326089",
+    "last_error": "HTTPSConnectionPool(host='api.groq.com', port=443): Max retries exceeded with url: /openai/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='api.groq.com', port=443): Failed to resolve 'api.groq.com' ([Errno 8] nodename nor servname provided, or not known)\"))",
+    "tokens_used": 0,
+    "uptime_percentage": 0.0
+  },
+  "perplexity": {
+    "total_calls": 0,
+    "successful_calls": 0,
+    "failed_calls": 0,
+    "total_time": 0.0,
+    "avg_time": 0.0,
+    "last_call": null,
+    "last_error": null,
+    "tokens_used": 0,
+    "uptime_percentage": 100.0
+  },
+  "openai": {
+    "total_calls": 0,
+    "successful_calls": 0,
+    "failed_calls": 0,
+    "total_time": 0.0,
+    "avg_time": 0.0,
+    "last_call": null,
+    "last_error": null,
+    "tokens_used": 0,
+    "uptime_percentage": 100.0
+  },
+  "gemini": {
+    "total_calls": 0,
+    "successful_calls": 0,
+    "failed_calls": 0,
+    "total_time": 0.0,
+    "avg_time": 0.0,
+    "last_call": null,
+    "last_error": null,
+    "tokens_used": 0,
+    "uptime_percentage": 100.0
+  },
+  "deepseek": {
+    "total_calls": 0,
+    "successful_calls": 0,
+    "failed_calls": 0,
+    "total_time": 0.0,
+    "avg_time": 0.0,
+    "last_call": null,
+    "last_error": null,
+    "tokens_used": 0,
+    "uptime_percentage": 100.0
+  },
+  "claude": {
+    "total_calls": 0,
+    "successful_calls": 0,
+    "failed_calls": 0,
+    "total_time": 0.0,
+    "avg_time": 0.0,
+    "last_call": null,
+    "last_error": null,
+    "tokens_used": 0,
+    "uptime_percentage": 100.0
+  }
+}

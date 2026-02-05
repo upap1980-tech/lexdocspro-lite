@@ -1,0 +1,46 @@
+name: IA Cascade Forensic
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"
+  push:
+    paths:
+      - "run.py"
+      - "services/**"
+      - "scripts/audit_enterprise_modules.py"
+      - "scripts/ia_cascade_slo_guard.py"
+      - "scripts/run_ia_cascade_forensic.sh"
+
+jobs:
+  forensic-check:
+    runs-on: ubuntu-latest
+    env:
+      MIN_SUCCESS_RATE: "60"
+      MAX_P95_MS: "130000"
+      MAX_5XX: "0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run forensic suite
+        run: |
+          bash scripts/run_ia_cascade_forensic.sh
+
+      - name: Upload forensic reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ia-cascade-forensic-reports
+          path: reports/*.json
+          if-no-files-found: warn

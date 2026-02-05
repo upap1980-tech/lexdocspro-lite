@@ -1,6 +1,7 @@
 flask==3.0.0
 flask-cors==4.0.0
 flask-sqlalchemy==3.1.1
+flask-jwt-extended==4.6.0
 PyMuPDF==1.24.7
 pytesseract==0.3.10
 pdf2image==1.17.0
@@ -8,3 +9,4 @@ Pillow==10.2.0
 requests==2.31.0
 watchdog==4.0.0
 python-dotenv==1.0.0
+holidays==0.64

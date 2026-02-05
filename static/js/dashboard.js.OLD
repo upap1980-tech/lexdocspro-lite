@@ -1,0 +1,54 @@
+/**
+ * Dashboard Stats - LexDocsPro v3.2
+ */
+
+// Función para cargar stats del dashboard
+async function loadDashboardStats() {
+    try {
+        const response = await fetch('/api/dashboard/stats', {
+            method: 'GET',
+            credentials: 'include'  // Incluir cookies JWT
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Actualizar valores en el DOM
+            document.getElementById('val-hoy').textContent = data.procesos_hoy || 0;
+            document.getElementById('val-rev').textContent = data.en_revision || 0;
+            document.getElementById('val-err').textContent = data.errores || 0;
+            document.getElementById('val-ale').textContent = data.alertas || 0;
+            
+            console.log('✅ Dashboard stats cargados:', data);
+        } else {
+            console.warn('⚠️ Dashboard stats sin success:', data);
+            setDefaultValues();
+        }
+        
+    } catch (error) {
+        console.error('❌ Error cargando dashboard stats:', error);
+        setDefaultValues();
+    }
+}
+
+// Valores por defecto si falla
+function setDefaultValues() {
+    document.getElementById('val-hoy').textContent = '0';
+    document.getElementById('val-rev').textContent = '0';
+    document.getElementById('val-err').textContent = '0';
+    document.getElementById('val-ale').textContent = '0';
+}
+
+// Cargar al iniciar página
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Iniciando carga de dashboard stats...');
+    loadDashboardStats();
+    
+    // Recargar cada 30 segundos
+    setInterval(loadDashboardStats, 30000);
+});
+

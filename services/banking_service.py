@@ -1,6 +1,12 @@
+"""
+Banking Service - Conciliación bancaria
+"""
+
 class BankingService:
-    def __init__(self, *args, **kwargs): pass
-    def __getattr__(self, name):
-        def handler(*args, **kwargs):
-            return {"success": False, "error": "Banking module not available in LITE"}
-        return handler
+    def get_stats(self):
+        """Obtener stats bancarias"""
+        return {
+            'bancos_activos': 0,
+            'pendientes_conciliar': 0
+        }
+

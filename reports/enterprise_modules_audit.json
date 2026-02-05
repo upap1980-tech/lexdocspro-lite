@@ -1,0 +1,233 @@
+{
+  "audit": "enterprise_modules",
+  "summary": {
+    "total_checks": 17,
+    "ok": 17,
+    "fail": 0,
+    "status": "PASS"
+  },
+  "by_module": {
+    "dashboard": {
+      "ok": 3,
+      "fail": 0
+    },
+    "autoprocessor": {
+      "ok": 4,
+      "fail": 0
+    },
+    "ia_cascade": {
+      "ok": 4,
+      "fail": 0
+    },
+    "ia_cascade_stress": {
+      "ok": 6,
+      "fail": 0
+    }
+  },
+  "ia_cascade_stress": {
+    "iterations": 5,
+    "failures_5xx": 0,
+    "success_count": 4,
+    "success_rate_percent": 80.0,
+    "provider_usage": {
+      "ollama": 4
+    },
+    "latency_ms": {
+      "min": 64628.26862494694,
+      "max": 120258.79729201552,
+      "avg": 99619.47264178889,
+      "p50": 108514.16737498948,
+      "p95": 120258.79729201552
+    }
+  },
+  "results": [
+    {
+      "module": "dashboard",
+      "endpoint": "/api/dashboard/stats",
+      "method": "GET",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 1.2422919971868396,
+      "detail": "success=True",
+      "app_success": true,
+      "provider_used": null
+    },
+    {
+      "module": "dashboard",
+      "endpoint": "/api/dashboard/stats-detailed",
+      "method": "GET",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 0.6454589893110096,
+      "detail": "success=True",
+      "app_success": true,
+      "provider_used": null
+    },
+    {
+      "module": "dashboard",
+      "endpoint": "/api/dashboard/drill-down/by-date/05%20Feb?limit=20",
+      "method": "GET",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 0.5660830065608025,
+      "detail": "success=True",
+      "app_success": true,
+      "provider_used": null
+    },
+    {
+      "module": "autoprocessor",
+      "endpoint": "/api/autoprocessor/status",
+      "method": "GET",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 0.1348750083707273,
+      "detail": "success=True",
+      "app_success": true,
+      "provider_used": null
+    },
+    {
+      "module": "autoprocessor",
+      "endpoint": "/api/autoprocessor/scan",
+      "method": "POST",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 1.2067080242559314,
+      "detail": "success=True",
+      "app_success": true,
+      "provider_used": null
+    },
+    {
+      "module": "autoprocessor",
+      "endpoint": "/api/autoprocessor/log?limit=20",
+      "method": "GET",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 0.38716604467481375,
+      "detail": "success=True",
+      "app_success": true,
+      "provider_used": null
+    },
+    {
+      "module": "autoprocessor",
+      "endpoint": "/api/autoprocessor/reset",
+      "method": "POST",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 0.10758399730548263,
+      "detail": "success=True",
+      "app_success": true,
+      "provider_used": null
+    },
+    {
+      "module": "ia_cascade",
+      "endpoint": "/api/ia-cascade/health",
+      "method": "GET",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 0.11362502118572593,
+      "detail": "success=True",
+      "app_success": true,
+      "provider_used": null
+    },
+    {
+      "module": "ia_cascade",
+      "endpoint": "/api/ia-cascade/stats-public",
+      "method": "GET",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 0.1289580250158906,
+      "detail": "success=True",
+      "app_success": true,
+      "provider_used": null
+    },
+    {
+      "module": "ia_cascade",
+      "endpoint": "/api/ia-cascade/providers-public",
+      "method": "GET",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 0.11787499533966184,
+      "detail": "success=True",
+      "app_success": true,
+      "provider_used": null
+    },
+    {
+      "module": "ia_cascade",
+      "endpoint": "/api/ia-cascade/stats",
+      "method": "GET",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 0.11916703078895807,
+      "detail": "success=True",
+      "app_success": true,
+      "provider_used": null
+    },
+    {
+      "module": "ia_cascade_stress",
+      "endpoint": "/api/ia-cascade/test",
+      "method": "POST",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 108514.16737498948,
+      "detail": "success=True",
+      "app_success": true,
+      "provider_used": "ollama"
+    },
+    {
+      "module": "ia_cascade_stress",
+      "endpoint": "/api/ia-cascade/test",
+      "method": "POST",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 86431.6954590031,
+      "detail": "success=True",
+      "app_success": true,
+      "provider_used": "ollama"
+    },
+    {
+      "module": "ia_cascade_stress",
+      "endpoint": "/api/ia-cascade/test",
+      "method": "POST",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 118264.43445798941,
+      "detail": "success=True",
+      "app_success": true,
+      "provider_used": "ollama"
+    },
+    {
+      "module": "ia_cascade_stress",
+      "endpoint": "/api/ia-cascade/test",
+      "method": "POST",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 64628.26862494694,
+      "detail": "success=True",
+      "app_success": true,
+      "provider_used": "ollama"
+    },
+    {
+      "module": "ia_cascade_stress",
+      "endpoint": "/api/ia-cascade/test",
+      "method": "POST",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 120258.79729201552,
+      "detail": "Todos los providers de IA fallaron",
+      "app_success": false,
+      "provider_used": null
+    },
+    {
+      "module": "ia_cascade_stress",
+      "endpoint": "/api/ia-cascade/query",
+      "method": "POST",
+      "status_code": 200,
+      "ok": true,
+      "elapsed_ms": 115461.65524999378,
+      "detail": "success=True",
+      "app_success": true,
+      "provider_used": "ollama"
+    }
+  ],
+  "timestamp_epoch_ms": 1770298664244
+}

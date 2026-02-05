@@ -1,0 +1,24 @@
+{
+  "guard": "ia_cascade_slo",
+  "status": "PASS",
+  "checks": {
+    "success_rate": {
+      "actual": 80.0,
+      "threshold": 60.0,
+      "ok": true
+    },
+    "latency_p95_ms": {
+      "actual": 120258.79729201552,
+      "threshold": 130000.0,
+      "ok": true
+    },
+    "failures_5xx": {
+      "actual": 0,
+      "threshold": 0,
+      "ok": true
+    }
+  },
+  "alerts": [],
+  "source_audit_report": "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/reports/enterprise_modules_audit.json",
+  "timestamp_epoch_ms": 1770298686103
+}

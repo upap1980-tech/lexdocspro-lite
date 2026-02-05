@@ -1,6 +1,13 @@
+"""
+Email Service - Envío de alertas por email
+"""
+
 class EmailService:
-    def __init__(self, *args, **kwargs): pass
-    def __getattr__(self, name):
-        def handler(*args, **kwargs):
-            return {"success": False, "error": "Email module not available in LITE"}
-        return handler
+    def send_alert(self, subject, body, to_email=None):
+        """Enviar email de alerta"""
+        print(f"📧 EMAIL ALERT (simulado)")
+        print(f"   To: {to_email or 'admin@lexdocs.com'}")
+        print(f"   Subject: {subject}")
+        print(f"   Body: {body[:100]}...")
+        return True
+

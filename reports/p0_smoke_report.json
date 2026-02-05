@@ -1,0 +1,1099 @@
+{
+  "skill": "p0_smoke",
+  "status": "PASS",
+  "criteria": {
+    "run_import_ok": true,
+    "ui_no_js_fatal": true,
+    "critical_endpoints_non_500": true
+  },
+  "details": {
+    "run_import_message": "======================================================================\n🤖 IA CASCADE SERVICE v3.0 INICIALIZADO\n======================================================================\n\n📊 PROVIDERS CONFIGURADOS:\n  1. Ollama (Local)       ✅ ENABLED    🏠 Local    | Model: lexdocs-legal-pro\n  2. Groq Cloud           ✅ ENABLED    ☁️  Cloud  | Model: llama-3.1-70b-versatile\n  3. Perplexity AI        ❌ DISABLED   ☁️  Cloud  | Model: llama-3.1-sonar-large-128k-online\n  4. OpenAI GPT-4         ❌ DISABLED   ☁️  Cloud  | Model: gpt-4-turbo-preview\n  5. Google Gemini        ❌ DISABLED   ☁️  Cloud  | Model: gemini-pro\n  6. DeepSeek             ❌ DISABLED   ☁️  Cloud  | Model: deepseek-chat\n  7. Anthropic Claude     ❌ DISABLED   ☁️  Cloud  | Model: claude-3-opus-20240229\n\n🎯 Provider por defecto: OLLAMA\n======================================================================\n\n📁 EXPEDIENTES: /Users/victormfrancisco/Desktop/EXPEDIENTES_LEXDOCS\n📁 GENERADOS: /Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/GENERADOS\n📁 PENDIENTES: /Users/victormfrancisco/Desktop/PENDIENTES_LEXDOCS\n🗄️ BD: /Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/lexdocs.db\n🗄️  DatabaseManager inicializado: /Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/lexdocs.db\n⚠️  auth_blueprint no disponible (opcional): No module named 'flask_jwt_extended'\n✅ Sistema de autenticación JWT configurado\n⏱️  Duración access token: 1:00:00\n⏱️  Duración refresh token: 30 days, 0:00:00\n🔐 JWT Token Location: ['cookies']\n✅ Base de datos de trazabilidad lista\n🤖 AutoProcessor v2.0 inicializado\n   📁 Monitoreo: /Users/victormfrancisco/Desktop/PENDIENTES_LEXDOCS\n   💾 Backup: /Users/victormfrancisco/Desktop/BACKUP_LEXDOCS\n   ✅ Procesados: /Users/victormfrancisco/Desktop/PROCESADOS\n   ❌ Errores: /Users/victormfrancisco/Desktop/ERRORES_LEXDOCS\n   📊 Log BD: /Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/processing_log.db\n⚠️  Watchdog no disponible: AutoProcessor v2 en modo degradado\n✅ AutoProcessor iniciado: /Users/victormfrancisco/Desktop/PENDIENTES_LEXDOCS\n======================================================================\n🤖 IA CASCADE SERVICE v3.0 INICIALIZADO\n======================================================================\n\n📊 PROVIDERS CONFIGURADOS:\n  1. Ollama (Local)       ✅ ENABLED    🏠 Local    | Model: lexdocs-legal-pro\n  2. Groq Cloud           ✅ ENABLED    ☁️  Cloud  | Model: llama-3.1-70b-versatile\n  3. Perplexity AI        ❌ DISABLED   ☁️  Cloud  | Model: llama-3.1-sonar-large-128k-online\n  4. OpenAI GPT-4         ❌ DISABLED   ☁️  Cloud  | Model: gpt-4-turbo-preview\n  5. Google Gemini        ❌ DISABLED   ☁️  Cloud  | Model: gemini-pro\n  6. DeepSeek             ❌ DISABLED   ☁️  Cloud  | Model: deepseek-chat\n  7. Anthropic Claude     ❌ DISABLED   ☁️  Cloud  | Model: claude-3-opus-20240229\n\n🎯 Provider por defecto: OLLAMA\n======================================================================\n\n✅ IA Cascade inicializado\n============================================================\n🚀 LexDocsPro LITE v2.0 - Sistema Legal Multi-IA\n============================================================\n📁 Base: /Users/victormfrancisco/Desktop/EXPEDIENTES\n📄 Generados: /Users/victormfrancisco/Desktop/EXPEDIENTES/_GENERADOS\n\n🤖 Inteligencia Artificial:\n  🎯 PRINCIPAL: Ollama Local (lexdocs-legal-pro)\n  ✅ Fallback 1: Groq (Llama 3.3 70B)\n============================================================\n✅ Servicios opcionales cargados\nOK",
+    "frontend_integrity_skill": {
+      "script": "scripts/p0_skills/frontend_integrity_skill.py",
+      "returncode": 0,
+      "stdout": "Frontend Integrity Skill\n- status: PASS\n- files checked: 3\n- fatal findings: 0\n- warning findings: 3\n- report: /Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/reports/p0_frontend_integrity_report.json",
+      "stderr": "",
+      "report": {
+        "skill": "frontend_integrity_skill",
+        "status": "PASS",
+        "summary": {
+          "fatal_findings": 0,
+          "warning_findings": 3,
+          "files_checked": 3
+        },
+        "ui_main_check": {
+          "file": "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/templates/index.html",
+          "findings": []
+        },
+        "js_duplicate_checks": [
+          {
+            "file": "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/static/js/app.js",
+            "findings": [
+              {
+                "severity": "warning",
+                "code": "duplicated_functions",
+                "message": "Funciones duplicadas (6): copyLexNetAnalysis, downloadLexNetAnalysis, exportToiCloud, extractTextFromUploadedFile, resetGenerator, resetLexNet"
+              },
+              {
+                "severity": "warning",
+                "code": "duplicated_window_assignments",
+                "message": "window.* duplicados (10): closeAPIKeyModal, exportCascadeStats, loadCascadeStats, openAPIKeyModal, refreshCascadeStats, resetCascadeStats, saveAPIKey, testIACascade, testProvider, toggleProvider"
+              },
+              {
+                "severity": "warning",
+                "code": "suspicious_truncation_patterns",
+                "message": "Lineas sospechosas: 1674"
+              }
+            ]
+          },
+          {
+            "file": "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/static/js/dashboard-fix.js",
+            "findings": []
+          }
+        ]
+      }
+    },
+    "api_contract_skill": {
+      "script": "scripts/p0_skills/api_contract_skill.py",
+      "returncode": 0,
+      "stdout": "API Contract Skill\n- status: PASS\n- backend routes: 89\n- frontend endpoints: 55\n- matched: 55\n- missing endpoints: 0\n- payload mismatches: 0\n- response mismatches: 0\n- report: /Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/reports/p0_api_contract_report.json",
+      "stderr": "",
+      "report": {
+        "skill": "api_contract_skill",
+        "status": "PASS",
+        "summary": {
+          "backend_routes_total": 89,
+          "frontend_endpoints_total": 55,
+          "frontend_endpoints_matched": 55,
+          "missing_endpoints": 0,
+          "payload_mismatches": 0,
+          "response_mismatches": 0
+        },
+        "missing_endpoints": [],
+        "payload_mismatches": [],
+        "response_mismatches": []
+      }
+    },
+    "route_coverage_skill": {
+      "script": "scripts/p0_skills/route_coverage_skill.py",
+      "returncode": 0,
+      "stdout": "Route Coverage Skill\n- routes total: 89\n- api routes: 86\n- OK: 57\n- FAIL: 29\n- N/A: 3\n- coverage: 66.28%\n- report: /Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/reports/p0_route_coverage_report.json",
+      "stderr": "",
+      "report": {
+        "skill": "route_coverage_skill",
+        "status": "PASS",
+        "summary": {
+          "total_routes": 89,
+          "api_routes": 86,
+          "ok_routes": 57,
+          "fail_routes": 29,
+          "na_routes": 3,
+          "coverage_percent": 66.28,
+          "test_files_scanned": 8
+        },
+        "items": [
+          {
+            "endpoint": "/",
+            "methods": [
+              "GET"
+            ],
+            "status": "N/A",
+            "matched_tests": [],
+            "note": "Ruta no API"
+          },
+          {
+            "endpoint": "/<path:path>",
+            "methods": [
+              "GET"
+            ],
+            "status": "N/A",
+            "matched_tests": [],
+            "note": "Ruta no API"
+          },
+          {
+            "endpoint": "/api/agent/feedback",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/ai/providers",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/ai/status",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/alerts/config",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/alerts/history",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/alerts/test-email",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/analytics/detailed",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/autoprocesador/aprobar/<int:doc_id>",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/autoprocesador/clientes",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/autoprocesador/cola-revision",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/autoprocesador/documento/<int:doc_id>",
+            "methods": [
+              "GET"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/autoprocesador/pdf/<int:doc_id>",
+            "methods": [
+              "GET"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/autoprocesador/procesados-hoy",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/autoprocesador/rechazar/<int:doc_id>",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/autoprocesador/stats",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/autoprocesos/logs",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/autoprocesos/toggle",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/autoprocessor/log",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/autoprocessor/reset",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/autoprocessor/scan",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/autoprocessor/start",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/autoprocessor/status",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/autoprocessor/stop",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/banking/institutions",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/banking/stats",
+            "methods": [
+              "GET"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/banking/transactions",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/business/jurisdictions",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_business_skills.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/business/strategy",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_business_skills.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/business/templates",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_business_skills.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/chat",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/config/get",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/config/save",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/dashboard/drill-down/by-date/<date_str>",
+            "methods": [
+              "GET"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/dashboard/export-pdf",
+            "methods": [
+              "GET"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/dashboard/stats",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/dashboard/stats-detailed",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/deploy/status",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/document/confirm-save",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_document_orchestration_e2e.py",
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/document/path-options",
+            "methods": [
+              "GET"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/document/preview",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/document/propose-save",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_document_orchestration_e2e.py",
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/document/save-organized",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/document/saved",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_document_orchestration_e2e.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/document/saved/<int:doc_id>",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_document_orchestration_e2e.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/document/smart-analyze",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/document/thumbnails",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/document/types",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/documents/generate",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/documents/templates",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/expedientes/listar",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/files",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/firma/ejecutar",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/firma/status",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/ia-cascade/health",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_ia_cascade_enterprise.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/ia-cascade/providers",
+            "methods": [
+              "GET"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/ia-cascade/providers-public",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_ia_cascade_enterprise.py",
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/ia-cascade/query",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/ia-cascade/reset-stats",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/ia-cascade/stats",
+            "methods": [
+              "GET"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/ia-cascade/stats-public",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_ia_cascade_enterprise.py",
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/ia-cascade/status",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/ia-cascade/test",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_ia_cascade_enterprise.py",
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/ia-cascade/toggle-provider",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/ia-cascade/update-key",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/ia/agent-task",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/ia/consultar",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/icloud/clients",
+            "methods": [
+              "GET"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/icloud/export",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/icloud/export-analysis",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/icloud/status",
+            "methods": [
+              "GET"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/lexnet-urgent",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/lexnet/analizar-plazo",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_enterprise.py",
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/lexnet/analyze",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_lexnet_endpoints.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/lexnet/notifications",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_lexnet_endpoints.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/lexnet/notifications/<int:notification_id>/read",
+            "methods": [
+              "PATCH"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_lexnet_endpoints.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/lexnet/upload-notification",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_lexnet_endpoints.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/lexnet/urgent-count",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_lexnet_endpoints.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/ocr",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/ocr/upload",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/pdf/<path:filepath>",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/pdf/preview-data",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/signature/certificates",
+            "methods": [
+              "GET"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/signature/sign",
+            "methods": [
+              "POST"
+            ],
+            "status": "FAIL",
+            "matched_tests": [],
+            "note": "Sin cobertura de tests detectada"
+          },
+          {
+            "endpoint": "/api/usuarios/equipo",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/usuarios/registrar",
+            "methods": [
+              "POST"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/api/watchdog-status",
+            "methods": [
+              "GET"
+            ],
+            "status": "OK",
+            "matched_tests": [
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_enterprise.py",
+              "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/tests/test_smoke_routes.py"
+            ],
+            "note": "Cubierto por test(s)"
+          },
+          {
+            "endpoint": "/login",
+            "methods": [
+              "GET",
+              "POST"
+            ],
+            "status": "N/A",
+            "matched_tests": [],
+            "note": "Ruta no API"
+          }
+        ]
+      }
+    },
+    "endpoint_checks": {
+      "status": "PASS",
+      "results": [
+        {
+          "method": "GET",
+          "path": "/api/files",
+          "status_code": 200,
+          "ok_non_500": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/ai/providers",
+          "status_code": 200,
+          "ok_non_500": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/documents/templates",
+          "status_code": 200,
+          "ok_non_500": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/document/types",
+          "status_code": 200,
+          "ok_non_500": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/autoprocessor/status",
+          "status_code": 200,
+          "ok_non_500": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/autoprocessor/log",
+          "status_code": 200,
+          "ok_non_500": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/ia-cascade/stats-public",
+          "status_code": 200,
+          "ok_non_500": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/ia-cascade/providers-public",
+          "status_code": 200,
+          "ok_non_500": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/ocr",
+          "status_code": 200,
+          "ok_non_500": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/ocr/upload",
+          "status_code": 400,
+          "ok_non_500": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/document/propose-save",
+          "status_code": 400,
+          "ok_non_500": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/document/confirm-save",
+          "status_code": 400,
+          "ok_non_500": true
+        }
+      ]
+    }
+  }
+}

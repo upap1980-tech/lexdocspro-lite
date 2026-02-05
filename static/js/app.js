@@ -80,69 +80,294 @@ window.switchPanel = function (panelId) {
         switchTab(panelId);
     }
 
-    // Triggers de carga dinámica por panel
-    if (panelId === 'cascade') loadAiStatus();
-    if (panelId === 'banking') loadBankingStats();
-    if (panelId === 'analytics') updateAnalytics();
-    if (panelId === 'agent') initializeAgentCoordinator();
-};
+    // ═══════════════════════════════════════════════════════════════
+    // TRIGGERS DE CARGA DINÁMICA POR PANEL
+    // ═══════════════════════════════════════════════════════════════
 
-async function loadAiStatus() {
-    const container = document.getElementById('aiCascadeStatus');
-    if (!container) return;
-    try {
-        const res = await fetch('/api/ai/status');
-        const data = await res.json();
-        if (data.success) {
-            container.innerHTML = Object.entries(data.status).map(([p, s]) => `
-                <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee;">
-                    <span><strong>${p.toUpperCase()}</strong></span>
-                    <span class="badge ${s === 'Online' ? 'success' : 'danger'}">${s}</span>
-                </div>
-            `).join('');
+    function showPanel(panelId) {
+        // Ocultar todos los paneles
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        
+        // Mostrar panel seleccionado
+        const panel = document.getElementById(panelId);
+        if (panel) panel.classList.add('active');
+        
+        // Triggers de carga dinámica por panel
+        if (panelId === 'ia-cascade') loadCascadeStats();  // ⚠️ CAMBIO: 'cascade' → 'ia-cascade'
+        if (panelId === 'banking') loadBankingStats();
+        if (panelId === 'analytics') updateAnalytics();
+        if (panelId === 'agent') initializeAgentCoordinator();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // IA CASCADE FUNCTIONS v3.0
+    // ═══════════════════════════════════════════════════════════════
+
+    let currentProviderForKey = null;
+
+    /**
+     * Cargar estadísticas de IA Cascade
+     * Actualiza stats globales y tabla de providers
+     */
+    async function loadCascadeStats() {
+        try {
+            const response = await fetch('/api/ia-cascade/stats-public');
+            const data = await response.json();
+            
+            if (data.success) {
+                const stats = data.stats;
+                
+                // ========== STATS GLOBALES ==========
+                const totalCalls = stats.global.total_calls || 0;
+                const successCalls = stats.global.successful_calls || 0;
+                const failedCalls = stats.global.failed_calls || 0;
+                const avgUptime = stats.global.avg_uptime || 0;
+                const enabledProviders = stats.global.enabled_providers || 0;
+                
+                // Actualizar DOM
+                setElementText('cascade-total-calls', totalCalls);
+                setElementText('cascade-success-calls', successCalls);
+                setElementText('cascade-failed-calls', failedCalls);
+                setElementText('cascade-avg-uptime', avgUptime.toFixed(2) + '%');
+                setElementText('cascade-enabled-providers', enabledProviders);
+                
+                // ========== CARGAR TABLA DE PROVIDERS ==========
+                await loadProvidersTable(stats.providers);
+                
+                console.log('✅ IA Cascade stats cargadas:', stats);
+            } else {
+                console.error('❌ Error cargando stats:', data.error);
+            }
+        } catch (error) {
+            console.error('❌ Error en loadCascadeStats:', error);
         }
-    } catch (e) { console.error(e); }
-}
+    }
 
-async function loadBankingStats() {
-    const container = document.getElementById('bankingStats');
-    if (!container) return;
-    try {
-        const res = await fetch('/api/banking/stats');
-        const data = await res.json();
-        if (data.success) {
-            container.innerHTML = `
-                <div class="kpi-card">
-                    <div class="kpi-value">${data.stats.bancos_activos}</div>
-                    <div class="kpi-label">Bancos Conectados</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-value">${data.stats.pendientes_conciliar}</div>
-                    <div class="kpi-label">Pendientes</div>
-                </div>
-            `;
+    /**
+     * Cargar tabla de providers con configuración y stats
+     */
+    async function loadProvidersTable(statsProviders) {
+        try {
+            const response = await fetch('/api/ia-cascade/providers-public');
+            const data = await response.json();
+            
+            if (data.success) {
+                const providers = data.providers;
+                const tbody = document.getElementById('providers-tbody');
+                
+                if (!tbody) {
+                    console.warn('⚠️ Elemento providers-tbody no encontrado');
+                    return;
+                }
+                
+                tbody.innerHTML = '';
+                
+                // Ordenar providers por prioridad
+                const sortedProviders = Object.entries(providers).sort((a, b) => a[1].priority - b[1].priority);
+                
+                sortedProviders.forEach(([provider_id, config]) => {
+                    const providerStats = statsProviders[provider_id] || {};
+                    
+                    const row = document.createElement('tr');
+                    row.className = config.enabled ? 'provider-enabled' : 'provider-disabled';
+                    
+                    // Construir HTML de la fila
+                    row.innerHTML = `
+                        <td>${config.priority}</td>
+                        <td>
+                            <strong>${config.name}</strong>
+                            ${config.local ? '🏠' : '☁️'}
+                        </td>
+                        <td><code style="font-size: 0.85em;">${config.model}</code></td>
+                        <td>
+                            <span class="status-badge ${config.enabled ? 'status-enabled' : 'status-disabled'}">
+                                ${config.enabled ? '✅ Enabled' : '❌ Disabled'}
+                            </span>
+                        </td>
+                        <td>${providerStats.total_calls || 0}</td>
+                        <td style="color: #38a169; font-weight: 600;">${providerStats.successful_calls || 0}</td>
+                        <td style="color: #e53e3e; font-weight: 600;">${providerStats.failed_calls || 0}</td>
+                        <td>${providerStats.avg_time ? providerStats.avg_time.toFixed(2) + 's' : 'N/A'}</td>
+                        <td>
+                            <div class="uptime-bar">
+                                <div class="uptime-fill" style="width: ${providerStats.uptime_percentage || 0}%"></div>
+                                <span>${(providerStats.uptime_percentage || 0).toFixed(1)}%</span>
+                            </div>
+                        </td>
+                        <td>
+                            ${config.has_api_key 
+                                ? '<span class="badge-success">✅ Configurada</span>' 
+                                : '<span class="badge-warning">⚠️ No configurada</span>'
+                            }
+                        </td>
+                        <td class="actions-cell">
+                            <button class="btn-icon" onclick="toggleProvider('${provider_id}', ${!config.enabled})" 
+                                    title="${config.enabled ? 'Deshabilitar' : 'Habilitar'}">
+                                ${config.enabled ? '⏸️' : '▶️'}
+                            </button>
+                            ${!config.local ? `
+                                <button class="btn-icon" onclick="openAPIKeyModal('${provider_id}')" title="Actualizar API Key">
+                                    🔑
+                                </button>
+                            ` : ''}
+                            <button class="btn-icon" onclick="testProvider('${provider_id}')" title="Test rápido">
+                                🧪
+                            </button>
+                        </td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                });
+                
+                console.log(`✅ Tabla de providers cargada (${sortedProviders.length} providers)`);
+            } else {
+                console.error('❌ Error cargando providers:', data.error);
+            }
+        } catch (error) {
+            console.error('❌ Error en loadProvidersTable:', error);
         }
-    } catch (e) { console.error(e); }
-}
+    }
 
-async function testEmail() {
-    updateStatus('📧 Enviando email de prueba...');
-    try {
-        const res = await fetch('/api/alerts/test-email', { method: 'POST' });
-        const data = await res.json();
-        if (data.success) updateStatus('✅ Email enviado con éxito');
-        else updateStatus('❌ Error al enviar email');
-    } catch (e) { updateStatus('❌ Error de conexión'); }
-}
+    /**
+     * Test de IA Cascade con provider seleccionado
+     */
+    async function testIACascade() {
+        const btn = document.getElementById('btn-test-cascade');
+        const provider = document.getElementById('test-provider').value;
+        const temperature = parseFloat(document.getElementById('test-temperature').value);
+        const prompt = document.getElementById('test-prompt-input').value.trim();
+        
+        if (!prompt) {
+            alert('❌ Escribe un prompt de prueba');
+            return;
+        }
+        
+        // UI Loading
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading"></span> Ejecutando...';
+        document.getElementById('test-result').style.display = 'none';
+        document.getElementById('test-error').style.display = 'none';
+        
+        console.log('🧪 Ejecutando test:', { provider, temperature, prompt: prompt.substring(0, 50) + '...' });
+        
+        try {
+            const response = await fetch('/api/ia-cascade/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider: provider,
+                    temperature: temperature,
+                    prompt: prompt
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // ========== MOSTRAR RESULTADO ==========
+                setElementText('result-provider', data.provider_used || 'N/A');
+                setElementText('result-time', data.time ? data.time.toFixed(2) + 's' : 'N/A');
+                setElementText('result-tokens', data.metadata?.tokens || 'N/A');
+                setElementText('result-text', data.response || '');
+                
+                document.getElementById('test-result').style.display = 'block';
+                
+                console.log('✅ Test exitoso:', {
+                    provider: data.provider_used,
+                    time: data.time,
+                    tokens: data.metadata?.tokens,
+                    response_length: data.response?.length
+                });
+            } else {
+                // ========== MOSTRAR ERROR ==========
+                setElementText('error-text', data.error || 'Error desconocido');
+                document.getElementById('test-error').style.display = 'block';
+                
+                console.error('❌ Test fallido:', data.error);
+            }
+        } catch (error) {
+            setElementText('error-text', error.message);
+            document.getElementById('test-error').style.display = 'block';
+            
+            console.error('❌ Error en test:', error);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '🚀 Ejecutar Test';
+        }
+    }
 
-function updateAnalytics() {
-    console.log("Analytics panel activated - Loading Chart.js...");
-    // Renderizado de gráficas (Chart.js ya debería estar disponible si se incluyó)
-}
+    /**
+     * Test rápido de un provider específico
+     */
+    async function testProvider(provider_id) {
+        document.getElementById('test-provider').value = provider_id;
+        await testIACascade();
+    }
 
-function initializeAgentCoordinator() {
-    console.log("IA Agent Coordinator initialized.");
-}
+    /**
+     * Toggle provider (habilitar/deshabilitar)
+     */
+    async function toggleProvider(provider_id, enabled) {
+        try {
+            console.log(`🔄 Toggle provider: ${provider_id} → ${enabled ? 'enabled' : 'disabled'}`);
+            
+            const response = await fetch('/api/ia-cascade/toggle-provider', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider_id: provider_id,
+                    enabled: enabled
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                console.log(`✅ Provider ${provider_id} ${enabled ? 'habilitado' : 'deshabilitado'}`);
+                await loadCascadeStats();  // Refrescar tabla
+            } else {
+                alert('❌ Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('❌ Error toggling provider:', error);
+            alert('❌ Error: ' + error.message);
+        }
+    }
+
+    /**
+     * Abrir modal para actualizar API key
+     */
+    function openAPIKeyModal(provider_id) {
+        currentProviderForKey = provider_id;
+        setElementText('modal-provider-name', provider_id.toUpperCase());
+        document.getElementById('modal-api-key-input').value = '';
+        document.getElementById('api-key-modal').classList.add('visible');
+        
+        console.log('🔑 Modal abierto para:', provider_id);
+    }
+
+    /**
+     * Cerrar modal de API key
+     */
+    function closeAPIKeyModal() {
+        document.getElementById('api-key-modal').classList.remove('visible');
+        currentProviderForKey = null;
+    }
+
+    /**
+     * Guardar API key del provider
+     */
+    async function saveAPIKey() {
+        const api_key = document.getElementById('modal-api-key-input').value.trim();
+        
+        if (!api_key) {
+            alert('❌ Ingresa una API key válida');
+            return;
+        }
+        
+        try {
+            con
+
 
 // ============================================
 // PROVEEDORES DE IA
@@ -2396,3 +2621,206 @@ document.querySelectorAll('.nav-item').forEach(item => {
         if(item.innerText.includes('Deploy Status')) setTimeout(loadDeployStatus, 150);
     });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// IA CASCADE - EVENT LISTENERS Y EVENTOS GLOBALES
+// ═══════════════════════════════════════════════════════════════
+
+// Event listener para slider de temperature
+document.addEventListener('DOMContentLoaded', () => {
+    const tempSlider = document.getElementById('test-temperature');
+    const tempValue = document.getElementById('temp-value');
+    
+    if (tempSlider && tempValue) {
+        tempSlider.addEventListener('input', (e) => {
+            tempValue.textContent = e.target.value;
+        });
+        console.log('✅ Slider temperature inicializado');
+    }
+    
+    // Cerrar modal al hacer clic fuera
+    const modal = document.getElementById('api-key-modal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeAPIKeyModal();
+            }
+        });
+    }
+});
+
+// Hacer funciones globales accesibles desde HTML
+window.loadCascadeStats = loadCascadeStats;
+window.testIACascade = testIACascade;
+window.refreshCascadeStats = refreshCascadeStats;
+window.resetCascadeStats = resetCascadeStats;
+window.exportCascadeStats = exportCascadeStats;
+window.toggleProvider = toggleProvider;
+window.openAPIKeyModal = openAPIKeyModal;
+window.closeAPIKeyModal = closeAPIKeyModal;
+window.saveAPIKey = saveAPIKey;
+window.testProvider = testProvider;
+
+console.log('✅ Funciones IA Cascade expuestas globalmente');
+
+// Auto-refresh stats cuando sección IA Cascade está activa
+setInterval(() => {
+    const iaCascadeSection = document.getElementById('ia-cascade');
+    if (iaCascadeSection && iaCascadeSection.classList.contains('active')) {
+        loadCascadeStats();
+    }
+}, 30000);  // Cada 30 segundos
+
+console.log('✅ Auto-refresh IA Cascade configurado');
+
+
+// ═══════════════════════════════════════════════════════════════
+// IA CASCADE - FUNCIONES GLOBALES (EXPUERTAS PARA HTML)
+// ═══════════════════════════════════════════════════════════════
+
+// Hacer TODAS las funciones accesibles desde HTML onclick
+window.loadCascadeStats = loadCascadeStats;
+window.testIACascade = testIACascade;
+window.refreshCascadeStats = refreshCascadeStats;
+window.resetCascadeStats = resetCascadeStats;
+window.exportCascadeStats = exportCascadeStats;
+window.toggleProvider = toggleProvider;
+window.openAPIKeyModal = openAPIKeyModal;
+window.closeAPIKeyModal = closeAPIKeyModal;
+window.saveAPIKey = saveAPIKey;
+window.testProvider = testProvider;
+
+console.log('✅ IA CASCADE FUNCIONES GLOBALES ACTIVADAS');
+
+// Event listener para slider de temperature
+const tempSlider = document.getElementById('test-temperature');
+const tempValue = document.getElementById('temp-value');
+if (tempSlider && tempValue) {
+    tempSlider.addEventListener('input', (e) => {
+        tempValue.textContent = e.target.value;
+    });
+    console.log('✅ Slider temperature configurado');
+}
+
+// Cerrar modal al clic fuera
+const modal = document.getElementById('api-key-modal');
+if (modal) {
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeAPIKeyModal();
+    });
+}
+
+// Auto-refresh cuando sección IA Cascade está activa
+setInterval(() => {
+    const section = document.getElementById('ia-cascade');
+    if (section && section.classList.contains('active')) {
+        loadCascadeStats();
+    }
+}, 30000);
+
+console.log('✅ IA CASCADE COMPLETAMENTE CONFIGURADO');
+
+// ═══════════════════════════════════════════════════════════════
+// IA CASCADE - FUNCIONES GLOBALES (CRÍTICO)
+// ═══════════════════════════════════════════════════════════════
+
+window.loadCascadeStats = loadCascadeStats;
+window.testIACascade = testIACascade;
+window.refreshCascadeStats = async () => { await loadCascadeStats(); };
+window.resetCascadeStats = async () => {
+    if (confirm('¿Resetear stats?')) {
+        await fetch('/api/ia-cascade/reset-stats', {method: 'POST'});
+        loadCascadeStats();
+    }
+};
+window.exportCascadeStats = async () => {
+    const res = await fetch('/api/ia-cascade/stats');
+    const data = await res.json();
+    const blob = new Blob([JSON.stringify(data.stats, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ia-cascade-stats.json';
+    a.click();
+};
+
+// Event listener temperatura
+const tempSlider = document.getElementById('test-temperature');
+const tempValue = document.getElementById('temp-value');
+if (tempSlider && tempValue) {
+    tempSlider.addEventListener('input', e => tempValue.textContent = e.target.value);
+}
+
+console.log('✅ IA CASCADE GLOBAL FUNCTIONS ACTIVATED');
+
+// ═══════════════════════════════════════════════════════════════
+// IA CASCADE GLOBAL FUNCTIONS - CRÍTICO
+// ═══════════════════════════════════════════════════════════════
+
+window.refreshCascadeStats = async function() {
+    console.log('🔄 Refrescando stats...');
+    if (typeof loadCascadeStats !== 'undefined') {
+        await loadCascadeStats();
+    } else {
+        const res = await fetch('/api/ia-cascade/stats-public');
+        const data = await res.json();
+        if (data.success) {
+            location.reload();
+        }
+    }
+};
+
+window.resetCascadeStats = async function() {
+    if (!confirm('¿Resetear todas las estadísticas?')) return;
+    console.log('🗑️ Reseteando stats...');
+    try {
+        const res = await fetch('/api/ia-cascade/reset-stats', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('✅ Estadísticas reseteadas');
+            window.refreshCascadeStats();
+        } else {
+            alert('❌ Error: ' + data.error);
+        }
+    } catch (e) {
+        alert('❌ Error: ' + e.message);
+    }
+};
+
+window.exportCascadeStats = async function() {
+    console.log('📥 Exportando stats...');
+    try {
+        const res = await fetch('/api/ia-cascade/stats-public');
+        const data = await res.json();
+        if (data.success) {
+            const blob = new Blob([JSON.stringify(data.stats, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ia-cascade-stats-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            console.log('✅ Stats exportadas');
+        }
+    } catch (e) {
+        alert('❌ Error: ' + e.message);
+    }
+};
+
+// Event listener para slider temperatura
+document.addEventListener('DOMContentLoaded', function() {
+    const tempSlider = document.getElementById('test-temperature');
+    const tempValue = document.getElementById('temp-value');
+    if (tempSlider && tempValue) {
+        tempSlider.addEventListener('input', function(e) {
+            tempValue.textContent = e.target.value;
+        });
+        console.log('✅ Slider temperatura configurado');
+    }
+});
+
+console.log('✅ IA CASCADE FUNCIONES GLOBALES ACTIVADAS');

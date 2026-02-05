@@ -1,0 +1,39 @@
+{
+  "skill": "frontend_integrity_skill",
+  "status": "PASS",
+  "summary": {
+    "fatal_findings": 0,
+    "warning_findings": 3,
+    "files_checked": 3
+  },
+  "ui_main_check": {
+    "file": "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/templates/index.html",
+    "findings": []
+  },
+  "js_duplicate_checks": [
+    {
+      "file": "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/static/js/app.js",
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "duplicated_functions",
+          "message": "Funciones duplicadas (6): copyLexNetAnalysis, downloadLexNetAnalysis, exportToiCloud, extractTextFromUploadedFile, resetGenerator, resetLexNet"
+        },
+        {
+          "severity": "warning",
+          "code": "duplicated_window_assignments",
+          "message": "window.* duplicados (10): closeAPIKeyModal, exportCascadeStats, loadCascadeStats, openAPIKeyModal, refreshCascadeStats, resetCascadeStats, saveAPIKey, testIACascade, testProvider, toggleProvider"
+        },
+        {
+          "severity": "warning",
+          "code": "suspicious_truncation_patterns",
+          "message": "Lineas sospechosas: 1674"
+        }
+      ]
+    },
+    {
+      "file": "/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE/static/js/dashboard-fix.js",
+      "findings": []
+    }
+  ]
+}
