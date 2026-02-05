@@ -80,6 +80,7 @@ from services.auto_processor_service import AutoProcessorService
 from services.ai_service import AIService
 from services.document_generator import DocumentGenerator
 from services.lexnet_analyzer import LexNetAnalyzer
+from services.business_skills_service import BusinessSkillsService
 
 # ============================================
 # DECORADORES Y AUTENTICACIÓN
@@ -153,6 +154,7 @@ except ImportError:
 
 doc_generator = DocumentGenerator(ai_service)
 lexnet_analyzer = LexNetAnalyzer(ai_service)
+business_skills_service = BusinessSkillsService(db)
 
 # Nuevo SignatureService v3.1.0
 from services.signature_service import SignatureService
@@ -447,6 +449,38 @@ def chat():
 @app.route('/api/documents/templates')
 def get_templates():
     return jsonify(doc_generator.get_templates())
+
+@app.route('/api/business/jurisdictions', methods=['GET'])
+def business_jurisdictions():
+    try:
+        return jsonify({
+            "success": True,
+            "jurisdictions": business_skills_service.list_jurisdictions()
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/business/templates', methods=['GET'])
+def business_templates():
+    try:
+        jurisdiction = request.args.get("jurisdiction", "ES_GENERAL")
+        return jsonify({
+            "success": True,
+            "jurisdiction": jurisdiction,
+            "templates": business_skills_service.list_document_templates(jurisdiction)
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/business/strategy', methods=['POST'])
+@abogado_or_admin_required
+def business_strategy():
+    try:
+        data = request.get_json(silent=True) or {}
+        strategy = business_skills_service.build_strategy(data)
+        return jsonify({"success": True, "strategy": strategy}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/documents/generate', methods=['POST'])
 @abogado_or_admin_required
