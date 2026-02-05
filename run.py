@@ -2,6 +2,9 @@ import tempfile
 import os
 import re
 import shutil
+import uuid
+import hashlib
+import json
 from pathlib import Path
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, send_file, send_from_directory, make_response
@@ -1887,6 +1890,92 @@ def autoprocessor_log():
 # IA CASCADE ENDPOINTS v3.0
 # ═══════════════════════════════════════════════════════════════
 
+def _ia_cascade_unavailable_response():
+    return jsonify({
+        'success': False,
+        'error': 'IA Cascade no disponible'
+    }), 503
+
+
+def _ensure_ia_cascade_audit_table():
+    conn = db.get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS ia_cascade_audit (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                request_id TEXT,
+                correlation_id TEXT,
+                endpoint TEXT,
+                user_id TEXT,
+                forced_provider TEXT,
+                provider_used TEXT,
+                success INTEGER,
+                elapsed_ms REAL,
+                prompt_hash TEXT,
+                prompt_preview TEXT,
+                error TEXT,
+                metadata_json TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _log_ia_cascade_audit(
+    endpoint,
+    user_id,
+    prompt,
+    forced_provider,
+    result,
+    request_id,
+    correlation_id,
+):
+    _ensure_ia_cascade_audit_table()
+    prompt_text = (prompt or "").strip()
+    prompt_hash = hashlib.sha256(prompt_text.encode("utf-8")).hexdigest() if prompt_text else ""
+    preview = prompt_text[:160]
+    metadata = result.get("metadata", {}) if isinstance(result, dict) else {}
+    provider_used = result.get("provider_used") if isinstance(result, dict) else None
+    success = 1 if (isinstance(result, dict) and result.get("success")) else 0
+    elapsed_ms = float(result.get("time", 0) or 0) * 1000 if isinstance(result, dict) else 0
+    error = result.get("error") if isinstance(result, dict) else "resultado inválido"
+
+    conn = db.get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO ia_cascade_audit
+            (
+                request_id, correlation_id, endpoint, user_id, forced_provider, provider_used,
+                success, elapsed_ms, prompt_hash, prompt_preview, error, metadata_json
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                request_id,
+                correlation_id,
+                endpoint,
+                str(user_id) if user_id is not None else None,
+                forced_provider,
+                provider_used,
+                success,
+                elapsed_ms,
+                prompt_hash,
+                preview,
+                error,
+                json.dumps(metadata, ensure_ascii=False),
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
 @app.route('/api/ia-cascade/stats', methods=['GET'])
 @jwt_required()
 def ia_cascade_stats():
@@ -1897,6 +1986,8 @@ def ia_cascade_stats():
         JSON con stats globales y por provider
     """
     try:
+        if ia_cascade is None:
+            return _ia_cascade_unavailable_response()
         stats = ia_cascade.get_stats()
         return jsonify({
             'success': True,
@@ -1909,9 +2000,12 @@ def ia_cascade_stats():
 
 
 @app.route('/api/ia-cascade/stats-public', methods=['GET'])
+@jwt_required_custom
 def ia_cascade_stats_public():
-    """Endpoint público temporal sin JWT para IA Cascade stats"""
+    """Endpoint protegido (compat legacy) para IA Cascade stats"""
     try:
+        if ia_cascade is None:
+            return _ia_cascade_unavailable_response()
         stats = ia_cascade.get_stats()
         return jsonify({
             'success': True,
@@ -1923,9 +2017,12 @@ def ia_cascade_stats_public():
 
 
 @app.route('/api/ia-cascade/providers-public', methods=['GET'])
+@jwt_required_custom
 def ia_cascade_providers_public():
-    """Endpoint público temporal sin JWT para providers config"""
+    """Endpoint protegido (compat legacy) para providers config"""
     try:
+        if ia_cascade is None:
+            return _ia_cascade_unavailable_response()
         providers = ia_cascade.get_all_providers_config()
         return jsonify({
             'success': True,
@@ -1946,6 +2043,8 @@ def ia_cascade_providers():
         JSON con nombre, modelo, estado, prioridad de cada provider
     """
     try:
+        if ia_cascade is None:
+            return _ia_cascade_unavailable_response()
         providers = ia_cascade.get_all_providers_config()
         return jsonify({
             'success': True,
@@ -1972,11 +2071,16 @@ def ia_cascade_test():
         JSON con respuesta, provider usado, tiempo, metadata
     """
     try:
+        if ia_cascade is None:
+            return _ia_cascade_unavailable_response()
         data = request.json
         prompt = data.get('prompt', '¿Qué es el artículo 133 de la LEC?')
         provider = data.get('provider', 'cascade')
         temperature = data.get('temperature', 0.3)
         max_tokens = data.get('max_tokens', 2000)
+        user_id = get_jwt_identity()
+        request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+        correlation_id = request.headers.get("X-Correlation-ID") or request_id
         
         print(f"🧪 Test IA Cascade: provider={provider}, temp={temperature}")
         
@@ -1984,6 +2088,16 @@ def ia_cascade_test():
             result = ia_cascade.consultar_cascade(prompt, temperature, max_tokens)
         else:
             result = ia_cascade.consultar_cascade(prompt, temperature, max_tokens, force_provider=provider)
+
+        _log_ia_cascade_audit(
+            endpoint="/api/ia-cascade/test",
+            user_id=user_id,
+            prompt=prompt,
+            forced_provider=None if provider == "cascade" else provider,
+            result=result,
+            request_id=request_id,
+            correlation_id=correlation_id,
+        )
         
         return jsonify({
             'success': result.get('success'),
@@ -1991,6 +2105,8 @@ def ia_cascade_test():
             'provider_used': result.get('provider_used'),
             'time': result.get('time'),
             'metadata': result.get('metadata', {}),
+            'request_id': request_id,
+            'correlation_id': correlation_id,
             'error': result.get('error')
         }), 200
     
@@ -2012,6 +2128,8 @@ def ia_cascade_update_key():
         - api_key: str (requerido)
     """
     try:
+        if ia_cascade is None:
+            return _ia_cascade_unavailable_response()
         data = request.json
         provider_id = data.get('provider_id')
         api_key = data.get('api_key')
@@ -2052,6 +2170,8 @@ def ia_cascade_toggle_provider():
         - enabled: bool (requerido)
     """
     try:
+        if ia_cascade is None:
+            return _ia_cascade_unavailable_response()
         data = request.json
         provider_id = data.get('provider_id')
         enabled = data.get('enabled', False)
@@ -2092,6 +2212,8 @@ def ia_cascade_reset_stats():
         - provider_id: str (opcional, si se omite resetea todos)
     """
     try:
+        if ia_cascade is None:
+            return _ia_cascade_unavailable_response()
         data = request.json or {}
         provider_id = data.get('provider_id')
         
@@ -2112,6 +2234,17 @@ def ia_cascade_reset_stats():
     
     except Exception as e:
         print(f"❌ Error en ia_cascade_reset_stats: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ia-cascade/health', methods=['GET'])
+def ia_cascade_health():
+    """Estado operativo de IA Cascade (enterprise healthcheck)."""
+    try:
+        if ia_cascade is None:
+            return _ia_cascade_unavailable_response()
+        return jsonify(ia_cascade.health_check()), 200
+    except Exception as e:
+        print(f"❌ Error en ia_cascade_health: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -2415,6 +2548,8 @@ def legacy_autoprocesos_toggle():
 
 @app.route('/api/ia-cascade/status', methods=['GET'])
 def legacy_ia_cascade_status():
+    if ia_cascade is None:
+        return jsonify({'success': False, 'error': 'IA Cascade no disponible'}), 503
     stats = ia_cascade.get_stats()
     providers_cfg = ia_cascade.get_all_providers_config()
     providers = []
@@ -2446,14 +2581,29 @@ def legacy_ia_cascade_status():
 
 @app.route('/api/ia-cascade/query', methods=['POST'])
 def legacy_ia_cascade_query():
+    if ia_cascade is None:
+        return jsonify({'success': False, 'error': 'IA Cascade no disponible'}), 503
     data = request.get_json(silent=True) or {}
     prompt = data.get('prompt', '')
+    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    correlation_id = request.headers.get("X-Correlation-ID") or request_id
     result = ia_cascade.consultar_cascade(prompt, temperature=0.3, max_tokens=1500)
+    _log_ia_cascade_audit(
+        endpoint="/api/ia-cascade/query",
+        user_id=None,
+        prompt=prompt,
+        forced_provider=None,
+        result=result,
+        request_id=request_id,
+        correlation_id=correlation_id,
+    )
     return jsonify({
         'success': result.get('success', False),
         'provider': result.get('provider_used'),
         'model': result.get('metadata', {}).get('model'),
         'response': result.get('response', ''),
+        'request_id': request_id,
+        'correlation_id': correlation_id,
         'error': result.get('error')
     }), 200
 
