@@ -75,6 +75,12 @@ Opcional (recomendado en este repo):
 ./run.sh
 
 Abre: http://localhost:5001
+
+Checklist manual de testeo:
+docs/MANUAL_TEST_CHECKLIST.md
+
+QA rápida diaria (10 pasos):
+docs/QA_RAPIDA_10_PASOS.md
 📖 Documentación
 Setup Completo
 
