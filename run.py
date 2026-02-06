@@ -417,15 +417,26 @@ def serve_pdf(filepath):
 
 @app.route('/api/ocr', methods=['POST'])
 def run_ocr():
-    data = request.json
-    filename = data.get('filename')
+    data = request.get_json(silent=True) or {}
+    filename = (data.get('filename') or '').strip()
+    if not filename:
+        return jsonify({
+            'success': False,
+            'error': 'filename requerido'
+        }), 400
+
     full_path = os.path.join(BASE_DIR, filename)
-    
+    if not os.path.exists(full_path):
+        return jsonify({
+            'success': False,
+            'error': 'Archivo no encontrado'
+        }), 404
+
     try:
         text = ocr_service.extraer_texto(full_path)
         return jsonify({'success': True, 'text': text})
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/ai/providers')
 def get_providers():
@@ -763,7 +774,13 @@ def smart_analyze_document():
         # EXTRAER TEXTO
         text_content = ""
         if file.filename.lower().endswith('.pdf'):
-            import fitz
+            try:
+                import fitz  # PyMuPDF
+            except ModuleNotFoundError:
+                return jsonify({
+                    'success': False,
+                    'error': "Dependencia faltante: PyMuPDF (fitz). Instala requirements del entorno activo."
+                }), 503
             doc = fitz.open(temppath)
             for page in doc:
                 text_content += page.get_text()
@@ -2395,19 +2412,35 @@ def sign_document():
     }
     """
     try:
-        data = request.json
+        data = request.get_json(silent=True) or {}
         doc_id = data.get('doc_id')
-        cert_name = data.get('certificate')
-        passphrase = data.get('passphrase')
+        cert_name = (data.get('certificate') or '').strip()
+        passphrase = (data.get('passphrase') or '').strip()
         
         if not all([doc_id, cert_name, passphrase]):
             return jsonify({'success': False, 'error': 'Faltan datos requeridos'}), 400
+
+        try:
+            doc_id = int(doc_id)
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'error': 'doc_id inválido'}), 400
             
         documento = db.get_saved_document(doc_id)
         if not documento:
             return jsonify({'success': False, 'error': 'Documento no encontrado'}), 404
-            
+
+        available = {c.get('name') for c in signature_service.list_available_certificates() if c.get('name')}
+        if cert_name not in available:
+            return jsonify({
+                'success': False,
+                'error': 'Certificado no disponible',
+                'available_certificates': sorted(available)
+            }), 400
+
         input_path = documento['file_path']
+        if not input_path or not os.path.exists(input_path):
+            return jsonify({'success': False, 'error': 'Ruta del documento no disponible'}), 404
+
         output_filename = f"FIRMADO_{documento['filename']}"
         output_path = os.path.join(os.path.dirname(input_path), output_filename)
         
@@ -2422,7 +2455,10 @@ def sign_document():
                 'signed_path': output_path
             })
         else:
-            return jsonify({'success': False, 'error': 'Error en el proceso de firma'}), 500
+            return jsonify({
+                'success': False,
+                'error': 'No se pudo firmar el documento con los parámetros actuales'
+            }), 422
             
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

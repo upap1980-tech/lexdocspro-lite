@@ -146,6 +146,10 @@ class AutoProcessorService:
         """Iniciar watchdog"""
         if self.is_running:
             return False
+        if os.getenv('LEXDOCS_DISABLE_WATCHDOG') in ('1', 'true', 'TRUE', 'yes', 'YES'):
+            print("⚠️  Watchdog desactivado por entorno (LEXDOCS_DISABLE_WATCHDOG=1)")
+            self.is_running = False
+            return False
 
         if not WATCHDOG_AVAILABLE:
             print("⚠️  Watchdog no disponible: AutoProcessor v2 en modo degradado")

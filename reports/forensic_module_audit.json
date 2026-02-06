@@ -1,0 +1,1879 @@
+{
+  "generated_at": "2026-02-06 10:13:18",
+  "modules": [
+    {
+      "module": "dashboard",
+      "buttons_total": 2,
+      "fields_total": 0,
+      "buttons": [
+        {
+          "label": "🔎 Ver Detalle",
+          "onclick": "loadDashboardDetailed()",
+          "function": "loadDashboardDetailed",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/dashboard/stats-detailed",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            },
+            {
+              "path": "/api/dashboard/drill-down/by-date/1",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📄 Exportar PDF",
+          "onclick": "uiDashboardExportPDF()",
+          "function": "uiDashboardExportPDF",
+          "function_found": true,
+          "calls": []
+        }
+      ],
+      "fields": [],
+      "status": "OK",
+      "summary": {
+        "missing_functions": 0,
+        "endpoint_calls": 2,
+        "endpoint_failures": 0
+      }
+    },
+    {
+      "module": "autoprocesos",
+      "buttons_total": 17,
+      "fields_total": 1,
+      "buttons": [
+        {
+          "label": "▶️ INICIAR",
+          "onclick": "startAutoProcessor()",
+          "function": "startAutoProcessor",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/autoprocessor/start",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"message\":\"\\u26a0\\ufe0f Ya estaba iniciado\",\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "⏸️ DETENER",
+          "onclick": "stopAutoProcessor()",
+          "function": "stopAutoProcessor",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/autoprocessor/stop",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"message\":\"\\u26a0\\ufe0f Ya estaba detenido\",\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🔍 ESCANEAR",
+          "onclick": "scanFiles()",
+          "function": "scanFiles",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/autoprocessor/scan",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"message\":\"\\u2705 No hay archivos\",\"processed\":0,\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "♻️ RESET",
+          "onclick": "resetAutoProcessor()",
+          "function": "resetAutoProcessor",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/autoprocessor/reset",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"message\":\"\\u2705 Estad\\u00edsticas reseteadas\",\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🔄 ACTUALIZAR",
+          "onclick": "loadAutoProcessorStatus()",
+          "function": "loadAutoProcessorStatus",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/autoprocessor/status",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"status\":{\"backup_dir\":\"/Users/victormfrancisco/Desktop/BACKUP_LEXDOCS\",\"error_dir\":\"/Users/victormfrancisco/Desktop/ERRORES_LEXDOCS\",\"processed_dir\":\"/Users/victormfrancisco/Desktop/PROCESADOS\",\"queue\":0,\"queue_items\":[],\"running\":false,\"stats\":{\"errors\":0,\"last_processed\":null,\"pending\":0,\"processed\":0,\"start_time\":null},\"watch_dir\":\"/Users/victormfrancisco/Desktop/PENDIENTES_LEXDOCS\"},\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📄 Ver doc",
+          "onclick": "uiAutoLegacyDocumento()",
+          "function": "uiAutoLegacyDocumento",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/autoprocesador/documento/1",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"documento\":{\"archivo_original\":\"tmpuvtgkzje.pdf\",\"carpeta_sugerida\":\"\",\"cliente_codigo\":\"\",\"cliente_detectado\":\"\",\"confianza\":0,\"fecha_documento\":\"\",\"id\":1,\"original_filename\":\"tmpuvtgkzje.pdf\",\"ruta_temporal\":\"/tmp/tmpuvtgkzje.pdf\",\"temp_file_path\":\"/tmp/tmpuvtgkzje.pdf\",\"tipo_documento\":\"\"},\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "✅ Aprobar",
+          "onclick": "uiAutoLegacyAprobar()",
+          "function": "uiAutoLegacyAprobar",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/autoprocesador/aprobar/1",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "❌ Rechazar",
+          "onclick": "uiAutoLegacyRechazar()",
+          "function": "uiAutoLegacyRechazar",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/autoprocesador/rechazar/1",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"error\":\"no such column: motivo_rechazo\",\"success\":false}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📑 PDF",
+          "onclick": "uiAutoLegacyPdf()",
+          "function": "uiAutoLegacyPdf",
+          "function_found": true,
+          "calls": []
+        },
+        {
+          "label": "📊 Stats legacy",
+          "onclick": "uiAutoLegacyStats()",
+          "function": "uiAutoLegacyStats",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/autoprocesador/stats",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"stats\":{\"automaticos\":0,\"en_revision\":6,\"errores\":0,\"porcentaje_auto\":0,\"porcentaje_errores\":0,\"porcentaje_revision\":0,\"total_hoy\":0},\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📥 Cola revisión",
+          "onclick": "uiAutoLegacyQueue()",
+          "function": "uiAutoLegacyQueue",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/autoprocesador/cola-revision",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"documentos\":[{\"archivo_original\":\"pendiente_0.pdf\",\"cliente_detectado\":\"\",\"confianza\":0,\"estado\":\"pending\",\"id\":13,\"tipo_documento\":\"\"},{\"archivo_original\":\"pendiente_1.pdf\",\"cliente_detectado\":\"\",\"confianza\":0,\"estado\":\"pending\",\"id\":14,\"tipo_documento\":\"\"},{\"archivo_original\":\"pendiente_2.pdf\",\"cliente_detectado\":\"\",\"confianza\":0,\"estado\":\"pending\",\"id\":15,\"tipo_documento\":\"\"},{\"archivo_original\":\"pendiente_0.pdf\",\"cliente_detectado\":\"\",\"confianza\":0,\"estado\":\"pending\",\"id\":17,\"tipo_documento\":\"\"},{\"archivo_original\":\"pendiente_1.pdf\",\"cliente_detectado\":\"\",\"confianza\":0,\"estado\":\"pending\",\"id\":18,\"tipo_documento\":\"\"},{\"archivo_original\":\"pendiente_2.pdf\",\"cliente_detectado\":\"\",\"confianza\":0,\"estado\":\"pending\",\"id\":19,\"tipo_documento\":\"\"}],\"success\":true,\"total\":6}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📅 Procesados hoy",
+          "onclick": "uiAutoLegacyProcessedToday()",
+          "function": "uiAutoLegacyProcessedToday",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/autoprocesador/procesados-hoy",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"documentos\":[],\"success\":true,\"total\":0}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "👥 Clientes",
+          "onclick": "uiAutoLegacyClientes()",
+          "function": "uiAutoLegacyClientes",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/autoprocesador/clientes",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"clientes\":[{\"codigo\":\"2026\",\"nombre\":\"2026\"}],\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📜 Logs legacy",
+          "onclick": "uiLegacyLogs()",
+          "function": "uiLegacyLogs",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/autoprocesos/logs",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"logs\":[\"2026-02-05T15:57:01.359000 | ERROR | 2026_0000055_JRA_20261084874773120260202114722_002_AUTO SEN\\u0303ALANDO JUICIO ORAL Y CITANDO SIN ESC copia.pdf\",\"2026-02-05T15:57:01.347943 | SUCCESS | 2026_0000055_JRA_20261084874773120260202114722_002_AUTO SEN\\u0303ALANDO JUICIO ORAL Y CITANDO SIN ESC copia.pdf\",\"2026-02-05T15:56:46.807152 | ERROR | 2026_0000055_JRA_20261084874773120260202114722_002_AUTO SEN\\u0303ALANDO JUICIO ORAL Y CITANDO SIN ESC copia 2.pdf\",\"2026-02-05T15:56:46.804960 | SUCCESS | 2026_0000055_JRA_20261084874773120260202114722_002_AUTO SEN\\u0303ALANDO JUICIO ORAL Y CITANDO SIN ESC copia 2.pdf\",\"2026-02-05T08:58:49.975628 | ERROR | 2026_0000055_JRA_20261084669786420260126152028_000_RESUMEN.pdf\",\"2026-02-05T08:58:49.846135 | SUCCESS | 2026_0000055_JRA_20261084669786420260"
+              }
+            }
+          ]
+        },
+        {
+          "label": "⏯️ Toggle watchdog",
+          "onclick": "uiLegacyToggle()",
+          "function": "uiLegacyToggle",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/autoprocesos/toggle",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"status\":\"stopped\",\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🩺 Watchdog",
+          "onclick": "uiLegacyWatchdog()",
+          "function": "uiLegacyWatchdog",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/watchdog-status",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"kpis\":{\"processed_today\":0,\"queued_files\":0,\"running\":false},\"status\":\"stopped\",\"success\":true,\"trends\":{\"labels\":[\"h-3\",\"h-2\",\"h-1\",\"now\"],\"values\":[0,0,0,0]},\"watchdog\":{\"backup_dir\":\"/Users/victormfrancisco/Desktop/BACKUP_LEXDOCS\",\"error_dir\":\"/Users/victormfrancisco/Desktop/ERRORES_LEXDOCS\",\"processed_dir\":\"/Users/victormfrancisco/Desktop/PROCESADOS\",\"queue\":0,\"queue_items\":[],\"running\":false,\"stats\":{\"errors\":0,\"last_processed\":null,\"pending\":0,\"processed\":0,\"start_time\":null},\"watch_dir\":\"/Users/victormfrancisco/Desktop/PENDIENTES_LEXDOCS\"}}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🔄 Actualizar",
+          "onclick": "loadProcessingLog()",
+          "function": "loadProcessingLog",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/autoprocessor/log",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"log\":[{\"ai_analysis\":null,\"backup_path\":\"/Users/victormfrancisco/Desktop/BACKUP_LEXDOCS/20260205_155659_2026_0000055_JRA_20261084874773120260202114722_002_AUTO SEN\\u0303ALANDO JUICIO ORAL Y CITANDO SIN ESC copia.pdf\",\"completed_at\":\"2026-02-05T15:57:01.359000\",\"error\":\"[Errno 2] No such file or directory: '/Users/victormfrancisco/Desktop/PENDIENTES_LEXDOCS/2026_0000055_JRA_20261084874773120260202114722_002_AUTO SEN\\u0303ALANDO JUICIO ORAL Y CITANDO SIN ESC copia.pdf'\\nTraceback (most recent call last):\\n  File \\\"/opt/homebrew/Cellar/python@3.12/3.12.12_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/shutil.py\\\", line 847, in move\\n    os.rename(src, real_dst)\\nFileNotFoundError: [Errno 2] No such file or directory: '/Users/victormfrancisco/Desktop/PENDIENTES_LEXDOCS/2026_00000"
+              }
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "type": "input",
+          "id": "auto-doc-id"
+        }
+      ],
+      "status": "OK",
+      "summary": {
+        "missing_functions": 0,
+        "endpoint_calls": 16,
+        "endpoint_failures": 0
+      }
+    },
+    {
+      "module": "ia-cascade",
+      "buttons_total": 6,
+      "fields_total": 4,
+      "buttons": [
+        {
+          "label": "🚀 Ejecutar Test",
+          "onclick": "testIACascade()",
+          "function": "testIACascade",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/ia-cascade/test",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            },
+            {
+              "path": "/api/ia-cascade/query",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 4,
+                "body_excerpt": "{\"correlation_id\":\"f892df4a-4fa5-47bf-91a8-0f573ea6cc6f\",\"error\":\"Todos los providers de IA fallaron\",\"model\":null,\"provider\":null,\"request_id\":\"f892df4a-4fa5-47bf-91a8-0f573ea6cc6f\",\"response\":\"\",\"success\":false}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🔄 Refrescar Stats",
+          "onclick": "refreshCascadeStats()",
+          "function": "refreshCascadeStats",
+          "function_found": true,
+          "calls": []
+        },
+        {
+          "label": "🗑️ Resetear Stats",
+          "onclick": "resetCascadeStats()",
+          "function": "resetCascadeStats",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/ia-cascade/reset-stats",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📥 Exportar Stats (JSON)",
+          "onclick": "exportCascadeStats()",
+          "function": "exportCascadeStats",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/ia-cascade/stats-public",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "💾 Guardar",
+          "onclick": "saveAPIKey()",
+          "function": "saveAPIKey",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/ia-cascade/update-key",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "❌ Cancelar",
+          "onclick": "closeAPIKeyModal()",
+          "function": "closeAPIKeyModal",
+          "function_found": true,
+          "calls": []
+        }
+      ],
+      "fields": [
+        {
+          "type": "select",
+          "id": "test-provider"
+        },
+        {
+          "type": "input",
+          "id": "test-temperature"
+        },
+        {
+          "type": "textarea",
+          "id": "test-prompt-input"
+        },
+        {
+          "type": "input",
+          "id": "modal-api-key-input"
+        }
+      ],
+      "status": "OK",
+      "summary": {
+        "missing_functions": 0,
+        "endpoint_calls": 5,
+        "endpoint_failures": 0
+      }
+    },
+    {
+      "module": "pdf-preview",
+      "buttons_total": 4,
+      "fields_total": 1,
+      "buttons": [
+        {
+          "label": "📂 Cargar",
+          "onclick": "uiLoadFiles()",
+          "function": "uiLoadFiles",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/files",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"current_path\":\"\",\"files\":[],\"folders\":[{\"name\":\"2022\",\"path\":\"2022\"},{\"name\":\"2026\",\"path\":\"2026\"},{\"name\":\"_UPLOADS\",\"path\":\"_UPLOADS\"},{\"name\":\"_GENERADOS\",\"path\":\"_GENERADOS\"}]}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🔎 OCR",
+          "onclick": "uiRunOCRSelected()",
+          "function": "uiRunOCRSelected",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/ocr",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 400,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"error\":\"filename requerido\",\"success\":false}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📤 OCR Upload",
+          "onclick": "uiOcrUploadQuick()",
+          "function": "uiOcrUploadQuick",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/ocr/upload",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 1,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🗂️ Preview Data",
+          "onclick": "uiPdfPreviewData()",
+          "function": "uiPdfPreviewData",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/pdf/preview-data",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"filename\":\"expediente_demo.pdf\",\"success\":true,\"thumbnails\":[{\"page\":1,\"url\":\"\"},{\"page\":2,\"url\":\"\"}]}\n"
+              }
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "type": "input",
+          "id": "files-path"
+        }
+      ],
+      "status": "OK",
+      "summary": {
+        "missing_functions": 0,
+        "endpoint_calls": 4,
+        "endpoint_failures": 0
+      }
+    },
+    {
+      "module": "email-alerts",
+      "buttons_total": 3,
+      "fields_total": 1,
+      "buttons": [
+        {
+          "label": "💾 Guardar",
+          "onclick": "uiSaveAlertEmail()",
+          "function": "uiSaveAlertEmail",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/alerts/config",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"history\":[{\"asunto\":\"Configuraci\\u00f3n de alertas actualizada\",\"estado\":\"Enviado\",\"fecha\":\"06/02/2026 10:13\",\"tipo\":\"INFO\"}],\"message\":\"Email guardado: audit@example.com\",\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🕘 Historial",
+          "onclick": "uiLoadAlertHistory()",
+          "function": "uiLoadAlertHistory",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/alerts/history",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"history\":[{\"asunto\":\"Plazo pr\\u00f3ximo a vencer\",\"estado\":\"Enviado\",\"fecha\":\"06/02/2026 10:13\",\"tipo\":\"CR\\u00cdTICA\"},{\"asunto\":\"Sincronizaci\\u00f3n completada\",\"estado\":\"Enviado\",\"fecha\":\"06/02/2026 10:13\",\"tipo\":\"INFO\"}],\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🧪 Test",
+          "onclick": "uiTestAlertEmail()",
+          "function": "uiTestAlertEmail",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/alerts/test-email",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "type": "input",
+          "id": "alerts-email"
+        }
+      ],
+      "status": "OK",
+      "summary": {
+        "missing_functions": 0,
+        "endpoint_calls": 3,
+        "endpoint_failures": 0
+      }
+    },
+    {
+      "module": "firma-digital",
+      "buttons_total": 3,
+      "fields_total": 1,
+      "buttons": [
+        {
+          "label": "📊 Estado",
+          "onclick": "uiFirmaStatus()",
+          "function": "uiFirmaStatus",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/firma/status",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"expira\":\"N/A\",\"hash\":\"N/A\",\"message\":\"Estado de firma cargado\",\"success\":true,\"timestamp\":\"2026-02-06T10:13:18.309929\",\"ultimo_certificado\":\"Sin certificado\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "✍️ Ejecutar",
+          "onclick": "uiFirmaSign()",
+          "function": "uiFirmaSign",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/firma/ejecutar",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"hash\":\"SIMULATED-HASH\",\"message\":\"Documento firmado (simulado): N/A\",\"success\":true,\"timestamp\":\"2026-02-06T10:13:18.310058\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🔐 Certificados",
+          "onclick": "uiSignatureCertificates()",
+          "function": "uiSignatureCertificates",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/signature/certificates",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "type": "input",
+          "id": "firma-doc-id"
+        }
+      ],
+      "status": "OK",
+      "summary": {
+        "missing_functions": 0,
+        "endpoint_calls": 3,
+        "endpoint_failures": 0
+      }
+    },
+    {
+      "module": "banking",
+      "buttons_total": 1,
+      "fields_total": 0,
+      "buttons": [
+        {
+          "label": "🔄 Cargar Banking",
+          "onclick": "uiLoadBanking()",
+          "function": "uiLoadBanking",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/banking/stats",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            },
+            {
+              "path": "/api/banking/institutions",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"banks\":[{\"balance\":\"12,340.21\\u20ac\",\"name\":\"CaixaBank\",\"status\":\"Sincronizado\"},{\"balance\":\"8,102.90\\u20ac\",\"name\":\"BBVA\",\"status\":\"Pendiente\"}],\"success\":true}\n"
+              }
+            },
+            {
+              "path": "/api/banking/transactions",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"success\":true,\"transactions\":[{\"amount\":-210.0,\"bank\":\"CaixaBank\",\"concept\":\"Pago procurador\",\"date\":\"06/02/2026\"},{\"amount\":1250.0,\"bank\":\"BBVA\",\"concept\":\"Cobro minuta\",\"date\":\"06/02/2026\"}]}\n"
+              }
+            }
+          ]
+        }
+      ],
+      "fields": [],
+      "status": "OK",
+      "summary": {
+        "missing_functions": 0,
+        "endpoint_calls": 3,
+        "endpoint_failures": 0
+      }
+    },
+    {
+      "module": "usuarios",
+      "buttons_total": 2,
+      "fields_total": 1,
+      "buttons": [
+        {
+          "label": "👥 Equipo",
+          "onclick": "uiLoadUsuarios()",
+          "function": "uiLoadUsuarios",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/usuarios/equipo",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"success\":true,\"usuarios\":[{\"actividad\":\"Ahora\",\"nombre\":\"Admin\",\"rol\":\"ADMIN\",\"status\":\"Online\"},{\"actividad\":\"Hace 2h\",\"nombre\":\"Abogado 1\",\"rol\":\"ABOGADO\",\"status\":\"Offline\"}]}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📩 Invitar",
+          "onclick": "uiInvitarUsuario()",
+          "function": "uiInvitarUsuario",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/usuarios/registrar",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 400,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"message\":\"nombre requerido\",\"success\":false}\n"
+              }
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "type": "input",
+          "id": "usuarios-nombre"
+        }
+      ],
+      "status": "OK",
+      "summary": {
+        "missing_functions": 0,
+        "endpoint_calls": 2,
+        "endpoint_failures": 0
+      }
+    },
+    {
+      "module": "pwa",
+      "buttons_total": 3,
+      "fields_total": 2,
+      "buttons": [
+        {
+          "label": "🌍 Jurisdicciones",
+          "onclick": "uiLoadJurisdictions()",
+          "function": "uiLoadJurisdictions",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/business/jurisdictions",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"jurisdictions\":[{\"id\":\"ES_GENERAL\",\"name\":\"Espa\\u00f1a (General)\",\"scope\":\"Nacional\"},{\"id\":\"ES_CANARIAS\",\"name\":\"Canarias\",\"scope\":\"Auton\\u00f3mico\"},{\"id\":\"ES_MADRID\",\"name\":\"Madrid\",\"scope\":\"Auton\\u00f3mico\"}],\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📄 Templates",
+          "onclick": "uiLoadBusinessTemplates()",
+          "function": "uiLoadBusinessTemplates",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/business/templates",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"jurisdiction\":\"ES_GENERAL\",\"success\":true,\"templates\":[{\"doc_type\":\"demanda\",\"title\":\"Demanda inicial\",\"tone\":\"forense\"},{\"doc_type\":\"recurso\",\"title\":\"Recurso\",\"tone\":\"forense\"},{\"doc_type\":\"escrito_tramite\",\"title\":\"Escrito de tr\\u00e1mite\",\"tone\":\"forense\"}]}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🧠 Construir Estrategia",
+          "onclick": "uiBuildBusinessStrategy()",
+          "function": "uiBuildBusinessStrategy",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/business/strategy",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "type": "input",
+          "id": "bs-jurisdiction"
+        },
+        {
+          "type": "textarea",
+          "id": "bs-query"
+        }
+      ],
+      "status": "OK",
+      "summary": {
+        "missing_functions": 0,
+        "endpoint_calls": 3,
+        "endpoint_failures": 0
+      }
+    },
+    {
+      "module": "ia-agent",
+      "buttons_total": 18,
+      "fields_total": 8,
+      "buttons": [
+        {
+          "label": "1) Smart Analyze",
+          "onclick": "uiDocSmartAnalyze()",
+          "function": "uiDocSmartAnalyze",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/document/smart-analyze",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "2) Propose Save",
+          "onclick": "uiDocProposeSave()",
+          "function": "uiDocProposeSave",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/document/propose-save",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "3) Confirm Save",
+          "onclick": "uiDocConfirmSave()",
+          "function": "uiDocConfirmSave",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/document/confirm-save",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "3b) Legacy Save",
+          "onclick": "uiDocSaveOrganizedLegacy()",
+          "function": "uiDocSaveOrganizedLegacy",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/document/save-organized",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 400,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"error\":\"Missing paths\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📚 Saved",
+          "onclick": "uiDocLoadSaved()",
+          "function": "uiDocLoadSaved",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/document/saved",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            },
+            {
+              "path": "/api/document/saved/1",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📂 Path Options",
+          "onclick": "uiDocPathOptions()",
+          "function": "uiDocPathOptions",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/document/path-options",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🏷️ Types",
+          "onclick": "uiDocTypes()",
+          "function": "uiDocTypes",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/document/types",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"allow_custom\":true,\"success\":true,\"types\":[\"demanda\",\"sentencia\",\"auto\",\"decreto\",\"providencia\",\"notificacion_lexnet\",\"contrato\",\"escrito\",\"otros\"]}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📝 Templates+Generate",
+          "onclick": "uiDocTemplatesGenerate()",
+          "function": "uiDocTemplatesGenerate",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/documents/templates",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"burofax\":{\"description\":\"Comunicaci\\u00f3n fehaciente por burofax\",\"fields\":[{\"label\":\"Remitente\",\"name\":\"remitente\",\"type\":\"text\"},{\"label\":\"Destinatario\",\"name\":\"destinatario\",\"type\":\"text\"},{\"label\":\"Asunto\",\"name\":\"asunto\",\"type\":\"text\"},{\"label\":\"Contenido\",\"name\":\"contenido\",\"type\":\"textarea\"}],\"name\":\"\\ud83d\\udcee Burofax\"},\"contestacion_demanda\":{\"description\":\"Respuesta formal a demanda civil\",\"fields\":[{\"label\":\"N\\u00ba Procedimiento\",\"name\":\"procedimiento\",\"type\":\"text\"},{\"label\":\"Demandado (quien contesta)\",\"name\":\"demandado\",\"type\":\"text\"},{\"label\":\"Hechos propios\",\"name\":\"hechos_propios\",\"type\":\"textarea\"},{\"label\":\"Excepciones y defensas\",\"name\":\"excepciones\",\"type\":\"textarea\"},{\"label\":\"S\\u00faplica\",\"name\":\"suplica\",\"type\":\"textarea\"}],\"name\":\"\\ud83d\\udee1\\ufe0f Contesta"
+              }
+            },
+            {
+              "path": "/api/documents/generate",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🤖 AI Providers",
+          "onclick": "uiLoadAIProvidersLegacy()",
+          "function": "uiLoadAIProvidersLegacy",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/ai/providers",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"default\":\"ollama\",\"providers\":[]}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "💬 Chat",
+          "onclick": "uiChatLegacy()",
+          "function": "uiChatLegacy",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/chat",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"response\":\"Error al consultar IA: HTTPConnectionPool(host='127.0.0.1', port=1): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\\\"HTTPConnection(host='127.0.0.1', port=1): Failed to establish a new connection: [Errno 61] Connection refused\\\"))\",\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🧠 IA Consultar",
+          "onclick": "uiIAConsultarLegacy()",
+          "function": "uiIAConsultarLegacy",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/ia/consultar",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"provider\":\"ollama\",\"respuesta\":\"Error al consultar IA: HTTPConnectionPool(host='127.0.0.1', port=1): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\\\"HTTPConnection(host='127.0.0.1', port=1): Failed to establish a new connection: [Errno 61] Connection refused\\\"))\",\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🧩 IA Agent Task",
+          "onclick": "uiIAAgentTaskLegacy()",
+          "function": "uiIAAgentTaskLegacy",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/ia/agent-task",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"performance\":{\"duration_ms\":120,\"tokens_estimated\":56},\"result\":\"Tarea procesada: Generar estrategia procesal detallada para expediente demo\",\"steps\":[\"Analizando contexto\",\"Buscando datos relevantes\",\"Proponiendo acci\\u00f3n\",\"Generando resultado\"],\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🔎 Saved Detail",
+          "onclick": "uiDocSavedDetail()",
+          "function": "uiDocSavedDetail",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/document/saved/1",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🖼️ Preview",
+          "onclick": "uiDocPreview()",
+          "function": "uiDocPreview",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/document/preview",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🧩 Thumbnails",
+          "onclick": "uiDocThumbnails()",
+          "function": "uiDocThumbnails",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/document/thumbnails",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "✍️ Signature Sign",
+          "onclick": "uiSignatureSign()",
+          "function": "uiSignatureSign",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/signature/certificates",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            },
+            {
+              "path": "/api/signature/sign",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🤖 AI Status",
+          "onclick": "uiAIStatus()",
+          "function": "uiAIStatus",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/ai/status",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"status\":{\"deepseek\":\"Online\",\"gemini\":\"Online\",\"groq\":\"Online\",\"ollama\":\"Online\",\"openai\":\"Online\",\"perplexity\":\"Online\"},\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📝 Agent Feedback",
+          "onclick": "uiAgentFeedback()",
+          "function": "uiAgentFeedback",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/agent/feedback",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "type": "input",
+          "id": "doc-e2e-file"
+        },
+        {
+          "type": "input",
+          "id": "doc-e2e-year"
+        },
+        {
+          "type": "input",
+          "id": "doc-path-year"
+        },
+        {
+          "type": "input",
+          "id": "doc-path-client"
+        },
+        {
+          "type": "input",
+          "id": "ia-legacy-prompt"
+        },
+        {
+          "type": "input",
+          "id": "doc-saved-id"
+        },
+        {
+          "type": "input",
+          "id": "feedback-expediente-id"
+        },
+        {
+          "type": "input",
+          "id": "feedback-contenido"
+        }
+      ],
+      "status": "OK",
+      "summary": {
+        "missing_functions": 0,
+        "endpoint_calls": 21,
+        "endpoint_failures": 0
+      }
+    },
+    {
+      "module": "analytics",
+      "buttons_total": 1,
+      "fields_total": 0,
+      "buttons": [
+        {
+          "label": "🔄 Cargar Analytics",
+          "onclick": "uiLoadAnalytics()",
+          "function": "uiLoadAnalytics",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/analytics/detailed",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"expedientes_por_tipo\":{\"labels\":[\"Civil\",\"Penal\",\"Laboral\",\"Mercantil\"],\"values\":[42,25,18,15]},\"performance\":{\"ahorro_horas_mes\":34,\"win_rate\":87},\"roi_data\":{\"ahorro_euro\":[1200,1800,2200,2600],\"labels\":[\"Ene\",\"Feb\",\"Mar\",\"Abr\"]},\"success\":true}\n"
+              }
+            }
+          ]
+        }
+      ],
+      "fields": [],
+      "status": "OK",
+      "summary": {
+        "missing_functions": 0,
+        "endpoint_calls": 1,
+        "endpoint_failures": 0
+      }
+    },
+    {
+      "module": "expedientes",
+      "buttons_total": 5,
+      "fields_total": 2,
+      "buttons": [
+        {
+          "label": "📂 Listar",
+          "onclick": "uiLoadExpedientes()",
+          "function": "uiLoadExpedientes",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/expedientes/listar",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"current_path\":\"/Users/victormfrancisco/Desktop/EXPEDIENTES\",\"files\":[{\"is_dir\":false,\"mtime\":\"05/02/2026 14:29\",\"name\":\".DS_Store\",\"size\":10244},{\"is_dir\":true,\"mtime\":\"04/02/2026 01:53\",\"name\":\"2022\",\"size\":\"-\"},{\"is_dir\":true,\"mtime\":\"04/02/2026 01:50\",\"name\":\"2026\",\"size\":\"-\"},{\"is_dir\":true,\"mtime\":\"01/02/2026 19:56\",\"name\":\"_GENERADOS\",\"size\":\"-\"},{\"is_dir\":true,\"mtime\":\"04/02/2026 20:30\",\"name\":\"_UPLOADS\",\"size\":\"-\"}],\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "☁️ iCloud Status",
+          "onclick": "uiIcloudStatus()",
+          "function": "uiIcloudStatus",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/icloud/status",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"available\":true,\"expedientes_exists\":true,\"path\":\"/Users/victormfrancisco/Library/Mobile Documents/com~apple~CloudDocs\",\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "👥 Clients",
+          "onclick": "uiIcloudClients()",
+          "function": "uiIcloudClients",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/icloud/clients",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 52,
+                "body_excerpt": "{\"clients\":[\"2026-01 Joel Hernandez San Juan\",\"2026-02 Sara \",\"2026-03 Youness Agtit\",\"2026-04 Antonio Gonzalez Medina\",\"2026-05 Alex Danilo Ri\\u0301os Reina\",\"2026-06 Mari\\u0301a Inmaculada Pe\\u0301rez Molina - DU_55\",\"2026-07 Mari\\u0301a Inmaculada Pe\\u0301rez Molina - DU_62\",\"CLIENTE_DEMO\"],\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📄 Export Document",
+          "onclick": "uiIcloudExportDocument()",
+          "function": "uiIcloudExportDocument",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/icloud/export",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📤 Export Analysis",
+          "onclick": "uiIcloudExportAnalysis()",
+          "function": "uiIcloudExportAnalysis",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/icloud/export-analysis",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"error\":\"write() argument must be str, not None\",\"success\":false}\n"
+              }
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "type": "input",
+          "id": "exp-path"
+        },
+        {
+          "type": "input",
+          "id": "icloud-client-name"
+        }
+      ],
+      "status": "OK",
+      "summary": {
+        "missing_functions": 0,
+        "endpoint_calls": 5,
+        "endpoint_failures": 0
+      }
+    },
+    {
+      "module": "lexnet",
+      "buttons_total": 6,
+      "fields_total": 5,
+      "buttons": [
+        {
+          "label": "⬆️ Subir Notificación",
+          "onclick": "uploadLexnetNotification()",
+          "function": "uploadLexnetNotification",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/lexnet/upload-notification",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🚨 Urgentes",
+          "onclick": "loadLexnetUrgentCount()",
+          "function": "loadLexnetUrgentCount",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/lexnet/urgent-count",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🚨 Urgentes legacy",
+          "onclick": "uiLegacyLexnetUrgent()",
+          "function": "uiLegacyLexnetUrgent",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/lexnet-urgent",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"count\":4,\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "⏱️ Analizar plazo",
+          "onclick": "uiLegacyLexnetAnalizarPlazo()",
+          "function": "uiLegacyLexnetAnalizarPlazo",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/lexnet/analizar-plazo",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"config\":{\"festivos_base\":2026,\"territorio\":\"Canarias\"},\"dias_habiles\":20,\"fecha_limite\":\"06/03/2026\",\"fecha_notificacion\":\"06/02/2026\",\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🔄 Cargar Notificaciones",
+          "onclick": "loadLexnetNotifications()",
+          "function": "loadLexnetNotifications",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/lexnet/notifications",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🧠 Analizar",
+          "onclick": "analyzeLexnetText()",
+          "function": "analyzeLexnetText",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/lexnet/analyze",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "type": "input",
+          "id": "lexnet-upload-file"
+        },
+        {
+          "type": "select",
+          "id": "lexnet-filter-unread"
+        },
+        {
+          "type": "select",
+          "id": "lexnet-filter-urgency"
+        },
+        {
+          "type": "input",
+          "id": "lexnet-filter-limit"
+        },
+        {
+          "type": "textarea",
+          "id": "lexnet-analyze-text"
+        }
+      ],
+      "status": "OK",
+      "summary": {
+        "missing_functions": 0,
+        "endpoint_calls": 6,
+        "endpoint_failures": 0
+      }
+    },
+    {
+      "module": "config",
+      "buttons_total": 2,
+      "fields_total": 0,
+      "buttons": [
+        {
+          "label": "📥 Cargar Config",
+          "onclick": "uiLoadConfig()",
+          "function": "uiLoadConfig",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/config/get",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"config\":{\"ia_fallback\":true,\"ollama_model\":\"lexdocs-legal-pro\",\"pendientes_dir\":\"/Users/victormfrancisco/Desktop/PENDIENTES_LEXDOCS\"},\"message\":\"Configuraci\\u00f3n cargada\",\"success\":true}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "💾 Guardar Config",
+          "onclick": "uiSaveConfig()",
+          "function": "uiSaveConfig",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/config/save",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"message\":\"Configuraci\\u00f3n guardada\",\"services\":{\"autoprocesador\":\"online\",\"ia_cascade\":\"online\",\"storage\":\"online\"},\"success\":true}\n"
+              }
+            }
+          ]
+        }
+      ],
+      "fields": [],
+      "status": "OK",
+      "summary": {
+        "missing_functions": 0,
+        "endpoint_calls": 2,
+        "endpoint_failures": 0
+      }
+    },
+    {
+      "module": "deploy",
+      "buttons_total": 6,
+      "fields_total": 0,
+      "buttons": [
+        {
+          "label": "🔄 Cargar Deploy",
+          "onclick": "uiLoadDeployStatus()",
+          "function": "uiLoadDeployStatus",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/deploy/status",
+              "method": "GET",
+              "route_exists": true,
+              "result": {
+                "status_code": 200,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"last_deploy\":\"06/02/2026 10:13\",\"services\":{\"database\":\"Online\",\"ollama\":\"Degraded\",\"pwa\":\"Online\",\"storage\":\"Online\"},\"success\":true,\"uptime\":\"N/A\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "${cfg.enabled ? '⏸️' : '▶️'}",
+          "onclick": "toggleProvider('${providerId}', ${!cfg.enabled})",
+          "function": "toggleProvider",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/ia-cascade/toggle-provider",
+              "method": "POST",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "🔑",
+          "onclick": "openAPIKeyModal('${providerId}')",
+          "function": "openAPIKeyModal",
+          "function_found": true,
+          "calls": []
+        },
+        {
+          "label": "🧪",
+          "onclick": "testProvider('${providerId}')",
+          "function": "testProvider",
+          "function_found": true,
+          "calls": []
+        },
+        {
+          "label": "Marcar leída",
+          "onclick": "markLexnetRead(${n.id})",
+          "function": "markLexnetRead",
+          "function_found": true,
+          "calls": [
+            {
+              "path": "/api/lexnet/notifications/1/read",
+              "method": "PATCH",
+              "route_exists": true,
+              "result": {
+                "status_code": 401,
+                "ok": true,
+                "latency_ms": 0,
+                "body_excerpt": "{\"msg\":\"Missing cookie \\\"access_token_cookie\\\"\"}\n"
+              }
+            }
+          ]
+        },
+        {
+          "label": "📂 Ver",
+          "onclick": "showFilePaths('${item.filename}', '${item.backup_path}', '${item.final_path}')",
+          "function": "showFilePaths",
+          "function_found": true,
+          "calls": []
+        }
+      ],
+      "fields": [],
+      "status": "OK",
+      "summary": {
+        "missing_functions": 0,
+        "endpoint_calls": 3,
+        "endpoint_failures": 0
+      }
+    }
+  ],
+  "ai_stress": [
+    {
+      "endpoint": "/api/chat",
+      "runs": 8,
+      "codes": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "avg_latency_ms": 0,
+      "p95_latency_ms": 0,
+      "error_rate_5xx": 0.0,
+      "status": "PASS"
+    },
+    {
+      "endpoint": "/api/ia/consultar",
+      "runs": 8,
+      "codes": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "avg_latency_ms": 0,
+      "p95_latency_ms": 0,
+      "error_rate_5xx": 0.0,
+      "status": "PASS"
+    },
+    {
+      "endpoint": "/api/ia-cascade/query",
+      "runs": 8,
+      "codes": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "avg_latency_ms": 1,
+      "p95_latency_ms": 1,
+      "error_rate_5xx": 0.0,
+      "status": "PASS"
+    }
+  ]
+}

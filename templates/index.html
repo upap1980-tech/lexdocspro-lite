@@ -362,7 +362,7 @@
             <h1 style="margin-bottom: 30px; color: #333;">Dashboard General</h1>
             <div style="display:flex; gap:10px; margin-bottom:16px;">
                 <button onclick="loadDashboardDetailed()" style="padding:8px 14px; background:#0ea5e9; color:#fff; border:none; border-radius:6px; cursor:pointer;">🔎 Ver Detalle</button>
-                <button onclick="window.open('/api/dashboard/export-pdf', '_blank')" style="padding:8px 14px; background:#334155; color:#fff; border:none; border-radius:6px; cursor:pointer;">📄 Exportar PDF</button>
+                <button onclick="uiDashboardExportPDF()" style="padding:8px 14px; background:#334155; color:#fff; border:none; border-radius:6px; cursor:pointer;">📄 Exportar PDF</button>
             </div>
             <div id="dashboard-detail" style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px; margin-bottom:18px; color:#334155;">
                 Cargando detalle...
@@ -1232,6 +1232,10 @@
             } catch (e) {
                 detail.textContent = `Error cargando detalle: ${e.message}`;
             }
+        }
+
+        function uiDashboardExportPDF() {
+            window.open('/api/dashboard/export-pdf', '_blank');
         }
 
         // ═══════════════════════════════════════════════════════════════
