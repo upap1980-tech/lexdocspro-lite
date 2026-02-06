@@ -71,6 +71,9 @@ cp .env.example .env
 Paso 5: Ejecutar
 python run.py
 
+Opcional (recomendado en este repo):
+./run.sh
+
 Abre: http://localhost:5001
 📖 Documentación
 Setup Completo
