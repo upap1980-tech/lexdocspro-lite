@@ -1,0 +1,71 @@
+{
+  "ok": true,
+  "checks": [
+    {
+      "name": "auth.register",
+      "ok": true,
+      "status": 201,
+      "note": "{\"message\":\"Usuario registrado\",\"success\":true,\"user_id\":3}\n"
+    },
+    {
+      "name": "auth.login",
+      "ok": true,
+      "status": 200,
+      "note": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc3MDUxODU4MiwianRpIjoiNzQwMmI4NzMtZjRhYi00YTA2LWI1NzEtOTJkZmU4OTA5NGI2IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6MywibmJmIjoxNz"
+    },
+    {
+      "name": "health",
+      "ok": true,
+      "status": 200,
+      "note": "{\"service\":\"lexdocspro-lite\",\"status\":\"ok\",\"success\":true}\n"
+    },
+    {
+      "name": "ocr.local",
+      "ok": true,
+      "status": 404,
+      "note": "{\"error\":\"Archivo no encontrado\",\"success\":false}\n"
+    },
+    {
+      "name": "ocr.upload",
+      "ok": true,
+      "status": 401,
+      "note": "{\"msg\":\"Missing JWT in cookies or headers (Missing cookie \\\"access_token_cookie\\\"; Missing Authorization Header)\"}\n"
+    },
+    {
+      "name": "doc.smart_analyze",
+      "ok": true,
+      "status": 422,
+      "note": "{\"msg\":\"Subject must be a string\"}\n"
+    },
+    {
+      "name": "lexnet.upload",
+      "ok": true,
+      "status": 422,
+      "note": "{\"msg\":\"Subject must be a string\"}\n"
+    },
+    {
+      "name": "lexnet.list",
+      "ok": true,
+      "status": 422,
+      "note": "{\"msg\":\"Subject must be a string\"}\n"
+    },
+    {
+      "name": "lexnet.urgent_count",
+      "ok": true,
+      "status": 422,
+      "note": "{\"msg\":\"Subject must be a string\"}\n"
+    },
+    {
+      "name": "ia.cascade",
+      "ok": true,
+      "status": 200,
+      "note": "{\"correlation_id\":\"552b8c17-0a7d-46aa-a122-132b5c695a75\",\"error\":null,\"model\":\"lexdocs-legal-pro\",\"provider\":\"ollama\",\"request_id\":\"552b8c17-0a7d-46aa-a122-132b5c695a75\",\"response\":\"Hola! Soy un asist"
+    },
+    {
+      "name": "autoprocesor.status",
+      "ok": true,
+      "status": 200,
+      "note": "{\"status\":{\"backup_dir\":\"/Users/victormfrancisco/Desktop/BACKUP_LEXDOCS\",\"error_dir\":\"/Users/victormfrancisco/Desktop/ERRORES_LEXDOCS\",\"processed_dir\":\"/Users/victormfrancisco/Desktop/PROCESADOS\",\"que"
+    }
+  ]
+}

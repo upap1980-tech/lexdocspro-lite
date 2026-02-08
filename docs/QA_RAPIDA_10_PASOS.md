@@ -12,3 +12,6 @@ Fecha: 2026-02-06
 8. Firma: `Status` responde OK (si hay certificado, `Sign`).
 9. Alerts: `Test Email` responde 2xx/4xx controlado.
 10. Verificar `reports/forensic_module_audit.json` con `OK=15`.
+
+QA técnico rápido:
+- Ejecutar `python3 scripts/validate_p0_runtime.py` y validar `reports/p0_runtime_validation.json` en OK.

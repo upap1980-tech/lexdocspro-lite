@@ -76,3 +76,4 @@ Fecha: 2026-02-06
 - Sin errores JS fatales.
 - Respuestas controladas (2xx o 4xx), no 500.
 - Reporte `reports/forensic_module_audit.json` en `OK=15`.
+- Reporte `reports/p0_runtime_validation.json` en `ok: true`.

@@ -355,6 +355,29 @@
     <!-- CONTENIDO PRINCIPAL -->
     <!-- ═══════════════════════════════════════════════════════════════ -->
     <main class="main-content">
+        <div id="first-run-overlay" style="position:fixed; inset:0; background:rgba(15,23,42,0.75); display:none; align-items:center; justify-content:center; z-index:9999;">
+            <div style="background:#fff; width:min(720px, 92vw); max-height:88vh; overflow:auto; border-radius:16px; padding:20px 24px; box-shadow:0 10px 40px rgba(0,0,0,0.35);">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                    <h2 style="margin:0;">Bienvenido a LexDocsPro LITE</h2>
+                    <button onclick="closeFirstRun()" style="border:none; background:#e2e8f0; padding:6px 10px; border-radius:8px; cursor:pointer;">Cerrar</button>
+                </div>
+                <p style="color:#475569;">Guía rápida para dejar todo funcionando en minutos.</p>
+                <ol style="line-height:1.8; color:#0f172a; padding-left:18px;">
+                    <li>Configura IA (Ollama o API keys) en <strong>Configuración</strong>.</li>
+                    <li>Activa Email Alerts con SMTP y prueba el envío.</li>
+                    <li>Sube un PDF en <strong>Documentos E2E</strong> y ejecuta Smart Analyze.</li>
+                    <li>Confirma guardado y firma digital si hay certificado.</li>
+                    <li>Valida LexNET con un XML/PDF de prueba.</li>
+                </ol>
+                <div style="margin-top:12px; padding:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
+                    QA diaria: <code>docs/QA_RAPIDA_10_PASOS.md</code>
+                </div>
+                <div style="margin-top:16px; display:flex; gap:8px;">
+                    <button onclick="openQA()" style="padding:8px 12px; background:#1d4ed8; color:#fff; border:none; border-radius:6px; cursor:pointer;">Ver QA Rápida</button>
+                    <button onclick="markFirstRunDone()" style="padding:8px 12px; background:#16a34a; color:#fff; border:none; border-radius:6px; cursor:pointer;">No volver a mostrar</button>
+                </div>
+            </div>
+        </div>
         <!-- ███████████████████████████████████████████████████████████ -->
         <!-- DASHBOARD -->
         <!-- ███████████████████████████████████████████████████████████ -->
@@ -1175,6 +1198,34 @@
             
             // Activar nav-item correspondiente
             event.target.closest('.nav-item').classList.add('active');
+        }
+
+        function openQA() {
+            showTab('qa-rapida');
+            closeFirstRun();
+        }
+
+        function closeFirstRun() {
+            const overlay = document.getElementById('first-run-overlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        function markFirstRunDone() {
+            try {
+                localStorage.setItem('lexdocs_first_run_done', '1');
+            } catch (e) {}
+            closeFirstRun();
+        }
+
+        function maybeShowFirstRun() {
+            let done = '0';
+            try {
+                done = localStorage.getItem('lexdocs_first_run_done') || '0';
+            } catch (e) {}
+            if (done !== '1') {
+                const overlay = document.getElementById('first-run-overlay');
+                if (overlay) overlay.style.display = 'flex';
+            }
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -2434,6 +2485,10 @@
                 loadProcessingLog();
             }
         };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            maybeShowFirstRun();
+        });
 
     </script>
 

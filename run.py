@@ -57,8 +57,8 @@ app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'CAMBIAR-ESTO-EN-PROD
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(seconds=int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 3600)))
 app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(seconds=int(os.getenv('JWT_REFRESH_TOKEN_EXPIRES', 2592000)))
 
-# ⭐ COOKIES JWT CONFIG
-app.config['JWT_TOKEN_LOCATION'] = ['cookies']
+# ⭐ COOKIES + HEADER JWT CONFIG (fallback seguro)
+app.config['JWT_TOKEN_LOCATION'] = os.getenv('JWT_TOKEN_LOCATION', 'cookies,headers').split(',')
 app.config['JWT_COOKIE_SECURE'] = False
 app.config['JWT_COOKIE_CSRF_PROTECT'] = False
 app.config['JWT_COOKIE_NAME'] = 'access_token_cookie'
@@ -2480,6 +2480,18 @@ def serve_static(path):
     return jsonify({'error': 'Not Found'}), 404
 
 # ============================================
+# HEALTH CHECK
+# ============================================
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        'success': True,
+        'service': 'lexdocspro-lite',
+        'status': 'ok'
+    }), 200
+
+# ============================================
 # NEW FEATURE ENDPOINTS (v2.3.1 CLASSIC)
 # ============================================
 
@@ -2972,4 +2984,7 @@ if __name__ == '__main__':
     # Iniciar el servidor
     print(f"🚀 LexDocsPro LITE v2.3.1 SIDEBAR CLASSIC iniciando en puerto 5001...")
     # Usamos threaded=True para manejar múltiples peticiones si es necesario
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", os.getenv("FLASK_PORT", "5002")))
+    debug = os.getenv("DEBUG", "0").lower() in ("1", "true", "yes")
+    app.run(host=host, port=port, debug=debug)

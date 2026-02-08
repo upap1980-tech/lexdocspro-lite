@@ -8,14 +8,13 @@ from flask_jwt_extended import (
     jwt_required, get_jwt_identity, get_jwt
 )
 from datetime import timedelta
-from models import DatabaseManager
-from services.auth_service import AuthService
+from services.auth_service import AuthService, AuthDB
 
 # Crear blueprint
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 # Inicializar servicios
-db_manager = DatabaseManager()
+db_manager = AuthDB()
 auth_service = AuthService(db_manager)
 
 # ==========================================
