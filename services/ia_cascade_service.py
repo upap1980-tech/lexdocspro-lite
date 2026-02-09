@@ -141,7 +141,8 @@ class IACascadeService:
     def _add_local_ollama_models(self, ollama_url: str) -> None:
         """Descubre modelos locales de Ollama y los añade como providers adicionales."""
         try:
-            resp = requests.get(f"{ollama_url}/api/tags", timeout=2)
+            base = ollama_url.replace("/api/generate", "")
+            resp = requests.get(f"{base}/api/tags", timeout=2)
             data = resp.json()
             models = [m.get("name") for m in data.get("models", []) if m.get("name")]
         except Exception:
