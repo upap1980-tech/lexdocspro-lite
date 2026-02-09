@@ -66,45 +66,50 @@ class SignatureService:
             print(f"❌ {err}")
             return False, err
 
-        # Usar directamente objetos cryptography (endesive los acepta)
-        key = key_c
-        cert = cert_c
-        other_certs = other_certs_c or []
+        # Firma con pyHanko (más robusto)
+        try:
+            from pyhanko.sign import signers
+            from pyhanko.sign.general import sign_pdf
+            from pyhanko.sign.fields import SigFieldSpec
+        except Exception as e:
+            err = f"Dependencias pyHanko no disponibles: {e}"
+            print(f"❌ {err}")
+            return False, err
 
         try:
-            with open(input_path, 'rb') as f:
-                pdf_in = f.read()
+            simple_signer = signers.SimpleSigner.load_pkcs12(
+                filepath=cert_path,
+                passphrase=passphrase.encode() if passphrase else None,
+                key_passphrase=passphrase.encode() if passphrase else None,
+            )
+        except Exception as e:
+            err = f"Error cargando PKCS#12 con pyHanko: {e}"
+            print(f"❌ {err}")
+            return False, err
+
+        try:
+            with open(input_path, 'rb') as inf:
+                pdf_in = inf.read()
         except Exception as e:
             err = f"No se pudo leer PDF a firmar: {e}"
             print(f"❌ {err}")
             return False, err
 
         try:
-            date = datetime.datetime.utcnow()
-            dct = {
-                "sigflags": 3,
-                "sigpage": 0,
-                "mdalg": "sha256",
-                "contact": "LexDocsPro",
-                "location": "ES",
-                "signingdate": date.strftime("D:%Y%m%d%H%M%S+00'00'"),
-                "reason": "LexDocsPro digital signature",
-                "signature": "Signature1",
-            }
-            signed_pdf = pdf.cms.sign(
+            meta = signers.PdfSignatureMetadata(field_name="Sig1", md_algorithm="sha256")
+            out = sign_pdf(
                 pdf_in,
-                dct,
-                key,
-                cert,
-                othercerts=other_certs,
-                algomd="sha256",
+                signature_meta=meta,
+                signer=simple_signer,
+                existing_fields_only=False,
+                new_field_spec=SigFieldSpec("Sig1"),
             )
-            if len(signed_pdf) < len(pdf_in) * 0.5:
+            if len(out) < len(pdf_in) * 0.5:
                 raise ValueError("El PDF firmado quedó demasiado pequeño, posible corrupción")
-            with open(output_path, 'wb') as f:
-                f.write(signed_pdf)
+            with open(output_path, 'wb') as outf:
+                outf.write(out)
 
-            # Validar que el PDF resultante es legible
+            # Validar lectura
             try:
                 from PyPDF2 import PdfReader
                 PdfReader(output_path)

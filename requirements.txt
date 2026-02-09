@@ -15,3 +15,6 @@ endesive
 pyOpenSSL
 
 PyPDF2
+
+pyhanko
+pyhanko-certvalidator
