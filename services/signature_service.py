@@ -102,14 +102,11 @@ class SignatureService:
 
         try:
             meta = signers.PdfSignatureMetadata(field_name="Sig1", md_algorithm="sha256")
-            # pyHanko requiere un PdfFileReader; usar buffer en memoria
+            # pyHanko requiere writer incremental sobre stream binario
             import io
             from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
-            from pyhanko.pdf_utils.reader import PdfFileReader
 
-            bio_in = io.BytesIO(pdf_in)
-            reader = PdfFileReader(bio_in)
-            writer = IncrementalPdfFileWriter(reader)
+            writer = IncrementalPdfFileWriter(io.BytesIO(pdf_in))
             bio_out = io.BytesIO()
             signers.sign_pdf(
                 writer,
