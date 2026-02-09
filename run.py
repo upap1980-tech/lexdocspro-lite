@@ -6,6 +6,7 @@ import shutil
 import uuid
 import hashlib
 import json
+import secrets
 from pathlib import Path
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, send_file, send_from_directory, make_response
@@ -3225,19 +3226,57 @@ def legacy_banking_transactions():
 
 @app.route('/api/usuarios/equipo', methods=['GET'])
 def legacy_usuarios_equipo():
-    usuarios = [
-        {'nombre': 'Admin', 'rol': 'ADMIN', 'status': 'Online', 'actividad': 'Ahora'},
-        {'nombre': 'Abogado 1', 'rol': 'ABOGADO', 'status': 'Offline', 'actividad': 'Hace 2h'},
-    ]
-    return jsonify({'success': True, 'usuarios': usuarios}), 200
+    try:
+        from services.auth_service import AuthDB
+        adb = AuthDB()
+        rows = adb.list_users()
+        usuarios = []
+        for u in rows:
+            usuarios.append({
+                'id': u.get('id'),
+                'nombre': u.get('nombre') or u.get('email'),
+                'email': u.get('email'),
+                'rol': u.get('rol', 'LECTURA'),
+                'status': 'Online' if u.get('activo') else 'Inactivo',
+                'actividad': u.get('last_login') or u.get('created_at') or ''
+            })
+        return jsonify({'success': True, 'usuarios': usuarios, 'total': len(usuarios)}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'usuarios': []}), 500
 
 @app.route('/api/usuarios/registrar', methods=['POST'])
 def legacy_usuarios_registrar():
     data = request.get_json(silent=True) or {}
-    nombre = data.get('nombre')
-    if not nombre:
-        return jsonify({'success': False, 'message': 'nombre requerido'}), 400
-    return jsonify({'success': True, 'message': f'Invitación enviada a {nombre}'}), 200
+    nombre = (data.get('nombre') or '').strip()
+    email = (data.get('email') or '').strip().lower()
+    rol = (data.get('rol') or 'LECTURA').strip().upper()
+    password = (data.get('password') or '').strip()
+
+    if not email:
+        return jsonify({'success': False, 'message': 'email requerido'}), 400
+    if rol not in {'ADMIN', 'ABOGADO', 'LECTURA'}:
+        return jsonify({'success': False, 'message': 'rol inválido'}), 400
+
+    if not password:
+        alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+        password = ''.join(secrets.choice(alphabet) for _ in range(12))
+
+    try:
+        from services.auth_service import AuthDB, AuthService
+        adb = AuthDB()
+        asvc = AuthService(adb)
+        result = asvc.register_user(email=email, password=password, rol=rol, nombre=nombre or None)
+        if not result.get('success'):
+            return jsonify({'success': False, 'message': result.get('error', 'No se pudo registrar')}), 400
+        return jsonify({
+            'success': True,
+            'message': f'Usuario creado: {email}',
+            'user_id': result.get('user_id'),
+            'rol': rol,
+            'temporary_password': password
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/analytics/detailed', methods=['GET'])
 def legacy_analytics_detailed():

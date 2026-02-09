@@ -1111,11 +1111,19 @@
         <section id="usuarios" class="section">
             <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
                 <h2 style="margin-top:0;">👥 Usuarios</h2>
-                <div style="display:flex; gap:8px; margin-bottom:10px;">
-                    <input id="usuarios-nombre" placeholder="Nombre usuario" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+                    <input id="usuarios-nombre" placeholder="Nombre (opcional)" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                    <input id="usuarios-email" type="email" placeholder="Email usuario" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; min-width:220px;">
+                    <select id="usuarios-rol" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                        <option value="LECTURA">LECTURA</option>
+                        <option value="ABOGADO">ABOGADO</option>
+                        <option value="ADMIN">ADMIN</option>
+                    </select>
+                    <input id="usuarios-password" type="text" placeholder="Password (opcional)" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
                     <button onclick="uiLoadUsuarios()" style="padding:8px 12px; background:#1d4ed8; color:#fff; border:none; border-radius:6px; cursor:pointer;">👥 Equipo</button>
                     <button onclick="uiInvitarUsuario()" style="padding:8px 12px; background:#7c3aed; color:#fff; border:none; border-radius:6px; cursor:pointer;">📩 Invitar</button>
                 </div>
+                <div id="usuarios-table-wrap" style="margin-bottom:10px;"></div>
                 <pre id="usuarios-output" style="background:#0f172a; color:#e2e8f0; padding:10px; border-radius:8px; max-height:260px; overflow:auto;">Usuarios output...</pre>
             </div>
         </section>
@@ -2708,17 +2716,59 @@
 
         async function uiLoadUsuarios() {
             const { data } = await apiJson('/api/usuarios/equipo');
+            renderUsuariosTable(data?.usuarios || []);
             setPre('usuarios-output', data);
         }
 
         async function uiInvitarUsuario() {
             const nombre = document.getElementById('usuarios-nombre')?.value || '';
+            const email = document.getElementById('usuarios-email')?.value || '';
+            const rol = document.getElementById('usuarios-rol')?.value || 'LECTURA';
+            const password = document.getElementById('usuarios-password')?.value || '';
             const { data } = await apiJson('/api/usuarios/registrar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nombre })
+                body: JSON.stringify({ nombre, email, rol, password })
             });
             setPre('usuarios-output', data);
+            if (data?.success) {
+                await uiLoadUsuarios();
+            }
+        }
+
+        function renderUsuariosTable(items) {
+            const wrap = document.getElementById('usuarios-table-wrap');
+            if (!wrap) return;
+            if (!items.length) {
+                wrap.innerHTML = '<div style="color:#64748b;">Sin usuarios para mostrar.</div>';
+                return;
+            }
+            wrap.innerHTML = `
+                <div style="overflow:auto; border:1px solid #e2e8f0; border-radius:8px;">
+                    <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                        <thead style="background:#f8fafc;">
+                            <tr>
+                                <th style="text-align:left; padding:8px; border-bottom:1px solid #e2e8f0;">Nombre</th>
+                                <th style="text-align:left; padding:8px; border-bottom:1px solid #e2e8f0;">Email</th>
+                                <th style="text-align:left; padding:8px; border-bottom:1px solid #e2e8f0;">Rol</th>
+                                <th style="text-align:left; padding:8px; border-bottom:1px solid #e2e8f0;">Estado</th>
+                                <th style="text-align:left; padding:8px; border-bottom:1px solid #e2e8f0;">Actividad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${items.map(u => `
+                                <tr>
+                                    <td style="padding:8px; border-bottom:1px solid #f1f5f9;">${u.nombre || '-'}</td>
+                                    <td style="padding:8px; border-bottom:1px solid #f1f5f9;">${u.email || '-'}</td>
+                                    <td style="padding:8px; border-bottom:1px solid #f1f5f9;">${u.rol || '-'}</td>
+                                    <td style="padding:8px; border-bottom:1px solid #f1f5f9;">${u.status || '-'}</td>
+                                    <td style="padding:8px; border-bottom:1px solid #f1f5f9;">${u.actividad || '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
         }
 
         async function uiLoadAnalytics() {
@@ -2821,6 +2871,9 @@
             }
             if (tab === 'email-alerts') {
                 uiAlertsStatus();
+            }
+            if (tab === 'usuarios') {
+                uiLoadUsuarios();
             }
         };
 

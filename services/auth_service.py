@@ -55,6 +55,27 @@ class AuthDB:
         conn.close()
         return dict(row) if row else None
 
+    def list_users(self):
+        conn = self._connect()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT id, email, rol, nombre, activo, created_at, last_login
+            FROM users
+            ORDER BY id ASC
+            """
+        )
+        rows = cur.fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+
+    def deactivate_user(self, target_user_id: int):
+        conn = self._connect()
+        cur = conn.cursor()
+        cur.execute("UPDATE users SET activo = 0 WHERE id = ?", (target_user_id,))
+        conn.commit()
+        conn.close()
+
 
 class AuthService:
     def __init__(self, db: AuthDB):
