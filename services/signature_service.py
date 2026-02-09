@@ -68,14 +68,29 @@ class SignatureService:
 
         # Convertir a objetos OpenSSL que exige endesive
         try:
-            key_pem = key_c.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
-            key = crypto.load_privatekey(crypto.FILETYPE_PEM, key_pem)
-            cert_pem = cert_c.public_bytes(Encoding.PEM)
-            cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_pem)
+            # clave
+            if hasattr(key_c, "private_bytes"):
+                key_pem = key_c.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+                key = crypto.load_privatekey(crypto.FILETYPE_PEM, key_pem)
+            else:
+                key = key_c
+            # cert principal
+            if hasattr(cert_c, "public_bytes"):
+                cert_pem = cert_c.public_bytes(Encoding.PEM)
+                cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_pem)
+            else:
+                cert = cert_c
+            # cadena
             other_certs = []
-            if other_certs_c:
-                for oc in other_certs_c:
-                    other_certs.append(crypto.load_certificate(crypto.FILETYPE_PEM, oc.public_bytes(Encoding.PEM)))
+            for oc in other_certs_c or []:
+                try:
+                    if hasattr(oc, "public_bytes"):
+                        pem = oc.public_bytes(Encoding.PEM)
+                    else:
+                        pem = crypto.dump_certificate(crypto.FILETYPE_PEM, oc)
+                    other_certs.append(crypto.load_certificate(crypto.FILETYPE_PEM, pem))
+                except Exception as e:
+                    print(f"⚠️  No se pudo convertir certificado intermedio: {e}")
         except Exception as e:
             err = f"Error convirtiendo certificados a OpenSSL: {e}"
             print(f"❌ {err}")
