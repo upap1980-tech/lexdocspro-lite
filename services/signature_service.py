@@ -4,9 +4,12 @@ Versión stub para v2.3.1
 """
 import os
 
+CERTS_PATH_DEFAULT = os.path.expanduser("~/Desktop/LEXDOCS_CERTS")
+
+
 class SignatureService:
-    def __init__(self):
-        self.certificates_path = os.path.expanduser("~/Desktop/CERTIFICADOS")
+    def __init__(self, certificates_path: str = CERTS_PATH_DEFAULT):
+        self.certificates_path = os.path.expanduser(certificates_path)
         os.makedirs(self.certificates_path, exist_ok=True)
     
     def list_available_certificates(self):
@@ -17,7 +20,7 @@ class SignatureService:
             
             certs = []
             for file in os.listdir(self.certificates_path):
-                if file.endswith('.p12'):
+                if file.lower().endswith('.p12'):
                     certs.append({
                         'name': file,
                         'path': os.path.join(self.certificates_path, file)
@@ -30,27 +33,72 @@ class SignatureService:
     
     def sign_pdf(self, input_path, output_path, cert_name, passphrase):
         """
-        Firmar PDF con certificado digital
-        
-        NOTA: Implementación simplificada
-        Para producción usar: pyHanko, endesive o similar
+        Firmar PDF con certificado PKCS#12 usando endesive (CMS).
         """
         try:
-            # Por ahora, simplemente copiamos el archivo
-            # En producción aquí iría la lógica real de firma con pyHanko
-            import shutil
-            shutil.copy(input_path, output_path)
-            
-            print(f"⚠️  SignatureService: Firma digital en desarrollo")
-            print(f"   Archivo copiado (sin firmar) a: {output_path}")
-            
-            # Retornar True para simular éxito
-            # En producción verificaríamos la firma real
-            return True
-            
+            from cryptography.hazmat.primitives.serialization import pkcs12
+            from endesive import pdf
+            import datetime
         except Exception as e:
-            print(f"❌ Error en firma digital: {e}")
-            return False
+            err = f"Dependencias de firma no disponibles: {e}"
+            print(f"❌ {err}")
+            return False, err
+
+        cert_path = os.path.join(self.certificates_path, cert_name)
+        if not os.path.exists(cert_path):
+            err = f"Certificado no encontrado: {cert_path}"
+            print(f"❌ {err}")
+            return False, err
+
+        # Cargar PKCS12 con passphrase (permitir vacío si no se indicó)
+        try:
+            data = open(cert_path, 'rb').read()
+            key, cert, other_certs = pkcs12.load_key_and_certificates(
+                data,
+                passphrase.encode() if passphrase else None,
+            )
+        except Exception as e:
+            if not passphrase:
+                err = "El certificado requiere passphrase. Indícala e inténtalo de nuevo."
+            else:
+                err = f"Error cargando PKCS#12 ({cert_path}): {e}"
+            print(f"❌ {err}")
+            return False, err
+
+        try:
+            with open(input_path, 'rb') as f:
+                pdf_in = f.read()
+        except Exception as e:
+            err = f"No se pudo leer PDF a firmar: {e}"
+            print(f"❌ {err}")
+            return False, err
+
+        try:
+            date = datetime.datetime.utcnow()
+            dct = {
+                "sigflags": 3,
+                "contact": "LexDocsPro",
+                "location": "ES",
+                "signingdate": date.strftime("D:%Y%m%d%H%M%S+00'00'"),
+                "reason": "LexDocsPro digital signature",
+                "signature": "Signature1",
+            }
+            signed_pdf = pdf.cms.sign(
+                pdf_in,
+                dct,
+                key,
+                cert,
+                othercerts=other_certs,
+                algomd="sha256",
+            )
+            with open(output_path, 'wb') as f:
+                f.write(signed_pdf)
+            print(f"✅ PDF firmado en {output_path}")
+            return True, None
+        except Exception as e:
+            err = f"Error firmando PDF: {e}"
+            print(f"❌ {err}")
+            return False, err
     
     def verify_signature(self, pdf_path):
         """Verificar firma de un PDF"""
@@ -61,4 +109,3 @@ class SignatureService:
             'signer': None,
             'timestamp': None
         }
-

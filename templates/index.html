@@ -1047,15 +1047,19 @@
         <section id="pdf-preview" class="section">
             <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
                 <h2 style="margin-top:0;">📄 OCR / PDF / Files</h2>
+                <div id="files-roots" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
                 <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-                    <input id="files-path" placeholder="Ruta relativa (vacío = raíz)" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; min-width:260px;">
+                    <input id="files-path" value="PROCESADOS_LEXDOCS" placeholder="Ruta (p.ej. PROCESADOS_LEXDOCS o EXPEDIENTES_LEXDOCS/subcarpeta)" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; min-width:260px;">
                     <button onclick="uiLoadFiles()" style="padding:8px 12px; background:#0284c7; color:#fff; border:none; border-radius:6px; cursor:pointer;">📂 Cargar</button>
                 </div>
                 <div id="files-list" style="max-height:180px; overflow:auto; border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin-bottom:10px;">Sin datos.</div>
                 <div id="selected-file" style="font-size:12px; color:#64748b; margin-bottom:8px;">Archivo seleccionado: -</div>
                 <div style="display:flex; gap:10px; margin-bottom:10px;">
                     <button onclick="uiRunOCRSelected()" style="padding:8px 12px; background:#16a34a; color:#fff; border:none; border-radius:6px; cursor:pointer;">🔎 OCR</button>
-                    <button onclick="uiOcrUploadQuick()" style="padding:8px 12px; background:#0369a1; color:#fff; border:none; border-radius:6px; cursor:pointer;">📤 OCR Upload</button>
+                    <label style="padding:8px 12px; background:#0369a1; color:#fff; border:none; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                        📤 OCR Upload (Finder)
+                        <input id="ocr-upload-input" type="file" accept=".pdf,.png,.jpg,.jpeg,.tiff" style="display:none;" onchange="uiOcrUploadInput(this.files)">
+                    </label>
                     <button onclick="uiPdfPreviewData()" style="padding:8px 12px; background:#334155; color:#fff; border:none; border-radius:6px; cursor:pointer;">🗂️ Preview Data</button>
                 </div>
                 <iframe id="pdf-frame" style="width:100%; height:300px; border:1px solid #cbd5e1; border-radius:8px;"></iframe>
@@ -1066,7 +1070,8 @@
         <section id="email-alerts" class="section">
             <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
                 <h2 style="margin-top:0;">📧 Email Alerts</h2>
-                <div style="display:flex; gap:8px; margin-bottom:10px;">
+                <div style="display:flex; gap:8px; margin-bottom:10px; align-items:center; flex-wrap:wrap;">
+                    <span id="alerts-status" style="font-size:12px; background:#f97316; color:#fff; padding:4px 10px; border-radius:12px;">SMTP?</span>
                     <input id="alerts-email" type="email" placeholder="correo@dominio.com" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; min-width:280px;">
                     <button onclick="uiSaveAlertEmail()" style="padding:8px 12px; background:#2563eb; color:#fff; border:none; border-radius:6px; cursor:pointer;">💾 Guardar</button>
                     <button onclick="uiLoadAlertHistory()" style="padding:8px 12px; background:#334155; color:#fff; border:none; border-radius:6px; cursor:pointer;">🕘 Historial</button>
@@ -1079,8 +1084,12 @@
         <section id="firma-digital" class="section">
             <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
                 <h2 style="margin-top:0;">✍️ Firma Digital</h2>
-                <div style="display:flex; gap:8px; margin-bottom:10px;">
-                    <input id="firma-doc-id" placeholder="doc_id (opcional)" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; align-items:center;">
+                    <input id="firma-doc-id" placeholder="doc_id o ruta PDF" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; min-width:220px;">
+                    <select id="firma-cert" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; min-width:200px;">
+                        <option value=\"\">Selecciona certificado</option>
+                    </select>
+                    <input id="firma-pass" type="password" placeholder="passphrase (si aplica)" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; min-width:180px;">
                     <button onclick="uiFirmaStatus()" style="padding:8px 12px; background:#0369a1; color:#fff; border:none; border-radius:6px; cursor:pointer;">📊 Estado</button>
                     <button onclick="uiFirmaSign()" style="padding:8px 12px; background:#16a34a; color:#fff; border:none; border-radius:6px; cursor:pointer;">✍️ Ejecutar</button>
                     <button onclick="uiSignatureCertificates()" style="padding:8px 12px; background:#475569; color:#fff; border:none; border-radius:6px; cursor:pointer;">🔐 Certificados</button>
@@ -2190,9 +2199,17 @@
             const p = document.getElementById('files-path')?.value || '';
             const { data } = await apiJson(`/api/files?path=${encodeURIComponent(p)}`);
             const box = document.getElementById('files-list');
+            const rootsBox = document.getElementById('files-roots');
             if (!box) return;
             const folders = data.folders || [];
             const files = data.files || [];
+            const roots = data.roots || [];
+            if (rootsBox) {
+                rootsBox.innerHTML = roots.map(r => `
+                    <button style="padding:6px 10px; border:1px solid #cbd5e1; background:#f8fafc; border-radius:6px; cursor:pointer;"
+                        onclick="document.getElementById('files-path').value='${r}'; uiLoadFiles()">${r}</button>
+                `).join('') || '';
+            }
             box.innerHTML = [
                 ...folders.map(f => `<div style=\"padding:6px; cursor:pointer;\" onclick=\"document.getElementById('files-path').value='${f.path}'; uiLoadFiles()\">📁 ${f.name}</div>`),
                 ...files.map(f => `<div style=\"padding:6px; cursor:pointer;\" onclick=\"uiSelectFile('${f.path}')\">📄 ${f.name}</div>`)
@@ -2590,11 +2607,12 @@
                 body: JSON.stringify({ email })
             });
             setPre('alerts-output', data);
+            await uiAlertsStatus();
         }
 
         async function uiLoadAlertHistory() {
             const { data } = await apiJson('/api/alerts/history');
-            setPre('alerts-output', data);
+            setPre('alerts-output', data?.history?.length ? data : { history: data.history || [], info: 'Sin historial real' });
         }
 
         async function uiTestAlertEmail() {
@@ -2607,23 +2625,53 @@
             setPre('alerts-output', data);
         }
 
+        async function uiAlertsStatus() {
+            const badge = document.getElementById('alerts-status');
+            const { data } = await apiJson('/api/alerts/status');
+            if (badge) {
+                const ok = data.smtp_configured;
+                badge.textContent = ok ? 'SMTP OK' : `SMTP incompleto: ${data.error || 'configurar'}`;
+                badge.style.background = ok ? '#16a34a' : '#f97316';
+                badge.style.color = '#fff';
+                badge.style.padding = '4px 10px';
+                badge.style.borderRadius = '12px';
+            }
+            setPre('alerts-output', data);
+        }
+
         async function uiFirmaStatus() {
             const { data } = await apiJson('/api/firma/status');
+            if (data?.certificates) {
+                const sel = document.getElementById('firma-cert');
+                if (sel) {
+                    sel.innerHTML = `<option value=\"\">Selecciona certificado</option>` + data.certificates.map(c => `<option value=\"${c.name}\">${c.name}</option>`).join('');
+                }
+            }
             setPre('firma-output', data);
         }
 
         async function uiFirmaSign() {
-            const docId = document.getElementById('firma-doc-id')?.value || 'demo-doc';
-            const { data } = await apiJson('/api/firma/ejecutar', {
+            const docId = document.getElementById('firma-doc-id')?.value || '';
+            const cert = document.getElementById('firma-cert')?.value || '';
+            const pass = document.getElementById('firma-pass')?.value || '';
+            if (!docId) return setPre('firma-output', 'Indica doc_id o ruta de PDF');
+            if (!cert) return setPre('firma-output', 'Selecciona un certificado .p12');
+            const { data } = await apiJson('/api/signature/sign', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ doc_id: docId })
+                body: JSON.stringify({ doc_id: docId, certificate: cert, passphrase: pass })
             });
             setPre('firma-output', data);
         }
 
         async function uiSignatureCertificates() {
             const { data } = await apiJson('/api/signature/certificates');
+            if (data?.certificates) {
+                const sel = document.getElementById('firma-cert');
+                if (sel) {
+                    sel.innerHTML = `<option value=\"\">Selecciona certificado</option>` + data.certificates.map(c => `<option value=\"${c.name}\">${c.name}</option>`).join('');
+                }
+            }
             setPre('firma-output', data);
         }
 
@@ -2767,6 +2815,12 @@
             if (tab === 'autoprocesos') {
                 loadAutoProcessorStatus();
                 loadProcessingLog();
+            }
+            if (tab === 'pdf-preview') {
+                uiLoadFiles();
+            }
+            if (tab === 'email-alerts') {
+                uiAlertsStatus();
             }
         };
 

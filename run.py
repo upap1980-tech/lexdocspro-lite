@@ -145,6 +145,26 @@ DEFAULT_OCR_PATHS = [
 BASE_DIR = os.path.join(BASE_OCR_ROOT, "PROCESADOS_LEXDOCS")
 GENERATED_DOCS_DIR = os.path.join(BASE_DIR, "_GENERADOS")
 
+
+def resolve_ocr_path(rel_path: str):
+    """Return absolute path for an OCR file under any allowed root, else None."""
+    if not rel_path:
+        return BASE_DIR
+    safe_rel = rel_path.lstrip("/").replace("..", "")
+    for root in DEFAULT_OCR_PATHS:
+        root_abs = os.path.join(BASE_OCR_ROOT, root)
+        if safe_rel.startswith(root):
+            suffix = os.path.relpath(safe_rel, root)
+        else:
+            suffix = safe_rel
+        candidate = os.path.join(root_abs, suffix)
+        try:
+            if os.path.commonpath([candidate, root_abs]) == root_abs and os.path.exists(candidate):
+                return candidate
+        except Exception:
+            continue
+    return None
+
 # Servicios
 ocr_service = OCRService()
 ai_service = AIService()
@@ -393,15 +413,9 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin comentarios):
 @app.route('/api/files')
 def list_files():
     path = request.args.get('path', '')
-    # Permitir rutas relativas a DEFAULT_OCR_PATHS bajo BASE_OCR_ROOT
-    if not path:
-        full_path = BASE_DIR
-    else:
-        candidate = os.path.join(BASE_OCR_ROOT, path)
-        if os.path.commonpath([candidate, BASE_OCR_ROOT]) == BASE_OCR_ROOT and os.path.exists(candidate):
-            full_path = candidate
-        else:
-            full_path = os.path.join(BASE_DIR, path)
+    full_path = resolve_ocr_path(path)
+    if not full_path:
+        return jsonify({'success': False, 'error': 'Ruta no permitida o inexistente', 'roots': DEFAULT_OCR_PATHS}), 404
     
     folders = []
     files = []
@@ -430,8 +444,8 @@ def list_files():
 
 @app.route('/api/pdf/<path:filepath>')
 def serve_pdf(filepath):
-    full_path = os.path.join(BASE_DIR, filepath)
-    if os.path.exists(full_path):
+    full_path = resolve_ocr_path(filepath)
+    if full_path and os.path.exists(full_path):
         return send_file(full_path, mimetype='application/pdf')
     return "File not found", 404
 
@@ -445,7 +459,7 @@ def run_ocr():
             'error': 'filename requerido'
         }), 400
 
-    full_path = os.path.join(BASE_DIR, filename)
+    full_path = resolve_ocr_path(filename)
     if not os.path.exists(full_path):
         return jsonify({
             'success': False,
@@ -2718,7 +2732,7 @@ def list_certificates():
     """Listar certificados disponibles para firmar"""
     try:
         certs = signature_service.list_available_certificates()
-        return jsonify({'success': True, 'certificates': certs})
+        return jsonify({'success': True, 'certificates': certs, 'path': signature_service.certificates_path})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -2741,16 +2755,26 @@ def sign_document():
         cert_name = (data.get('certificate') or '').strip()
         passphrase = (data.get('passphrase') or '').strip()
         
-        if not all([doc_id, cert_name, passphrase]):
-            return jsonify({'success': False, 'error': 'Faltan datos requeridos'}), 400
+        if not doc_id or not cert_name:
+            return jsonify({'success': False, 'error': 'Faltan doc_id y certificate'}), 400
 
+        documento = None
+        doc_path = None
         try:
-            doc_id = int(doc_id)
+            doc_int = int(doc_id)
+            documento = db.get_saved_document(doc_int) if 'db' in globals() and db else None
         except (TypeError, ValueError):
-            return jsonify({'success': False, 'error': 'doc_id inválido'}), 400
-            
-        documento = db.get_saved_document(doc_id)
-        if not documento:
+            documento = None
+
+        doc_input = str(doc_id).strip().strip('"').strip("'")
+        if doc_input.startswith("~"):
+            doc_input = os.path.expanduser(doc_input)
+
+        if documento:
+            doc_path = documento.get('file_path')
+        elif os.path.exists(doc_input):
+            doc_path = doc_input
+        else:
             return jsonify({'success': False, 'error': 'Documento no encontrado'}), 404
 
         available = {c.get('name') for c in signature_service.list_available_certificates() if c.get('name')}
@@ -2761,14 +2785,15 @@ def sign_document():
                 'available_certificates': sorted(available)
             }), 400
 
-        input_path = documento['file_path']
+        input_path = doc_path
         if not input_path or not os.path.exists(input_path):
             return jsonify({'success': False, 'error': 'Ruta del documento no disponible'}), 404
 
-        output_filename = f"FIRMADO_{documento['filename']}"
+        base_name = os.path.basename(input_path)
+        output_filename = f"FIRMADO_{base_name}"
         output_path = os.path.join(os.path.dirname(input_path), output_filename)
         
-        success = signature_service.sign_pdf(input_path, output_path, cert_name, passphrase)
+        success, err = signature_service.sign_pdf(input_path, output_path, cert_name, passphrase)
         
         if success:
             # Registrar en log y opcionalmente actualizar el documento en BD
@@ -2781,7 +2806,7 @@ def sign_document():
         else:
             return jsonify({
                 'success': False,
-                'error': 'No se pudo firmar el documento con los parámetros actuales'
+                'error': err or 'No se pudo firmar el documento con los parámetros actuales'
             }), 422
             
     except Exception as e:
@@ -2893,7 +2918,10 @@ def test_email_alert():
         from services.email_service import EmailService
         email_service = EmailService()
         data = request.get_json(silent=True) or {}
-        to_email = data.get('to_email')
+        to_email = data.get('to_email') or data.get('email')
+        ok, err = email_service._validate_config()
+        if not ok:
+            return jsonify({'success': False, 'configured': False, 'error': err}), 400
         # Enviar email al usuario logueado
         success = email_service.send_alert(
             subject="LexDocsPro LITE: Test de Alerta Crítica",
@@ -2903,6 +2931,21 @@ def test_email_alert():
         return jsonify({'success': success, 'configured': success}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/alerts/status', methods=['GET'])
+@abogado_or_admin_required
+def alerts_status():
+    """Estado de configuración SMTP para Alertas."""
+    from services.email_service import EmailService
+    svc = EmailService()
+    ok, err = svc._validate_config()
+    return jsonify({
+        'success': True,
+        'smtp_configured': ok,
+        'error': None if ok else err,
+        'from': svc.smtp_from,
+        'default_to': svc.default_to
+    }), 200
 
 # ============================================
 # LEGACY COMPAT ENDPOINTS (P0 CONTRATO)
@@ -3108,16 +3151,11 @@ def legacy_alerts_history():
 @app.route('/api/firma/status', methods=['GET'])
 def legacy_firma_status():
     certs = signature_service.list_available_certificates()
-    if certs:
-        cert_name = certs[0].get('name')
-    else:
-        cert_name = 'Sin certificado'
     return jsonify({
         'success': True,
-        'ultimo_certificado': cert_name,
-        'expira': 'N/A',
+        'certificates': certs,
+        'certificates_path': signature_service.certificates_path,
         'message': 'Estado de firma cargado',
-        'hash': 'N/A',
         'timestamp': datetime.now().isoformat()
     }), 200
 

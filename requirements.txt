@@ -10,3 +10,6 @@ requests==2.31.0
 watchdog==4.0.0
 python-dotenv==1.0.0
 holidays==0.64
+
+endesive
+pyOpenSSL
