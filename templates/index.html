@@ -2194,9 +2194,13 @@
             const folders = data.folders || [];
             const files = data.files || [];
             box.innerHTML = [
-                ...folders.map(f => `<div style="padding:6px; cursor:pointer;" onclick="document.getElementById('files-path').value='${f.path}'; uiLoadFiles()">📁 ${f.name}</div>`),
-                ...files.map(f => `<div style="padding:6px; cursor:pointer;" onclick="uiSelectFile('${f.path}')">📄 ${f.name}</div>`)
+                ...folders.map(f => `<div style=\"padding:6px; cursor:pointer;\" onclick=\"document.getElementById('files-path').value='${f.path}'; uiLoadFiles()\">📁 ${f.name}</div>`),
+                ...files.map(f => `<div style=\"padding:6px; cursor:pointer;\" onclick=\"uiSelectFile('${f.path}')\">📄 ${f.name}</div>`)
             ].join('') || 'Sin datos.';
+            // autoseleccionar primero
+            if (!uiState.selectedFilePath && files.length) {
+                uiSelectFile(files[0].path);
+            }
         }
 
         function uiSelectFile(path) {

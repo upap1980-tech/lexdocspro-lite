@@ -134,7 +134,15 @@ DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
 
 # Configuración
-BASE_DIR = os.path.expanduser("~/Desktop/EXPEDIENTES")
+BASE_OCR_ROOT = os.path.expanduser("~/Desktop")
+DEFAULT_OCR_PATHS = [
+    "PROCESADOS_LEXDOCS",
+    "PENDIENTES_LEXDOCS",
+    "BACKUP_LEXDOCS",
+    "ERRORES_LEXDOCS",
+    "EXPEDIENTES_LEXDOCS",
+]
+BASE_DIR = os.path.join(BASE_OCR_ROOT, "PROCESADOS_LEXDOCS")
 GENERATED_DOCS_DIR = os.path.join(BASE_DIR, "_GENERADOS")
 
 # Servicios
@@ -385,7 +393,15 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin comentarios):
 @app.route('/api/files')
 def list_files():
     path = request.args.get('path', '')
-    full_path = os.path.join(BASE_DIR, path) if path else BASE_DIR
+    # Permitir rutas relativas a DEFAULT_OCR_PATHS bajo BASE_OCR_ROOT
+    if not path:
+        full_path = BASE_DIR
+    else:
+        candidate = os.path.join(BASE_OCR_ROOT, path)
+        if os.path.commonpath([candidate, BASE_OCR_ROOT]) == BASE_OCR_ROOT and os.path.exists(candidate):
+            full_path = candidate
+        else:
+            full_path = os.path.join(BASE_DIR, path)
     
     folders = []
     files = []
@@ -408,7 +424,8 @@ def list_files():
     return jsonify({
         'current_path': path,
         'folders': folders,
-        'files': files
+        'files': files,
+        'roots': DEFAULT_OCR_PATHS
     })
 
 @app.route('/api/pdf/<path:filepath>')
