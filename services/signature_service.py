@@ -105,16 +105,22 @@ class SignatureService:
             # pyHanko requiere writer incremental sobre stream binario
             import io
             from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
+            from pyhanko.sign.signers import PdfSigner
+            from pyhanko.stamp import TextStampStyle
 
             writer = IncrementalPdfFileWriter(io.BytesIO(pdf_in))
             bio_out = io.BytesIO()
-            signers.sign_pdf(
-                writer,
+            field_spec = SigFieldSpec("Sig1", on_page=0, box=(36, 36, 260, 120))
+            pdf_signer = PdfSigner(
                 signature_meta=meta,
                 signer=simple_signer,
+                stamp_style=TextStampStyle(),
+                new_field_spec=field_spec,
+            )
+            pdf_signer.sign_pdf(
+                writer,
                 existing_fields_only=False,
-                new_field_spec=SigFieldSpec("Sig1"),
-                output=bio_out
+                output=bio_out,
             )
             out = bio_out.getvalue()
             if len(out) < len(pdf_in) * 0.5:
