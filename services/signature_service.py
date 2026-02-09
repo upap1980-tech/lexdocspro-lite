@@ -36,8 +36,9 @@ class SignatureService:
         Firmar PDF con certificado PKCS#12 usando endesive (CMS).
         """
         try:
-            from cryptography.hazmat.primitives.serialization import pkcs12
+            from cryptography.hazmat.primitives.serialization import pkcs12, Encoding, PrivateFormat, NoEncryption
             from endesive import pdf
+            from OpenSSL import crypto
             import datetime
         except Exception as e:
             err = f"Dependencias de firma no disponibles: {e}"
@@ -53,7 +54,7 @@ class SignatureService:
         # Cargar PKCS12 con passphrase (permitir vacío si no se indicó)
         try:
             data = open(cert_path, 'rb').read()
-            key, cert, other_certs = pkcs12.load_key_and_certificates(
+            key_c, cert_c, other_certs_c = pkcs12.load_key_and_certificates(
                 data,
                 passphrase.encode() if passphrase else None,
             )
@@ -62,6 +63,21 @@ class SignatureService:
                 err = "El certificado requiere passphrase. Indícala e inténtalo de nuevo."
             else:
                 err = f"Error cargando PKCS#12 ({cert_path}): {e}"
+            print(f"❌ {err}")
+            return False, err
+
+        # Convertir a objetos OpenSSL que exige endesive
+        try:
+            key_pem = key_c.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+            key = crypto.load_privatekey(crypto.FILETYPE_PEM, key_pem)
+            cert_pem = cert_c.public_bytes(Encoding.PEM)
+            cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_pem)
+            other_certs = []
+            if other_certs_c:
+                for oc in other_certs_c:
+                    other_certs.append(crypto.load_certificate(crypto.FILETYPE_PEM, oc.public_bytes(Encoding.PEM)))
+        except Exception as e:
+            err = f"Error convirtiendo certificados a OpenSSL: {e}"
             print(f"❌ {err}")
             return False, err
 
@@ -93,6 +109,8 @@ class SignatureService:
                 othercerts=other_certs,
                 algomd="sha256",
             )
+            if len(signed_pdf) < len(pdf_in) * 0.5:
+                raise ValueError("El PDF firmado quedó demasiado pequeño, posible corrupción")
             with open(output_path, 'wb') as f:
                 f.write(signed_pdf)
 
