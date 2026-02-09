@@ -104,23 +104,12 @@ class IACascadeService:
                 'api_key': claude_api_key
             }
         }
+        # Añadir dinámicamente todos los modelos locales de Ollama como providers separados
+        self._add_local_ollama_models(ollama_url)
         self.stats_lock = threading.Lock()
         
         # ============ ESTADÍSTICAS EN TIEMPO REAL ============
-        self.stats = {
-            provider: {
-                'total_calls': 0,
-                'successful_calls': 0,
-                'failed_calls': 0,
-                'total_time': 0.0,
-                'avg_time': 0.0,
-                'last_call': None,
-                'last_error': None,
-                'tokens_used': 0,
-                'uptime_percentage': 100.0
-            }
-            for provider in self.providers_config.keys()
-        }
+        self._init_stats()
         
         # Cargar stats persistentes si existen
         self._load_stats()
@@ -148,6 +137,46 @@ class IACascadeService:
         if raw.endswith("/api/generate"):
             return raw
         return f"{raw}/api/generate"
+
+    def _add_local_ollama_models(self, ollama_url: str) -> None:
+        """Descubre modelos locales de Ollama y los añade como providers adicionales."""
+        try:
+            resp = requests.get(f"{ollama_url}/api/tags", timeout=2)
+            data = resp.json()
+            models = [m.get("name") for m in data.get("models", []) if m.get("name")]
+        except Exception:
+            models = []
+        base_priority = 1
+        for idx, model_name in enumerate(models, start=1):
+            provider_id = f"ollama::{model_name}"
+            if provider_id in self.providers_config:
+                continue
+            self.providers_config[provider_id] = {
+                "name": f"Ollama Local ({model_name})",
+                "url": ollama_url,
+                "model": model_name,
+                "enabled": True,
+                "local": True,
+                "priority": base_priority + idx,
+                "timeout": 120,
+                "api_key": None,
+            }
+
+    def _init_stats(self) -> None:
+        self.stats = {
+            provider: {
+                "total_calls": 0,
+                "successful_calls": 0,
+                "failed_calls": 0,
+                "total_time": 0.0,
+                "avg_time": 0.0,
+                "last_call": None,
+                "last_error": None,
+                "tokens_used": 0,
+                "uptime_percentage": 100.0,
+            }
+            for provider in self.providers_config.keys()
+        }
 
     def _sanitize_request(self, prompt: str, temperature: float, max_tokens: int) -> Tuple[str, float, int]:
         safe_prompt = (prompt or "").strip()
