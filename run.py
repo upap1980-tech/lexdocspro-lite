@@ -3225,6 +3225,7 @@ def legacy_banking_transactions():
         return jsonify({'success': False, 'error': str(e), 'transactions': []}), 500
 
 @app.route('/api/usuarios/equipo', methods=['GET'])
+@abogado_or_admin_required
 def legacy_usuarios_equipo():
     try:
         from services.auth_service import AuthDB
@@ -3245,6 +3246,7 @@ def legacy_usuarios_equipo():
         return jsonify({'success': False, 'error': str(e), 'usuarios': []}), 500
 
 @app.route('/api/usuarios/registrar', methods=['POST'])
+@admin_required
 def legacy_usuarios_registrar():
     data = request.get_json(silent=True) or {}
     nombre = (data.get('nombre') or '').strip()
@@ -3277,6 +3279,60 @@ def legacy_usuarios_registrar():
         }), 200
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/usuarios/<int:user_id>/estado', methods=['POST'])
+@admin_required
+def legacy_usuarios_estado(user_id):
+    current_user_id = get_jwt_identity()
+    if int(current_user_id) == int(user_id):
+        return jsonify({'success': False, 'error': 'No puedes desactivarte a ti mismo'}), 400
+
+    data = request.get_json(silent=True) or {}
+    activo = bool(data.get('activo', True))
+    try:
+        from services.auth_service import AuthDB
+        adb = AuthDB()
+        if activo:
+            conn = adb._connect()
+            cur = conn.cursor()
+            cur.execute("UPDATE users SET activo = 1 WHERE id = ?", (user_id,))
+            conn.commit()
+            conn.close()
+        else:
+            adb.deactivate_user(user_id)
+        return jsonify({'success': True, 'user_id': user_id, 'activo': activo}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/usuarios/<int:user_id>/reset-password', methods=['POST'])
+@admin_required
+def legacy_usuarios_reset_password(user_id):
+    current_user_id = get_jwt_identity()
+    if int(current_user_id) == int(user_id):
+        return jsonify({'success': False, 'error': 'No puedes resetear tu propia contraseña desde este endpoint'}), 400
+
+    alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+    temp_password = ''.join(secrets.choice(alphabet) for _ in range(12))
+
+    try:
+        from werkzeug.security import generate_password_hash
+        from services.auth_service import AuthDB
+        adb = AuthDB()
+        conn = adb._connect()
+        cur = conn.cursor()
+        cur.execute("UPDATE users SET password_hash = ? WHERE id = ?", (generate_password_hash(temp_password), user_id))
+        changed = cur.rowcount
+        conn.commit()
+        conn.close()
+        if not changed:
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+        try:
+            adb.log_action(int(current_user_id), f'RESET_PASSWORD_USER_{user_id}', request.remote_addr)
+        except Exception:
+            pass
+        return jsonify({'success': True, 'user_id': user_id, 'temporary_password': temp_password}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/analytics/detailed', methods=['GET'])
 def legacy_analytics_detailed():

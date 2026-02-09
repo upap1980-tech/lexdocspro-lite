@@ -1123,6 +1123,20 @@
                     <button onclick="uiLoadUsuarios()" style="padding:8px 12px; background:#1d4ed8; color:#fff; border:none; border-radius:6px; cursor:pointer;">👥 Equipo</button>
                     <button onclick="uiInvitarUsuario()" style="padding:8px 12px; background:#7c3aed; color:#fff; border:none; border-radius:6px; cursor:pointer;">📩 Invitar</button>
                 </div>
+                <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+                    <input id="usuarios-search" placeholder="Buscar por nombre/email" oninput="applyUsuariosFilters()" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; min-width:220px;">
+                    <select id="usuarios-filter-rol" onchange="applyUsuariosFilters()" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                        <option value="">Rol: todos</option>
+                        <option value="ADMIN">ADMIN</option>
+                        <option value="ABOGADO">ABOGADO</option>
+                        <option value="LECTURA">LECTURA</option>
+                    </select>
+                    <select id="usuarios-filter-status" onchange="applyUsuariosFilters()" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                        <option value="">Estado: todos</option>
+                        <option value="Online">Online</option>
+                        <option value="Inactivo">Inactivo</option>
+                    </select>
+                </div>
                 <div id="usuarios-table-wrap" style="margin-bottom:10px;"></div>
                 <pre id="usuarios-output" style="background:#0f172a; color:#e2e8f0; padding:10px; border-radius:8px; max-height:260px; overflow:auto;">Usuarios output...</pre>
             </div>
@@ -2716,7 +2730,8 @@
 
         async function uiLoadUsuarios() {
             const { data } = await apiJson('/api/usuarios/equipo');
-            renderUsuariosTable(data?.usuarios || []);
+            window.uiUsuariosCache = data?.usuarios || [];
+            applyUsuariosFilters();
             setPre('usuarios-output', data);
         }
 
@@ -2753,6 +2768,8 @@
                                 <th style="text-align:left; padding:8px; border-bottom:1px solid #e2e8f0;">Rol</th>
                                 <th style="text-align:left; padding:8px; border-bottom:1px solid #e2e8f0;">Estado</th>
                                 <th style="text-align:left; padding:8px; border-bottom:1px solid #e2e8f0;">Actividad</th>
+                                <th style="text-align:left; padding:8px; border-bottom:1px solid #e2e8f0;">Acción</th>
+                                <th style="text-align:left; padding:8px; border-bottom:1px solid #e2e8f0;">Seguridad</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -2763,12 +2780,57 @@
                                     <td style="padding:8px; border-bottom:1px solid #f1f5f9;">${u.rol || '-'}</td>
                                     <td style="padding:8px; border-bottom:1px solid #f1f5f9;">${u.status || '-'}</td>
                                     <td style="padding:8px; border-bottom:1px solid #f1f5f9;">${u.actividad || '-'}</td>
+                                    <td style="padding:8px; border-bottom:1px solid #f1f5f9;">
+                                        <button onclick="uiToggleUsuario(${u.id}, ${u.status === 'Online' ? 'false' : 'true'})"
+                                            style="padding:4px 8px; border:none; border-radius:6px; cursor:pointer; background:${u.status === 'Online' ? '#ef4444' : '#16a34a'}; color:#fff;">
+                                            ${u.status === 'Online' ? 'Desactivar' : 'Activar'}
+                                        </button>
+                                    </td>
+                                    <td style="padding:8px; border-bottom:1px solid #f1f5f9;">
+                                        <button onclick="uiResetUsuarioPassword(${u.id})"
+                                            style="padding:4px 8px; border:none; border-radius:6px; cursor:pointer; background:#f59e0b; color:#111827;">
+                                            Reset pass
+                                        </button>
+                                    </td>
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
                 </div>
             `;
+        }
+
+        function applyUsuariosFilters() {
+            const items = window.uiUsuariosCache || [];
+            const q = (document.getElementById('usuarios-search')?.value || '').toLowerCase().trim();
+            const rol = (document.getElementById('usuarios-filter-rol')?.value || '').toUpperCase();
+            const status = document.getElementById('usuarios-filter-status')?.value || '';
+            const filtered = items.filter(u => {
+                const text = `${u.nombre || ''} ${u.email || ''}`.toLowerCase();
+                const matchQ = !q || text.includes(q);
+                const matchRol = !rol || (u.rol || '').toUpperCase() === rol;
+                const matchStatus = !status || (u.status || '') === status;
+                return matchQ && matchRol && matchStatus;
+            });
+            renderUsuariosTable(filtered);
+        }
+
+        async function uiToggleUsuario(userId, activo) {
+            const { data } = await apiJson(`/api/usuarios/${userId}/estado`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ activo: String(activo) === 'true' })
+            });
+            setPre('usuarios-output', data);
+            if (data?.success) await uiLoadUsuarios();
+        }
+
+        async function uiResetUsuarioPassword(userId) {
+            const { data } = await apiJson(`/api/usuarios/${userId}/reset-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            setPre('usuarios-output', data);
         }
 
         async function uiLoadAnalytics() {
