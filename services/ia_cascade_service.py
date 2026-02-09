@@ -305,34 +305,45 @@ class IACascadeService:
         """Llamada a un provider específico con manejo de errores"""
         start_time = time.time()
         
-        # Verificar que el provider existe y está habilitado
-        if provider_id not in self.providers_config:
+        # Soporte para providers dinámicos ollama::<model>
+        effective_provider = provider_id
+        override_model = None
+        if provider_id.startswith("ollama::"):
+            effective_provider = "ollama"
+            override_model = provider_id.split("::", 1)[1]
+
+        if effective_provider not in self.providers_config:
             return {'success': False, 'error': f'Provider {provider_id} no existe'}
         
-        config = self.providers_config[provider_id]
+        config = self.providers_config[effective_provider].copy()
+        if override_model:
+            config['model'] = override_model
+        
         if not config['enabled']:
             return {'success': False, 'error': f'Provider {provider_id} está deshabilitado'}
         
         # Actualizar stats
         with self.stats_lock:
+            if provider_id not in self.stats:
+                self._init_stats()
             self.stats[provider_id]['total_calls'] += 1
             self.stats[provider_id]['last_call'] = datetime.now().isoformat()
         
         try:
             # Llamar al método específico del provider
-            if provider_id == 'ollama':
+            if effective_provider == 'ollama':
                 result = self._call_ollama(prompt, temperature, max_tokens, config)
-            elif provider_id == 'groq':
+            elif effective_provider == 'groq':
                 result = self._call_groq(prompt, temperature, max_tokens, config)
-            elif provider_id == 'perplexity':
+            elif effective_provider == 'perplexity':
                 result = self._call_perplexity(prompt, temperature, max_tokens, config)
-            elif provider_id == 'openai':
+            elif effective_provider == 'openai':
                 result = self._call_openai(prompt, temperature, max_tokens, config)
-            elif provider_id == 'gemini':
+            elif effective_provider == 'gemini':
                 result = self._call_gemini(prompt, temperature, max_tokens, config)
-            elif provider_id == 'deepseek':
+            elif effective_provider == 'deepseek':
                 result = self._call_deepseek(prompt, temperature, max_tokens, config)
-            elif provider_id == 'claude':
+            elif effective_provider == 'claude':
                 result = self._call_claude(prompt, temperature, max_tokens, config)
             else:
                 return {'success': False, 'error': f'Provider {provider_id} no implementado'}
