@@ -165,6 +165,20 @@ def resolve_ocr_path(rel_path: str):
             continue
     return None
 
+def find_file_in_roots(filename: str):
+    """Buscar un archivo por nombre exacto en los roots permitidos."""
+    if not filename:
+        return None
+    target = os.path.basename(filename)
+    for root in DEFAULT_OCR_PATHS:
+        root_abs = os.path.join(BASE_OCR_ROOT, root)
+        if not os.path.exists(root_abs):
+            continue
+        for dirpath, _, files in os.walk(root_abs):
+            if target in files:
+                return os.path.join(dirpath, target)
+    return None
+
 # Servicios
 ocr_service = OCRService()
 ai_service = AIService()
@@ -2774,6 +2788,11 @@ def sign_document():
             doc_path = documento.get('file_path')
         elif os.path.exists(doc_input):
             doc_path = doc_input
+        else:
+            # Búsqueda por nombre en roots OCR
+            found = find_file_in_roots(doc_input)
+            if found:
+                doc_path = found
         else:
             return jsonify({'success': False, 'error': 'Documento no encontrado'}), 404
 
