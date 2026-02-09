@@ -67,28 +67,29 @@ class SignatureService:
             return False, err
 
         # Convertir a objetos OpenSSL que exige endesive
+        def _to_pkey(keyobj):
+            if isinstance(keyobj, crypto.PKey):
+                return keyobj
+            if hasattr(keyobj, "private_bytes"):
+                pem = keyobj.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+                return crypto.load_privatekey(crypto.FILETYPE_PEM, pem)
+            raise TypeError("No se pudo convertir la clave privada a OpenSSL")
+
+        def _to_cert(certobj):
+            if isinstance(certobj, crypto.X509):
+                return certobj
+            if hasattr(certobj, "public_bytes"):
+                pem = certobj.public_bytes(Encoding.PEM)
+                return crypto.load_certificate(crypto.FILETYPE_PEM, pem)
+            raise TypeError("No se pudo convertir certificado a OpenSSL")
+
         try:
-            # clave
-            if hasattr(key_c, "private_bytes"):
-                key_pem = key_c.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
-                key = crypto.load_privatekey(crypto.FILETYPE_PEM, key_pem)
-            else:
-                key = key_c
-            # cert principal
-            if hasattr(cert_c, "public_bytes"):
-                cert_pem = cert_c.public_bytes(Encoding.PEM)
-                cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_pem)
-            else:
-                cert = cert_c
-            # cadena
+            key = _to_pkey(key_c)
+            cert = _to_cert(cert_c)
             other_certs = []
             for oc in other_certs_c or []:
                 try:
-                    if hasattr(oc, "public_bytes"):
-                        pem = oc.public_bytes(Encoding.PEM)
-                    else:
-                        pem = crypto.dump_certificate(crypto.FILETYPE_PEM, oc)
-                    other_certs.append(crypto.load_certificate(crypto.FILETYPE_PEM, pem))
+                    other_certs.append(_to_cert(oc))
                 except Exception as e:
                     print(f"⚠️  No se pudo convertir certificado intermedio: {e}")
         except Exception as e:
