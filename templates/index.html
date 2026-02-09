@@ -1811,33 +1811,45 @@
                 const tbody = document.getElementById('providers-tbody');
                 if (!tbody) return;
 
-                const rows = Object.entries(providers)
+                const sortedProviders = Object.entries(providers)
                     .sort((a, b) => (a[1].priority || 99) - (b[1].priority || 99))
-                    .map(([providerId, cfg]) => {
-                        const p = statsByProvider[providerId] || {};
-                        const uptime = Number(p.uptime_percentage || 0);
-                        return `
-                            <tr>
-                                <td>${cfg.priority ?? '-'}</td>
-                                <td>${cfg.name || providerId}</td>
-                                <td><code>${cfg.model || '-'}</code></td>
-                                <td>${cfg.enabled ? '✅ Enabled' : '❌ Disabled'}</td>
-                                <td>${p.total_calls || 0}</td>
-                                <td>${p.successful_calls || 0}</td>
-                                <td>${p.failed_calls || 0}</td>
-                                <td>${p.avg_time ? `${Number(p.avg_time).toFixed(2)}s` : 'N/A'}</td>
-                                <td>${uptime.toFixed(1)}%</td>
-                                <td>${cfg.has_api_key ? '✅ Configurada' : '⚠️ No configurada'}</td>
-                                <td>
-                                    <button class="btn-icon" onclick="toggleProvider('${providerId}', ${!cfg.enabled})">${cfg.enabled ? '⏸️' : '▶️'}</button>
-                                    ${cfg.local ? '' : `<button class="btn-icon" onclick="openAPIKeyModal('${providerId}')">🔑</button>`}
-                                    <button class="btn-icon" onclick="testProvider('${providerId}')">🧪</button>
-                                </td>
-                            </tr>
-                        `;
-                    }).join('');
+                    .map(([pid, cfg]) => ({ pid, cfg, stats: statsByProvider[pid] || {} }));
+
+                const rows = sortedProviders.map(({pid, cfg, stats}) => {
+                    const uptime = Number(stats.uptime_percentage || 0);
+                    const apiStatus = cfg.local ? '— (Local)' : (cfg.has_api_key ? '✅ Configurada' : '⚠️ No configurada');
+                    return `
+                        <tr>
+                            <td>${cfg.priority ?? '-'}</td>
+                            <td>${cfg.name || pid}</td>
+                            <td><code>${cfg.model || '-'}</code></td>
+                            <td>${cfg.enabled ? '✅ Enabled' : '❌ Disabled'}</td>
+                            <td>${stats.total_calls || 0}</td>
+                            <td>${stats.successful_calls || 0}</td>
+                            <td>${stats.failed_calls || 0}</td>
+                            <td>${stats.avg_time ? `${Number(stats.avg_time).toFixed(2)}s` : 'N/A'}</td>
+                            <td>${uptime.toFixed(1)}%</td>
+                            <td>${apiStatus}</td>
+                            <td>
+                                <button class="btn-icon" onclick="toggleProvider('${pid}', ${!cfg.enabled})">${cfg.enabled ? '⏸️' : '▶️'}</button>
+                                ${cfg.local ? '' : `<button class="btn-icon" onclick="openAPIKeyModal('${pid}')">🔑</button>`}
+                                <button class="btn-icon" onclick="testProvider('${pid}')">🧪</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
 
                 tbody.innerHTML = rows || '<tr><td colspan="11" style="padding:24px;text-align:center;color:#666;">Sin providers</td></tr>';
+
+                // Poblar selector de test dinámicamente
+                const select = document.getElementById('test-provider');
+                if (select) {
+                    const options = sortedProviders.map(({pid, cfg}) => {
+                        const label = `${cfg.name || pid} (${cfg.model || ''})`;
+                        return `<option value="${pid}">${label}</option>`;
+                    }).join('');
+                    select.innerHTML = `<option value="cascade">🔄 Cascade Automático (Fallback)</option>${options}`;
+                }
             })
             .catch(e => console.error('Error IA Cascade:', e));
 
