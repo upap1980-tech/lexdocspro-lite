@@ -102,13 +102,21 @@ class SignatureService:
 
         try:
             meta = signers.PdfSignatureMetadata(field_name="Sig1", md_algorithm="sha256")
+            # pyHanko requiere un PdfFileReader; usar buffer en memoria
+            import io
+            from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
+            from pyhanko.pdf_utils.reader import PdfFileReader
+
+            reader = PdfFileReader(io.BytesIO(pdf_in))
+            writer = IncrementalPdfFileWriter(reader)
             out = signers.sign_pdf(
-                pdf_in,
+                writer,
                 signature_meta=meta,
                 signer=simple_signer,
                 existing_fields_only=False,
                 new_field_spec=SigFieldSpec("Sig1"),
-            )
+                output=io.BytesIO()
+            ).getvalue()
             if len(out) < len(pdf_in) * 0.5:
                 raise ValueError("El PDF firmado quedó demasiado pequeño, posible corrupción")
             with open(output_path, 'wb') as outf:
