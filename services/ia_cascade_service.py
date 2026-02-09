@@ -36,7 +36,7 @@ class IACascadeService:
             'ollama': {
                 'name': 'Ollama (Local)',
                 'url': ollama_url,
-                'model': os.getenv('OLLAMA_MODEL', 'llama3.2'),
+                'model': os.getenv('OLLAMA_MODEL', 'llama3'),
                 'enabled': True,
                 'local': True,
                 'priority': 1,
@@ -46,7 +46,7 @@ class IACascadeService:
             'groq': {
                 'name': 'Groq Cloud',
                 'url': 'https://api.groq.com/openai/v1/chat/completions',
-                'model': os.getenv('GROQ_MODEL', 'llama-3.1-70b-versatile'),
+                'model': os.getenv('GROQ_MODEL', 'llama-3.1-8b-instant'),
                 'enabled': bool(os.getenv('GROQ_API_KEY')),
                 'local': False,
                 'priority': 2,
@@ -56,7 +56,7 @@ class IACascadeService:
             'perplexity': {
                 'name': 'Perplexity AI',
                 'url': 'https://api.perplexity.ai/chat/completions',
-                'model': os.getenv('PERPLEXITY_MODEL', 'llama-3.1-sonar-large-128k-online'),
+                'model': os.getenv('PERPLEXITY_MODEL', 'sonar-medium-online'),
                 'enabled': bool(os.getenv('PERPLEXITY_API_KEY')),
                 'local': False,
                 'priority': 3,
@@ -66,7 +66,7 @@ class IACascadeService:
             'openai': {
                 'name': 'OpenAI GPT-4',
                 'url': 'https://api.openai.com/v1/chat/completions',
-                'model': os.getenv('OPENAI_MODEL', 'gpt-4-turbo-preview'),
+                'model': os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
                 'enabled': bool(os.getenv('OPENAI_API_KEY')),
                 'local': False,
                 'priority': 4,
@@ -75,8 +75,8 @@ class IACascadeService:
             },
             'gemini': {
                 'name': 'Google Gemini',
-                'url': 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent',
-                'model': os.getenv('GEMINI_MODEL', 'gemini-pro'),
+                'url': 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
+                'model': os.getenv('GEMINI_MODEL', 'gemini-1.5-flash'),
                 'enabled': bool(os.getenv('GEMINI_API_KEY')),
                 'local': False,
                 'priority': 5,

@@ -1815,11 +1815,11 @@
                     .sort((a, b) => (a[1].priority || 99) - (b[1].priority || 99))
                     .map(([pid, cfg]) => ({ pid, cfg, stats: statsByProvider[pid] || {} }));
 
-                const rows = sortedProviders.map(({pid, cfg, stats}) => {
-                    const uptime = Number(stats.uptime_percentage || 0);
-                    const apiStatus = cfg.local ? '— (Local)' : (cfg.has_api_key ? '✅ Configurada' : '⚠️ No configurada');
-                    return `
-                        <tr>
+                        const rows = sortedProviders.map(({pid, cfg, stats}) => {
+                            const uptime = Number(stats.uptime_percentage || 0);
+                            const apiStatus = cfg.local ? '— (Local)' : (cfg.has_api_key ? '✅ Configurada' : '⚠️ No configurada');
+                            return `
+                                <tr>
                             <td>${cfg.priority ?? '-'}</td>
                             <td>${cfg.name || pid}</td>
                             <td><code>${cfg.model || '-'}</code></td>
