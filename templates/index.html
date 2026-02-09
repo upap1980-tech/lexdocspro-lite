@@ -47,6 +47,8 @@
             background: linear-gradient(180deg, #0b3a7a 0%, #0d2855 100%);
             color: white;
             position: fixed;
+            transform: translateX(0);
+            transition: transform 0.25s ease;
             overflow-y: auto;
             box-shadow: 8px 0 24px rgba(2, 6, 23, 0.3);
             z-index: 1000;
@@ -129,6 +131,15 @@
             min-height: 100vh;
             padding: 34px 38px;
         }
+
+        body.sidebar-hidden .sidebar {
+            transform: translateX(-105%);
+        }
+
+        body.sidebar-hidden .main-content {
+            margin-left: 0;
+            width: 100%;
+        }
         
         .main-content h1 {
             color: var(--ink);
@@ -161,7 +172,7 @@
         }
         
         .kpi-card {
-            background: var(--surface);
+            background: linear-gradient(160deg, #f8fbff 0%, #eef4ff 100%);
             padding: 25px;
             border-radius: var(--radius);
             border-bottom: 4px solid var(--primary);
@@ -190,10 +201,10 @@
             display: block;
         }
         
-        .kpi-card.success { border-bottom-color: var(--success); }
-        .kpi-card.warning { border-bottom-color: var(--warning); }
-        .kpi-card.danger { border-bottom-color: var(--danger); }
-        .kpi-card.info { border-bottom-color: var(--info); }
+        .kpi-card.success { border-bottom-color: var(--success); background: linear-gradient(160deg, #ecfdf3 0%, #dcfce7 100%); }
+        .kpi-card.warning { border-bottom-color: var(--warning); background: linear-gradient(160deg, #fff7ed 0%, #ffedd5 100%); }
+        .kpi-card.danger { border-bottom-color: var(--danger); background: linear-gradient(160deg, #fef2f2 0%, #fee2e2 100%); }
+        .kpi-card.info { border-bottom-color: var(--info); background: linear-gradient(160deg, #eef2ff 0%, #e0e7ff 100%); }
         
         /* ═══════════════════════════════════════════════════════════════ */
         /* GRÁFICOS */
@@ -382,30 +393,40 @@
         <!-- DASHBOARD -->
         <!-- ███████████████████████████████████████████████████████████ -->
         <section id="dashboard" class="section active">
-            <h1 style="margin-bottom: 30px; color: #333;">Dashboard General</h1>
-            <div style="display:flex; gap:10px; margin-bottom:16px;">
-                <button onclick="loadDashboardDetailed()" style="padding:8px 14px; background:#0ea5e9; color:#fff; border:none; border-radius:6px; cursor:pointer;">🔎 Ver Detalle</button>
-                <button onclick="uiDashboardExportPDF()" style="padding:8px 14px; background:#334155; color:#fff; border:none; border-radius:6px; cursor:pointer;">📄 Exportar PDF</button>
+            <div style="display:flex; gap:10px; margin-bottom:12px; align-items:center; justify-content:space-between;">
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <button onclick="toggleSidebar()" style="padding:8px 12px; background:#0f172a; color:#fff; border:none; border-radius:8px; cursor:pointer;">☰</button>
+                    <h1 style="margin:0; color: #333;">Dashboard General</h1>
+                    <span style="background:#e0f2fe; color:#0ea5e9; padding:4px 10px; border-radius:999px; font-weight:700; font-size:0.95rem;">v3.2.1</span>
+                </div>
+                <button onclick="goBack()" style="padding:8px 12px; background:#e2e8f0; border:none; border-radius:8px; cursor:pointer; color:#0f172a;">← Volver</button>
             </div>
+            <div style="display:flex; gap:10px; margin-bottom:12px; align-items:center;">
+                <button id="btn-dash-refresh" onclick="refreshDashboard()" style="padding:8px 14px; background:#0ea5e9; color:#fff; border:none; border-radius:6px; cursor:pointer;">🔄 Actualizar</button>
+                <button onclick="openDashboardModal()" style="padding:8px 14px; background:#2563eb; color:#fff; border:none; border-radius:6px; cursor:pointer;">🔎 Ver Detalle</button>
+                <button onclick="uiDashboardExportPDF()" style="padding:8px 14px; background:#334155; color:#fff; border:none; border-radius:6px; cursor:pointer;">📄 Exportar PDF</button>
+                <span id="dash-last-updated" style="color:#475569; font-size:0.9rem;">—</span>
+            </div>
+            <div id="dashboard-statusbar" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;"></div>
             <div id="dashboard-detail" style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px; margin-bottom:18px; color:#334155;">
                 Cargando detalle...
             </div>
             
             <!-- KPIs -->
-            <div class="kpi-grid">
-                <div class="kpi-card success">
+            <div class="kpi-grid" style="grid-template-columns: repeat(4, minmax(200px, 1fr));">
+                <div class="kpi-card success" onclick="goToDashboardCard('hoy')" style="cursor:pointer;">
                     <h3>Procesos Hoy</h3>
                     <span class="kpi-value" id="val-hoy">0</span>
                 </div>
-                <div class="kpi-card info">
+                <div class="kpi-card info" onclick="goToDashboardCard('revision')" style="cursor:pointer;">
                     <h3>En Revisión</h3>
                     <span class="kpi-value" id="val-rev">0</span>
                 </div>
-                <div class="kpi-card warning">
+                <div class="kpi-card warning" onclick="goToDashboardCard('errores')" style="cursor:pointer;">
                     <h3>Errores</h3>
                     <span class="kpi-value" id="val-err">0</span>
                 </div>
-                <div class="kpi-card danger">
+                <div class="kpi-card danger" onclick="goToDashboardCard('alertas')" style="cursor:pointer;">
                     <h3>Alertas</h3>
                     <span class="kpi-value" id="val-ale">0</span>
                 </div>
@@ -423,6 +444,58 @@
                 </div>
             </div>
         </section>
+
+        <!-- Modal detalle dashboard -->
+        <div id="dashboard-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:2000; align-items:center; justify-content:center;">
+            <div style="background:white; width:90%; max-width:1100px; max-height:90vh; overflow-y:auto; border-radius:12px; padding:18px; box-shadow:0 20px 50px rgba(0,0,0,0.2);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h3 style="margin:0;">Detalle operativo</h3>
+                    <button onclick="closeDashboardModal()" style="border:none; background:#e2e8f0; padding:6px 10px; border-radius:6px; cursor:pointer;">Cerrar</button>
+                </div>
+                <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+                    <button onclick="reloadModalData()" style="padding:8px 12px; background:#0ea5e9; color:#fff; border:none; border-radius:6px; cursor:pointer;">🔄 Actualizar</button>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div style="border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <h4 style="margin:0;">Últimos documentos</h4>
+                            <div>
+                                <button onclick="changeDocsPage(-1)" style="padding:4px 8px;">◀</button>
+                                <button onclick="changeDocsPage(1)" style="padding:4px 8px;">▶</button>
+                            </div>
+                        </div>
+                        <table style="width:100%; border-collapse:collapse;" id="table-docs">
+                            <thead>
+                                <tr style="text-align:left; border-bottom:1px solid #e2e8f0;">
+                                    <th style="padding:6px;">Archivo</th>
+                                    <th style="padding:6px;">Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div style="border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <h4 style="margin:0;">Alertas LexNET</h4>
+                            <div>
+                                <button onclick="changeAlertsPage(-1)" style="padding:4px 8px;">◀</button>
+                                <button onclick="changeAlertsPage(1)" style="padding:4px 8px;">▶</button>
+                            </div>
+                        </div>
+                        <table style="width:100%; border-collapse:collapse;" id="table-alerts">
+                            <thead>
+                                <tr style="text-align:left; border-bottom:1px solid #e2e8f0;">
+                                    <th style="padding:6px;">Título</th>
+                                    <th style="padding:6px;">Fecha</th>
+                                    <th style="padding:6px;">Urgencia</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- ███████████████████████████████████████████████████████████ -->
         <!-- OTROS MÓDULOS (PLACEHOLDERS) -->
@@ -1228,58 +1301,96 @@
             }
         }
 
+        // Estado de servicios (IA, SMTP, LexNET, Autoprocesos)
+        async function loadStatusOverview() {
+            try {
+                const res = await fetch('/api/status/overview', { credentials: 'include' });
+                const data = await res.json();
+                const bar = document.getElementById('dashboard-statusbar');
+                if (!bar) return;
+                if (!data.success) {
+                    bar.textContent = 'Estado no disponible';
+                    return;
+                }
+                const svcs = data.services || {};
+                const badge = (label, ok) => {
+                    const color = ok ? '#16a34a' : '#dc2626';
+                    const bg = ok ? '#dcfce7' : '#fee2e2';
+                    return `<span style="display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:${bg}; color:${color}; font-weight:600;">● ${label}</span>`;
+                };
+                bar.innerHTML = [
+                    badge('IA local', svcs.ia_local),
+                    badge('SMTP', svcs.smtp),
+                    badge('LexNET', svcs.lexnet),
+                    badge('Auto-Procesos', svcs.autoprocesor)
+                ].join('');
+            } catch (e) {
+                const bar = document.getElementById('dashboard-statusbar');
+                if (bar) bar.textContent = 'Estado no disponible';
+            }
+        }
+
         // ═══════════════════════════════════════════════════════════════
         // CARGAR DATOS DEL DASHBOARD
         // ═══════════════════════════════════════════════════════════════
+        let dashboardDetailedCache = null;
+        let dashboardDocsOffset = 0;
+        let dashboardAlertsOffset = 0;
+
+        async function refreshDashboard() {
+            const btn = document.getElementById('btn-dash-refresh');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Actualizando...'; }
+            await Promise.all([
+                loadDashboardStats(),
+                loadDashboardDetailed(true),
+                loadStatusOverview()
+            ]);
+            if (btn) { btn.disabled = false; btn.textContent = '🔄 Actualizar'; }
+            const ts = new Date().toLocaleTimeString();
+            const lbl = document.getElementById('dash-last-updated');
+            if (lbl) lbl.textContent = `Actualizado: ${ts}`;
+        }
+
         async function loadDashboardStats() {
             try {
-                const response = await fetch('/api/dashboard/stats', {
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
+                const response = await fetch('/api/dashboard/stats', { credentials: 'include' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
-                
                 if (data.success) {
-                    // Actualizar KPIs
                     document.getElementById('val-hoy').textContent = data.procesos_hoy || 0;
                     document.getElementById('val-rev').textContent = data.en_revision || 0;
                     document.getElementById('val-err').textContent = data.errores || 0;
                     document.getElementById('val-ale').textContent = data.alertas || 0;
-                    
-                    console.log('✅ Dashboard stats cargados:', data);
-                    
-                    // Inicializar gráficos
-                    initCharts();
-                    loadDashboardDetailed();
+                    initChartsFromCache();
                 }
             } catch (error) {
                 console.error('❌ Error cargando dashboard:', error);
-                // Mantener valores por defecto (0)
             }
         }
 
-        async function loadDashboardDetailed() {
+        async function loadDashboardDetailed(updateCharts) {
             const detail = document.getElementById('dashboard-detail');
             if (!detail) return;
             try {
                 const rDetailed = await fetch('/api/dashboard/stats-detailed', { credentials: 'include' });
                 const detailed = await rDetailed.json();
+                dashboardDetailedCache = detailed;
 
                 const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
                 const rDrill = await fetch(`/api/dashboard/drill-down/by-date/${encodeURIComponent(dateStr)}?limit=10`, { credentials: 'include' });
                 const drill = await rDrill.json();
 
-                const trendCount = Array.isArray(detailed?.trend) ? detailed.trend.length : 0;
+                const trendCount = Array.isArray(detailed?.trends?.values) ? detailed.trends.values.reduce((a,b)=>a+b,0) : 0;
                 const drillCount = Array.isArray(drill?.items) ? drill.items.length : 0;
                 detail.innerHTML = `
                     <strong>Detalle operativo:</strong>
-                    <div style="margin-top:8px;">Tendencia (stats-detailed): <b>${trendCount}</b> registros</div>
+                    <div style="margin-top:8px;">Tendencia 7 días: <b>${trendCount}</b> registros</div>
                     <div>Drill-down ${dateStr}: <b>${drillCount}</b> items</div>
                 `;
+                if (trendCount === 0 && drillCount === 0) {
+                    detail.innerHTML += `<div style="margin-top:6px; color:#94a3b8;">Sin datos. Añade documentos o recarga.</div>`;
+                }
+                if (updateCharts) initChartsFromDetailed(detailed);
             } catch (e) {
                 detail.textContent = `Error cargando detalle: ${e.message}`;
             }
@@ -1289,19 +1400,72 @@
             window.open('/api/dashboard/export-pdf', '_blank');
         }
 
+        function goToDashboardCard(kind) {
+            switch (kind) {
+                case 'hoy':
+                    showTab('expedientes');
+                    break;
+                case 'revision':
+                    showTab('autoprocesos');
+                    break;
+                case 'errores':
+                    showTab('autoprocesos');
+                    const logEl = document.getElementById('processing-log');
+                    if (logEl) logEl.scrollIntoView({ behavior: 'smooth' });
+                    break;
+                case 'alertas':
+                    showTab('lexnet');
+                    break;
+                default:
+                    showTab('dashboard');
+            }
+        }
+
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-hidden');
+        }
+
+        function goBack() {
+            if (history.length > 1) {
+                history.back();
+            } else {
+                showTab('dashboard');
+            }
+        }
+
         // ═══════════════════════════════════════════════════════════════
         // GRÁFICOS CON CHART.JS
         // ═══════════════════════════════════════════════════════════════
-        function initCharts() {
+        function initChartsFromCache() {
+            if (dashboardDetailedCache) {
+                initChartsFromDetailed(dashboardDetailedCache);
+            }
+        }
+
+        function initChartsFromDetailed(detailed) {
+            const trends = detailed?.trends || {};
+            const types = detailed?.stats?.by_type || {};
+            const trendLabels = Array.isArray(trends.labels) ? trends.labels : ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+            const trendValues = Array.isArray(trends.values) ? trends.values : [0,0,0,0,0,0,0];
+            const typeLabels = Object.keys(types);
+            const typeValues = Object.values(types);
+            renderCharts(trendLabels, trendValues, typeLabels, typeValues);
+        }
+
+        let chartDocsInstance = null;
+        let chartTypesInstance = null;
+
+        function renderCharts(labelsDocs, valuesDocs, labelsTypes, valuesTypes) {
             // Gráfico de línea - Documentos por día
             const ctxDocs = document.getElementById('chart-docs').getContext('2d');
-            new Chart(ctxDocs, {
+            if (chartDocsInstance) chartDocsInstance.destroy();
+            chartDocsInstance = new Chart(ctxDocs, {
                 type: 'line',
                 data: {
-                    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                    labels: labelsDocs && labelsDocs.length ? labelsDocs : ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
                     datasets: [{
                         label: 'Documentos Procesados',
-                        data: [12, 19, 15, 25, 22, 18, 20],
+                        data: valuesDocs && valuesDocs.length ? valuesDocs : [0,0,0,0,0,0,0],
                         borderColor: '#007BFF',
                         backgroundColor: 'rgba(0, 123, 255, 0.1)',
                         tension: 0.4,
@@ -1311,40 +1475,94 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
                 }
             });
             
             // Gráfico de dona - Tipos de documento
             const ctxTipos = document.getElementById('chart-tipos').getContext('2d');
-            new Chart(ctxTipos, {
+            if (chartTypesInstance) chartTypesInstance.destroy();
+            chartTypesInstance = new Chart(ctxTipos, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Contratos', 'Demandas', 'Escrituras', 'Otros'],
+                    labels: labelsTypes && labelsTypes.length ? labelsTypes : ['Contratos','Demandas','Escrituras','Otros'],
                     datasets: [{
-                        data: [35, 25, 20, 20],
-                        backgroundColor: [
-                            '#007BFF',
-                            '#28a745',
-                            '#ffc107',
-                            '#dc3545'
-                        ]
+                        data: valuesTypes && valuesTypes.length ? valuesTypes : [1,1,1,1],
+                        backgroundColor: ['#007BFF','#28a745','#ffc107','#dc3545','#0ea5e9','#f97316','#a855f7']
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true
-                }
+                options: { responsive: true, maintainAspectRatio: true }
             });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // MODAL DETALLE
+        // ═══════════════════════════════════════════════════════════════
+        async function openDashboardModal() {
+            dashboardDocsOffset = 0;
+            dashboardAlertsOffset = 0;
+            await reloadModalData();
+            const modal = document.getElementById('dashboard-modal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeDashboardModal() {
+            const modal = document.getElementById('dashboard-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function reloadModalData() {
+            await Promise.all([loadDocsPage(), loadAlertsPage()]);
+        }
+
+        async function loadDocsPage() {
+            try {
+                const res = await fetch(`/api/document/saved?limit=10&offset=${dashboardDocsOffset}`, { credentials: 'include' });
+                const data = await res.json();
+                const tbody = document.querySelector('#table-docs tbody');
+                if (!tbody) return;
+                if (!data.success) { tbody.innerHTML = '<tr><td colspan="2">Error cargando documentos</td></tr>'; return; }
+                tbody.innerHTML = data.documents.map(d => `
+                    <tr style="border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:6px;">${d.filename || '—'}</td>
+                        <td style="padding:6px;">${d.created_at || ''}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                const tbody = document.querySelector('#table-docs tbody');
+                if (tbody) tbody.innerHTML = `<tr><td colspan="2">Error: ${e.message}</td></tr>`;
+            }
+        }
+
+        async function loadAlertsPage() {
+            try {
+                const res = await fetch(`/api/lexnet/notifications?limit=10&offset=${dashboardAlertsOffset}`, { credentials: 'include' });
+                const data = await res.json();
+                const tbody = document.querySelector('#table-alerts tbody');
+                if (!tbody) return;
+                if (!data.success) { tbody.innerHTML = '<tr><td colspan="3">Error cargando alertas</td></tr>'; return; }
+                tbody.innerHTML = data.notifications.map(n => `
+                    <tr style="border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:6px;">${n.title || '—'}</td>
+                        <td style="padding:6px;">${n.created_at || ''}</td>
+                        <td style="padding:6px;">${n.urgency || ''}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                const tbody = document.querySelector('#table-alerts tbody');
+                if (tbody) tbody.innerHTML = `<tr><td colspan="3">Error: ${e.message}</td></tr>`;
+            }
+        }
+
+        function changeDocsPage(delta) {
+            dashboardDocsOffset = Math.max(0, dashboardDocsOffset + delta * 10);
+            loadDocsPage();
+        }
+
+        function changeAlertsPage(delta) {
+            dashboardAlertsOffset = Math.max(0, dashboardAlertsOffset + delta * 10);
+            loadAlertsPage();
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -1352,10 +1570,10 @@
         // ═══════════════════════════════════════════════════════════════
         document.addEventListener('DOMContentLoaded', () => {
             console.log('🚀 LexDocsPro Enterprise v3.2 iniciado');
-            loadDashboardStats();
-            
+            document.body.classList.remove('sidebar-hidden');
+            refreshDashboard();
             // Recargar stats cada 30 segundos
-            setInterval(loadDashboardStats, 30000);
+            setInterval(refreshDashboard, 30000);
         });
     
         // ═══════════════════════════════════════════════════════════════

@@ -305,6 +305,7 @@ class LexNetNotifications:
         unread_only=False,
         urgency=None,
         limit=50,
+        offset=0,
         case_type=None,
         date_from=None,
         date_to=None,
@@ -340,6 +341,7 @@ class LexNetNotifications:
 
         where_clause = " AND ".join(conditions) if conditions else "1=1"
         params.append(limit)
+        params.append(offset)
 
         cur.execute(
             f"""
@@ -350,7 +352,7 @@ class LexNetNotifications:
             FROM notifications
             WHERE {where_clause}
             ORDER BY datetime(created_at) DESC
-            LIMIT ?
+            LIMIT ? OFFSET ?
             """,
             params,
         )

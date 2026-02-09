@@ -1,4 +1,5 @@
 import tempfile
+import io
 import os
 import re
 import shutil
@@ -84,6 +85,7 @@ from services.ai_service import AIService
 from services.document_generator import DocumentGenerator
 from services.lexnet_analyzer import LexNetAnalyzer
 from services.business_skills_service import BusinessSkillsService
+from services.ai_core_adapter_service import AICoreAdapterService
 
 # ============================================
 # DECORADORES Y AUTENTICACIÓN
@@ -91,7 +93,7 @@ from services.business_skills_service import BusinessSkillsService
 from decorators import jwt_required_custom, abogado_or_admin_required, admin_required
 
 # Configurar CORS
-cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:5001').split(',')
+cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:5002').split(',')
 CORS(app, resources={
     r"/api/*": {
         "origins": cors_origins,
@@ -138,6 +140,7 @@ GENERATED_DOCS_DIR = os.path.join(BASE_DIR, "_GENERADOS")
 # Servicios
 ocr_service = OCRService()
 ai_service = AIService()
+ai_core_adapter = AICoreAdapterService()
 
 # Inicializar Base de Datos para servicios (Models v3.0)
 # Importar DatabaseManager o usar el existente
@@ -232,7 +235,7 @@ print("="*60)
 # FUNCIÓN MULTI-IA CON CASCADA
 # ============================================
 
-def analizar_documento_con_ia_cascade(texto, max_chars=5000):
+def analizar_documento_con_ia_cascade(texto, max_chars=5002):
     """
     Analiza documento con múltiples IAs en cascada:
     1. Ollama local (privado, gratis, sin límites)
@@ -459,6 +462,158 @@ def chat():
         return jsonify({'success': True, 'response': response})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/ai-core/health', methods=['GET'])
+def ai_core_health_proxy():
+    try:
+        data = ai_core_adapter.health()
+        return jsonify({'success': True, 'data': data}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 502
+
+
+@app.route('/api/ai-core/health/ocr', methods=['GET'])
+def ai_core_health_ocr_proxy():
+    try:
+        data = ai_core_adapter.health_ocr()
+        return jsonify({'success': True, 'data': data}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 502
+
+
+@app.route('/api/ai-core/chat', methods=['POST'])
+def ai_core_chat_proxy():
+    data = request.get_json(silent=True) or {}
+    message = data.get('message', '').strip()
+    if not message:
+        return jsonify({'success': False, 'error': 'message required'}), 400
+
+    try:
+        result = ai_core_adapter.chat(
+            message=message,
+            project_id=data.get('project_id', 'LexDocsPro-LITE'),
+            case_id=data.get('case_id'),
+            task_type=data.get('task_type', 'chat'),
+            allow_cloud=bool(data.get('allow_cloud', False)),
+            model=data.get('model'),
+        )
+        return jsonify({'success': True, 'data': result}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 502
+
+
+@app.route('/api/ai-core/rag/documents', methods=['GET'])
+def ai_core_documents_proxy():
+    project_id = request.args.get('project_id', 'LexDocsPro-LITE')
+    case_id = request.args.get('case_id')
+    try:
+        result = ai_core_adapter.list_documents(project_id=project_id, case_id=case_id)
+        return jsonify({'success': True, 'data': result}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 502
+
+
+@app.route('/api/ai-core/rag/search', methods=['POST'])
+def ai_core_rag_search_proxy():
+    data = request.get_json(silent=True) or {}
+    query = data.get('query', '').strip()
+    if not query:
+        return jsonify({'success': False, 'error': 'query required'}), 400
+
+    try:
+        result = ai_core_adapter.rag_search(
+            project_id=data.get('project_id', 'LexDocsPro-LITE'),
+            case_id=data.get('case_id'),
+            query=query,
+            top_k=int(data.get('top_k', 5)),
+        )
+        return jsonify({'success': True, 'data': result}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 502
+
+
+@app.route('/api/ai-core/rag/upload', methods=['POST'])
+def ai_core_rag_upload_proxy():
+    file = request.files.get('file')
+
+    # multipart/form-data path (supports real file upload)
+    if file is not None:
+        project_id = request.form.get('project_id', 'LexDocsPro-LITE')
+        case_id = request.form.get('case_id')
+        document_id = request.form.get('document_id', file.filename or '')
+        source = request.form.get('source', 'upload')
+        source_url = request.form.get('source_url', '')
+        page = request.form.get('page')
+
+        try:
+            temp_dir = tempfile.mkdtemp(prefix='ai_core_upload_')
+            temp_path = Path(temp_dir) / (file.filename or 'upload.bin')
+            file.save(str(temp_path))
+            result = ai_core_adapter.rag_upload(
+                project_id=project_id,
+                case_id=case_id,
+                document_id=document_id,
+                source=source,
+                source_url=source_url,
+                page=page,
+                file_path=str(temp_path),
+            )
+            return jsonify({'success': True, 'data': result}), 200
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 502
+        finally:
+            try:
+                shutil.rmtree(temp_dir)
+            except Exception:
+                pass
+
+    # JSON path (content text)
+    data = request.get_json(silent=True) or {}
+    content = (data.get('content') or '').strip()
+    if not content:
+        return jsonify({'success': False, 'error': 'content required (json) or file required (multipart)'}), 400
+
+    try:
+        result = ai_core_adapter.rag_upload(
+            project_id=data.get('project_id', 'LexDocsPro-LITE'),
+            case_id=data.get('case_id'),
+            document_id=data.get('document_id', ''),
+            source=data.get('source', 'upload'),
+            source_url=data.get('source_url', ''),
+            page=data.get('page'),
+            content=content,
+        )
+        return jsonify({'success': True, 'data': result}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 502
+
+
+@app.route('/api/ai-core/rag/delete', methods=['POST'])
+def ai_core_rag_delete_proxy():
+    data = request.get_json(silent=True) or {}
+    document_id = data.get('document_id')
+    if document_id is None:
+        return jsonify({'success': False, 'error': 'document_id required'}), 400
+
+    try:
+        result = ai_core_adapter.delete_document(
+            project_id=data.get('project_id', 'LexDocsPro-LITE'),
+            document_id=document_id,
+            case_id=data.get('case_id'),
+        )
+        return jsonify({'success': True, 'data': result}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 502
+
+
+@app.route('/api/ai-core/rag/reindex', methods=['POST'])
+def ai_core_rag_reindex_proxy():
+    try:
+        result = ai_core_adapter.reindex()
+        return jsonify({'success': True, 'data': result}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 502
 
 @app.route('/api/documents/templates')
 def get_templates():
@@ -799,7 +954,7 @@ def smart_analyze_document():
             'confianza': 'baja'
         }
         
-        ai_response, provider = analizar_documento_con_ia_cascade(text_content, max_chars=5000)
+        ai_response, provider = analizar_documento_con_ia_cascade(text_content, max_chars=5002)
         
         if ai_response:
             print(f"\n📥 Respuesta de {provider.upper()}:")
@@ -1359,6 +1514,7 @@ def lexnet_get_notifications():
         unread_only = request.args.get('unread', 'false').lower() == 'true'
         urgency = request.args.get('urgency', None)
         limit = request.args.get('limit', 50, type=int)
+        offset = request.args.get('offset', 0, type=int)
         case_type = request.args.get('case_type', None)
         date_from = request.args.get('date_from', None)
         date_to = request.args.get('date_to', None)
@@ -1371,6 +1527,7 @@ def lexnet_get_notifications():
             unread_only=unread_only,
             urgency=urgency,
             limit=limit,
+            offset=offset,
             case_type=case_type,
             date_from=date_from,
             date_to=date_to,
@@ -1664,7 +1821,8 @@ def document_saved_list():
     """Listar documentos guardados recientes (ruta final E2E)."""
     try:
         limit = request.args.get('limit', 50, type=int)
-        docs = db.list_saved_documents(limit=limit or 50)
+        offset = request.args.get('offset', 0, type=int)
+        docs = db.list_saved_documents(limit=limit or 50, offset=offset or 0)
         return jsonify({'success': True, 'documents': docs, 'total': len(docs)}), 200
     except Exception as e:
         print(f"❌ Error listando documentos guardados: {str(e)}")
@@ -1747,32 +1905,81 @@ def dashboard_stats():
 def dashboard_stats_detailed():
     conn = None
     try:
+        from datetime import date, timedelta
         conn = db.get_connection()
         cursor = conn.cursor()
+
+        # Totales
         cursor.execute("SELECT COUNT(*) FROM saved_documents")
         docs_total = cursor.fetchone()[0]
-        cursor.execute("""SELECT doc_type, COUNT(*) as count FROM saved_documents 
-                       WHERE created_at >= DATE("now", "-30 days") 
-                       AND doc_type IS NOT NULL AND doc_type != "" 
-                       GROUP BY doc_type ORDER BY count DESC LIMIT 10""")
+
+        # Distribución por tipo (últimos 30 días)
+        cursor.execute("""
+            SELECT doc_type, COUNT(*) as count
+            FROM saved_documents 
+            WHERE created_at >= DATE('now', '-30 days') 
+              AND doc_type IS NOT NULL AND doc_type != '' 
+            GROUP BY doc_type ORDER BY count DESC LIMIT 10
+        """)
         by_type_rows = cursor.fetchall()
         by_type = {row[0]: row[1] for row in by_type_rows}
-        cursor.execute("""SELECT client_name, COUNT(*) as count FROM saved_documents 
-                       WHERE created_at >= DATE("now", "-30 days") 
-                       AND client_name IS NOT NULL AND client_name != "" 
-                       GROUP BY client_name ORDER BY count DESC LIMIT 10""")
+
+        # Distribución por cliente (últimos 30 días)
+        cursor.execute("""
+            SELECT client_name, COUNT(*) as count
+            FROM saved_documents 
+            WHERE created_at >= DATE('now', '-30 days') 
+              AND client_name IS NOT NULL AND client_name != '' 
+            GROUP BY client_name ORDER BY count DESC LIMIT 10
+        """)
         by_client_rows = cursor.fetchall()
         by_client = {row[0]: row[1] for row in by_client_rows}
-        # Compatibilidad con frontend antiguo y nuevo
-        today = sum(by_type.values()) if by_type else 0
-        week = today
-        month = docs_total
-        trends_labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
-        trends_values = [0, 0, 0, 0, 0, 0, 0]
+
+        # Tendencia últimos 7 días
+        today = date.today()
+        last7 = [(today - timedelta(days=i)).isoformat() for i in range(6, -1, -1)]
+        placeholders = ",".join(["?"] * len(last7))
+        cursor.execute(
+            f"""
+            SELECT DATE(created_at) as d, COUNT(*) as c
+            FROM saved_documents
+            WHERE DATE(created_at) IN ({placeholders})
+            GROUP BY DATE(created_at)
+            """,
+            last7,
+        )
+        map_counts = {row[0]: row[1] for row in cursor.fetchall()}
+        trends_labels = [d[8:10] + "/" + d[5:7] for d in last7]  # dd/mm
+        trends_values = [map_counts.get(d, 0) for d in last7]
+
+        # Documentos recientes (ultimos 10)
+        cursor.execute("""
+            SELECT filename, created_at 
+            FROM saved_documents
+            ORDER BY datetime(created_at) DESC
+            LIMIT 10
+        """)
+        rows_recent = cursor.fetchall()
         recent_docs = [
-            {'name': k, 'time': f"{v} docs"}
-            for k, v in list(by_type.items())[:5]
+            {'name': r[0], 'time': r[1]} for r in rows_recent
         ]
+
+        # Alertas recientes (ultimo 10)
+        cursor.execute("""
+            SELECT title, created_at, urgency
+            FROM notifications
+            ORDER BY datetime(created_at) DESC
+            LIMIT 10
+        """)
+        rows_alerts = cursor.fetchall()
+        recent_alerts = [
+            {'title': r[0], 'time': r[1], 'urgency': r[2]} for r in rows_alerts
+        ]
+
+        # Compatibilidad con frontend antiguo y nuevo
+        today_total = sum(trends_values[-1:]) if trends_values else 0
+        week_total = sum(trends_values[-7:]) if trends_values else 0
+        month = docs_total
         return jsonify({
             "success": True,
             "stats": {
@@ -1781,8 +1988,8 @@ def dashboard_stats_detailed():
                 "by_client": by_client
             },
             "kpis": {
-                "today": today,
-                "week": week,
+                "today": today_total,
+                "week": week_total,
                 "month": month
             },
             "trends": {
@@ -1790,6 +1997,7 @@ def dashboard_stats_detailed():
                 "values": trends_values
             },
             "recent_docs": recent_docs,
+            "recent_alerts": recent_alerts,
             "logs": []
         })
     except Exception as e:
@@ -2312,35 +2520,104 @@ def export_dashboard_pdf():
     Exportar estadísticas del dashboard a PDF (v2.2.0)
     """
     try:
-        from services.report_service import DashboardReportService
-        
-        # 1. Obtener datos detallados (usamos la lógica interna de stats_detailed)
-        # Para evitar duplicar código, en un entorno real refactorizaríamos a un StatsService
-        # Por ahora, obtenemos un reporte completo
-        
-        # Re-usamos la lógica de dashboard_stats_detailed() internamente o llamamos a la función
-        # Pero como necesitamos los datos, lo más limpio es obtener el JSON que retornaría
+        # 1. Obtener datos detallados (reusa endpoint)
         stats_response = dashboard_stats_detailed()
-        if stats_response[1] != 200:
+        if not hasattr(stats_response, "get_json"):
             return stats_response
-            
-        stats_data = stats_response[0].get_json().get('stats')
+        if stats_response.status_code != 200:
+            return stats_response
+        payload = stats_response.get_json() or {}
+        stats_data = payload.get('stats', {})
+        trends = payload.get('trends', {})
+        kpis = payload.get('kpis', {})
+        recent_docs = payload.get('recent_docs', [])
+        recent_alerts = payload.get('recent_alerts', [])
         
-        # 2. Generar reporte
-        report_service = DashboardReportService()
+        # 2. Generar PDF sencillo (ReportLab si disponible; fallback manual si no)
+        try:
+            from reportlab.pdfgen import canvas
+            from reportlab.lib.pagesizes import A4
+            pdf_buffer = io.BytesIO()
+            c = canvas.Canvas(pdf_buffer, pagesize=A4)
+            width, height = A4
+            y = height - 50
+            c.setFont("Helvetica-Bold", 14)
+            c.drawString(40, y, "Reporte Dashboard LexDocsPro")
+            y -= 24
+            c.setFont("Helvetica", 10)
+            c.drawString(40, y, f"Generado por: {get_jwt_identity() or 'usuario'}")
+            y -= 18
+            c.drawString(40, y, f"Total documentos: {stats_data.get('total_documents', 0)}")
+            y -= 14
+            c.drawString(40, y, f"Hoy: {kpis.get('today', 0)}  Semana: {kpis.get('week', 0)}  Mes: {kpis.get('month', 0)}")
+            y -= 22
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(40, y, "Top tipos (30 días)")
+            y -= 16
+            c.setFont("Helvetica", 10)
+            for t, v in (stats_data.get('by_type') or {}).items():
+                c.drawString(50, y, f"- {t}: {v}")
+                y -= 14
+                if y < 80:
+                    c.showPage(); y = height - 50
+            y -= 6
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(40, y, "Últimos documentos")
+            y -= 16
+            c.setFont("Helvetica", 10)
+            for doc in recent_docs:
+                c.drawString(50, y, f"- {doc.get('name','')} ({doc.get('time','')})")
+                y -= 14
+                if y < 80:
+                    c.showPage(); y = height - 50
+            y -= 6
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(40, y, "Alertas recientes")
+            y -= 16
+            c.setFont("Helvetica", 10)
+            for al in recent_alerts:
+                c.drawString(50, y, f"- [{al.get('urgency','')}] {al.get('title','')} ({al.get('time','')})")
+                y -= 14
+                if y < 80:
+                    c.showPage(); y = height - 50
+            c.showPage()
+            c.save()
+            pdf_buffer.seek(0)
+        except Exception as e:
+            print(f"❌ Error generando PDF con reportlab: {e}")
+            # Fallback mínimo PDF sin dependencias
+            def simple_pdf(text_lines):
+                buf = io.BytesIO()
+                # muy simple PDF 1.1
+                lines = text_lines or ["Reporte Dashboard"]
+                text = "\\n".join(lines)
+                content = f"BT /F1 12 Tf 50 750 Td ({text}) Tj ET"
+                pdf = f"%PDF-1.1\\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\\n2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj\\n4 0 obj<</Length {len(content)}>>stream\\n{content}\\nendstream endobj\\n5 0 obj<</Type/Font/Subtype/Type1/Name/F1/BaseFont/Helvetica>>endobj\\nxref\\n0 6\\n0000000000 65535 f \\n0000000010 00000 n \\n0000000060 00000 n \\n0000000114 00000 n \\n0000000277 00000 n \\n0000000420 00000 n \\ntrailer<</Size 6/Root 1 0 R>>\\nstartxref\\n518\\n%%EOF"
+                buf.write(pdf.encode("latin-1"))
+                buf.seek(0)
+                return buf
+            lines = [
+                "Reporte Dashboard LexDocsPro",
+                f"Total documentos: {stats_data.get('total_documents',0)}",
+                f"Hoy: {kpis.get('today',0)}  Semana: {kpis.get('week',0)}  Mes: {kpis.get('month',0)}",
+                "Top tipos:",
+            ]
+            for t,v in (stats_data.get('by_type') or {}).items():
+                lines.append(f" - {t}: {v}")
+            lines.append("Últimos documentos:")
+            for d in recent_docs[:10]:
+                lines.append(f" - {d.get('name','')} {d.get('time','')}")
+            lines.append("Alertas recientes:")
+            for a in recent_alerts[:10]:
+                lines.append(f" - [{a.get('urgency','')}] {a.get('title','')} {a.get('time','')}")
+            pdf_buffer = simple_pdf(lines)
+        
+        # 3. Responder
         user_id = get_jwt_identity()
         user = db.get_user_by_id(user_id)
         user_name = user.get('nombre', 'Admin') if user else 'Admin'
-        
-        pdf_path = report_service.generate_report(stats_data, user_name)
-        
-        # 3. Retornar archivo
-        return send_file(
-            pdf_path,
-            mimetype='application/pdf',
-            as_attachment=True,
-            download_name=f"reporte_dashboard_{datetime.now().strftime('%Y%m%d')}.pdf"
-        )
+        return send_file(pdf_buffer, mimetype='application/pdf', as_attachment=True,
+                         download_name=f"reporte_dashboard_{datetime.now().strftime('%Y%m%d')}.pdf")
         
     except Exception as e:
         print(f"❌ Error exportando PDF: {e}")
@@ -2491,6 +2768,36 @@ def health_check():
         'status': 'ok'
     }), 200
 
+@app.route('/api/status/overview', methods=['GET'])
+def status_overview():
+    """Estado rápido de servicios críticos para la banda de salud UI."""
+    try:
+        # IA local
+        ia_local = ai_service.providers.get('ollama').is_available() if ai_service and ai_service.providers.get('ollama') else False
+        # SMTP configurado
+        smtp_ready = all(os.getenv(k) for k in ('SMTP_HOST', 'SMTP_USER', 'SMTP_PASS'))
+        # LexNET: considera configurado si tabla notifications existe y LexNetNotifications inicializa
+        try:
+            from services.lexnet_notifications import LexNetNotifications
+            lexnet_ok = True
+            LexNetNotifications(db_manager=db)  # ensure schema
+        except Exception:
+            lexnet_ok = False
+        # Autoprocesador
+        auto_running = autoprocessor.get_status().get('running', False)
+
+        return jsonify({
+            'success': True,
+            'services': {
+                'ia_local': ia_local,
+                'smtp': smtp_ready,
+                'lexnet': lexnet_ok,
+                'autoprocesor': auto_running
+            }
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # ============================================
 # NEW FEATURE ENDPOINTS (v2.3.1 CLASSIC)
 # ============================================
@@ -2498,18 +2805,24 @@ def health_check():
 @app.route('/api/banking/stats', methods=['GET'])
 @abogado_or_admin_required
 def get_banking_stats():
-    """Obtener resumen de conciliación bancaria"""
+    """Obtener resumen de conciliación bancaria (proveedor real si está configurado)."""
     try:
         from services.banking_service import BankingService
         service = BankingService()
-        # Simulamos obtención de últimos movimientos para el dashboard
-        stats = {
-            'bancos_activos': 11,
-            'ultimo_sincro': datetime.now().strftime("%d/%m/%Y %H:%M"),
-            'pendientes_conciliar': 24,
-            'alerts_criticas': 0 # Limpio de 347
-        }
-        return jsonify({'success': True, 'stats': stats})
+        result = service.get_stats()
+        if result.get('success'):
+            return jsonify({'success': True, 'stats': result.get('stats', {}), 'configured': True}), 200
+        return jsonify({
+            'success': False,
+            'configured': False,
+            'error': result.get('error', 'Banking no configurado'),
+            'stats': result.get('stats', {
+                'bancos_activos': 0,
+                'pendientes_conciliar': 0,
+                'ultimo_sincro': None,
+                'alerts_criticas': 0,
+            })
+        }), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -2532,12 +2845,15 @@ def test_email_alert():
     try:
         from services.email_service import EmailService
         email_service = EmailService()
+        data = request.get_json(silent=True) or {}
+        to_email = data.get('to_email')
         # Enviar email al usuario logueado
         success = email_service.send_alert(
             subject="LexDocsPro LITE: Test de Alerta Crítica",
-            body="Este es un test de la funcionalidad Email Alerts v2.3.1."
+            body="Este es un test de la funcionalidad Email Alerts v2.3.1.",
+            to_email=to_email
         )
-        return jsonify({'success': success})
+        return jsonify({'success': success, 'configured': success}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -2626,6 +2942,24 @@ def legacy_ia_cascade_status():
             'providers': providers
         }
     }), 200
+
+@app.route('/api/ai/models', methods=['GET'])
+@abogado_or_admin_required
+def list_ai_models():
+    """Listar modelos disponibles en Ollama y el modelo actual."""
+    result = ai_service.get_ollama_models()
+    status_code = 200 if result.get('success') else 503
+    return jsonify(result), status_code
+
+@app.route('/api/ai/models', methods=['POST'])
+@abogado_or_admin_required
+def set_ai_model():
+    """Seleccionar el modelo Ollama activo."""
+    data = request.get_json(silent=True) or {}
+    model = data.get('model')
+    result = ai_service.set_ollama_model(model)
+    status_code = 200 if result.get('success') else 400
+    return jsonify(result), status_code
 
 @app.route('/api/ia-cascade/query', methods=['POST'])
 def legacy_ia_cascade_query():
@@ -2753,19 +3087,39 @@ def legacy_firma_ejecutar():
 
 @app.route('/api/banking/institutions', methods=['GET'])
 def legacy_banking_institutions():
-    banks = [
-        {'name': 'CaixaBank', 'status': 'Sincronizado', 'balance': '12,340.21€'},
-        {'name': 'BBVA', 'status': 'Pendiente', 'balance': '8,102.90€'},
-    ]
-    return jsonify({'success': True, 'banks': banks}), 200
+    try:
+        from services.banking_service import BankingService
+        service = BankingService()
+        country = request.args.get('country', None)
+        result = service.get_institutions(country=country)
+        if result.get('success'):
+            return jsonify({'success': True, 'configured': True, 'banks': result.get('institutions', [])}), 200
+        return jsonify({
+            'success': False,
+            'configured': False,
+            'error': result.get('error', 'Banking no configurado'),
+            'banks': []
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'banks': []}), 500
 
 @app.route('/api/banking/transactions', methods=['GET'])
 def legacy_banking_transactions():
-    tx = [
-        {'date': datetime.now().strftime('%d/%m/%Y'), 'bank': 'CaixaBank', 'concept': 'Pago procurador', 'amount': -210.0},
-        {'date': datetime.now().strftime('%d/%m/%Y'), 'bank': 'BBVA', 'concept': 'Cobro minuta', 'amount': 1250.0},
-    ]
-    return jsonify({'success': True, 'transactions': tx}), 200
+    try:
+        from services.banking_service import BankingService
+        service = BankingService()
+        limit = request.args.get('limit', 50, type=int)
+        result = service.get_transactions(limit=limit)
+        if result.get('success'):
+            return jsonify({'success': True, 'configured': True, 'transactions': result.get('transactions', [])}), 200
+        return jsonify({
+            'success': False,
+            'configured': False,
+            'error': result.get('error', 'Banking no configurado'),
+            'transactions': []
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'transactions': []}), 500
 
 @app.route('/api/usuarios/equipo', methods=['GET'])
 def legacy_usuarios_equipo():
@@ -2982,7 +3336,7 @@ if __name__ == '__main__':
     app.template_folder = os.path.join(os.path.dirname(__file__), 'templates')
     
     # Iniciar el servidor
-    print(f"🚀 LexDocsPro LITE v2.3.1 SIDEBAR CLASSIC iniciando en puerto 5001...")
+    print(f"🚀 LexDocsPro LITE v2.3.1 SIDEBAR CLASSIC iniciando en puerto 5002...")
     # Usamos threaded=True para manejar múltiples peticiones si es necesario
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", os.getenv("FLASK_PORT", "5002")))

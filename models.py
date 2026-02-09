@@ -182,16 +182,16 @@ class DatabaseManager:
         conn.commit()
         conn.close()
 
-    def list_saved_documents(self, limit=50):
+    def list_saved_documents(self, limit=50, offset=0):
         conn = self.get_connection()
         cur = conn.cursor()
         cur.execute(
             """
             SELECT * FROM saved_documents
             ORDER BY datetime(created_at) DESC
-            LIMIT ?
+            LIMIT ? OFFSET ?
             """,
-            (int(limit),),
+            (int(limit), int(offset)),
         )
         rows = [dict(r) for r in cur.fetchall()]
         conn.close()
