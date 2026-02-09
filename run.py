@@ -2793,7 +2793,8 @@ def sign_document():
             found = find_file_in_roots(doc_input)
             if found:
                 doc_path = found
-        else:
+
+        if not doc_path or not os.path.exists(doc_path):
             return jsonify({'success': False, 'error': 'Documento no encontrado'}), 404
 
         available = {c.get('name') for c in signature_service.list_available_certificates() if c.get('name')}
@@ -2805,9 +2806,6 @@ def sign_document():
             }), 400
 
         input_path = doc_path
-        if not input_path or not os.path.exists(input_path):
-            return jsonify({'success': False, 'error': 'Ruta del documento no disponible'}), 404
-
         base_name = os.path.basename(input_path)
         output_filename = f"FIRMADO_{base_name}"
         output_path = os.path.join(os.path.dirname(input_path), output_filename)
