@@ -93,6 +93,20 @@ class SignatureService:
             )
             with open(output_path, 'wb') as f:
                 f.write(signed_pdf)
+
+            # Validar que el PDF resultante es legible
+            try:
+                from PyPDF2 import PdfReader
+                PdfReader(output_path)
+            except Exception as e:
+                err = f"PDF firmado generado pero no es legible ({e})"
+                print(f"❌ {err}")
+                try:
+                    os.remove(output_path)
+                except Exception:
+                    pass
+                return False, err
+
             print(f"✅ PDF firmado en {output_path}")
             return True, None
         except Exception as e:
