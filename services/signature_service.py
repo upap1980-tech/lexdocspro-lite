@@ -82,7 +82,7 @@ class SignatureService:
         for cpwd, kpwd in [(pwd, pwd), (pwd, None), (None, pwd), (None, None)]:
             try:
                 simple_signer = signers.SimpleSigner.load_pkcs12(
-                    filepath=cert_path,
+                    cert_file=cert_path,
                     passphrase=cpwd,
                     key_passphrase=kpwd,
                 )
