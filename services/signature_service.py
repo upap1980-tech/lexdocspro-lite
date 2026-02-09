@@ -76,15 +76,13 @@ class SignatureService:
             return False, err
 
         # Intentar varias combinaciones de passphrase (algunos .p12 usan pass distinta para clave)
-        pwd = passphrase.encode() if passphrase else None
         load_errors = []
         simple_signer = None
-        for cpwd, kpwd in [(pwd, pwd), (pwd, None), (None, pwd), (None, None)]:
+        for cpwd in [passphrase.encode() if passphrase else None, None]:
             try:
                 simple_signer = signers.SimpleSigner.load_pkcs12(
-                    cert_file=cert_path,
+                    pfx_file=cert_path,
                     passphrase=cpwd,
-                    key_passphrase=kpwd,
                 )
                 break
             except Exception as e:
