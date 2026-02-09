@@ -445,6 +445,12 @@
             </div>
         </section>
 
+        <!-- Botón volver global (float) -->
+        <div style="position:fixed; top:14px; right:14px; z-index:1800; display:flex; gap:8px;">
+            <button onclick="toggleSidebar()" style="padding:10px 12px; background:#0f172a; color:#fff; border:none; border-radius:10px; cursor:pointer; box-shadow:0 10px 30px rgba(0,0,0,0.15);">☰</button>
+            <button onclick="goBack()" id="btn-global-back" style="padding:10px 14px; background:#0f172a; color:#fff; border:none; border-radius:10px; cursor:pointer; box-shadow:0 10px 30px rgba(0,0,0,0.15);">← Volver</button>
+        </div>
+
         <!-- Modal detalle dashboard -->
         <div id="dashboard-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:2000; align-items:center; justify-content:center;">
             <div style="background:white; width:90%; max-width:1100px; max-height:90vh; overflow-y:auto; border-radius:12px; padding:18px; box-shadow:0 20px 50px rgba(0,0,0,0.2);">
@@ -577,8 +583,20 @@
 
             <!-- Historial de Procesamiento -->
             <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-top: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3>Historial de Procesamiento</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; gap:12px; margin-bottom: 15px; flex-wrap:wrap;">
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <h3 style="margin:0;">Historial de Procesamiento</h3>
+                        <label style="font-size:0.9rem; color:#475569;">Estado:
+                            <select id="log-filter-status" onchange="applyProcessingLogFilter()" style="margin-left:6px; padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px;">
+                                <option value="ALL">Todos</option>
+                                <option value="SUCCESS">Success</option>
+                                <option value="ERROR">Error</option>
+                            </select>
+                        </label>
+                        <input id="log-filter-search" oninput="applyProcessingLogFilter()" placeholder="Buscar archivo..." style="padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; min-width:200px;">
+                        <input id="log-filter-from" type="date" onchange="applyProcessingLogFilter()" style="padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px;">
+                        <input id="log-filter-to" type="date" onchange="applyProcessingLogFilter()" style="padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px;">
+                    </div>
                     <button onclick="loadProcessingLog()" style="padding: 8px 15px; background: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer;">
                         🔄 Actualizar
                     </button>
@@ -1580,8 +1598,10 @@
         // AUTO-PROCESSOR FUNCTIONS (ÚNICA VERSIÓN)
         // ═══════════════════════════════════════════════════════════════
         
+        let processingLogCache = [];
+
         function loadAutoProcessorStatus() {
-            fetch('/api/autoprocessor/status')
+            fetch('/api/autoprocessor/status', {credentials:'include'})
                 .then(function(response) { return response.json(); })
                 .then(function(data) {
                     if (data.success && data.status) {
@@ -1623,7 +1643,7 @@
         }
         
         function startAutoProcessor() {
-            fetch('/api/autoprocessor/start', {method:'POST'})
+            fetch('/api/autoprocessor/start', {method:'POST', credentials:'include'})
                 .then(function(r) { return r.json(); })
                 .then(function(d) { 
                     alert(d.message); 
@@ -1633,7 +1653,7 @@
         }
         
         function stopAutoProcessor() {
-            fetch('/api/autoprocessor/stop', {method:'POST'})
+            fetch('/api/autoprocessor/stop', {method:'POST', credentials:'include'})
                 .then(function(r) { return r.json(); })
                 .then(function(d) { 
                     alert(d.message); 
@@ -1645,7 +1665,7 @@
         function scanFiles() {
             if (!confirm('¿Escanear archivos en PENDIENTES?')) return;
             
-            fetch('/api/autoprocessor/scan', {method:'POST'})
+            fetch('/api/autoprocessor/scan', {method:'POST', credentials:'include'})
                 .then(function(r) { return r.json(); })
                 .then(function(d) { 
                     alert(d.message); 
@@ -1653,27 +1673,116 @@
                 })
                 .catch(function(e) { alert('Error: ' + e.message); });
         }
-
+        
         function resetAutoProcessor() {
             if (!confirm('¿Resetear contadores y estado del AutoProcessor?')) return;
 
-            fetch('/api/autoprocessor/reset', {method:'POST'})
+            fetch('/api/autoprocessor/reset', {method:'POST', credentials:'include'})
                 .then(function(r) { return r.json(); })
                 .then(function(d) {
                     alert(d.message || 'Reset ejecutado');
-                    loadAutoProcessorStatus();
-                    loadProcessingLog();
+                    refreshAutoProcessor();
                 })
                 .catch(function(e) { alert('Error: ' + e.message); });
         }
         
+        function refreshAutoProcessor() {
+            loadAutoProcessorStatus();
+            loadProcessingLog();
+        }
+
         // Auto-actualizar cada 5 segundos si el tab está activo
         setInterval(function() {
             var section = document.getElementById('autoprocesos');
             if (section && section.classList.contains('active')) {
-                loadAutoProcessorStatus();
+                refreshAutoProcessor();
             }
         }, 5000);
+
+        function loadProcessingLog() {
+            fetch('/api/autoprocessor/log?limit=200', {credentials:'include'})
+                .then(r => r.json())
+                .then(d => {
+                    if (!d.success) throw new Error(d.error || 'Error log');
+                    processingLogCache = d.log || [];
+                    applyProcessingLogFilter();
+                })
+                .catch(e => {
+                    document.getElementById('processing-log').innerHTML = `<p style="color:#dc2626; padding:20px;">Error cargando log: ${e.message}</p>`;
+                });
+        }
+
+        function applyProcessingLogFilter() {
+            const statusSel = document.getElementById('log-filter-status');
+            const searchInput = document.getElementById('log-filter-search');
+            const fromInput = document.getElementById('log-filter-from');
+            const toInput = document.getElementById('log-filter-to');
+            const statusVal = statusSel ? statusSel.value : 'ALL';
+            const searchVal = (searchInput ? searchInput.value : '').toLowerCase();
+            const fromVal = fromInput && fromInput.value ? fromInput.value : null;
+            const toVal = toInput && toInput.value ? toInput.value : null;
+            let rows = processingLogCache;
+            if (statusVal !== 'ALL') {
+                rows = rows.filter(r => (r.status || '').toUpperCase() === statusVal);
+            }
+            if (searchVal) {
+                rows = rows.filter(r => (r.filename || '').toLowerCase().includes(searchVal));
+            }
+            if (fromVal) {
+                rows = rows.filter(r => (r.completed_at || '').slice(0,10) >= fromVal);
+            }
+            if (toVal) {
+                rows = rows.filter(r => (r.completed_at || '').slice(0,10) <= toVal);
+            }
+            renderProcessingLog(rows);
+        }
+
+        function renderProcessingLog(rows) {
+            const container = document.getElementById('processing-log');
+            if (!container) return;
+            if (!rows || rows.length === 0) {
+                container.innerHTML = `<p style="color:#999; text-align:center; padding:40px;">Sin registros</p>`;
+                return;
+            }
+            const toRow = (r) => {
+                const status = (r.status || '').toUpperCase();
+                const badgeColor = status === 'SUCCESS' ? '#16a34a' : '#dc2626';
+                let timeVal = '-';
+                if (r.time) {
+                    const t = Number(r.time);
+                    timeVal = t < 1 ? Math.round(t * 1000) + ' ms' : t.toFixed(2) + ' s';
+                }
+                const ocrVal = r.ocr_chars ? r.ocr_chars : '-';
+                const link = r.final_path ? `/api/autoprocessor/file?path=${encodeURIComponent(r.final_path)}&preview=1` : null;
+                return `
+                    <tr style="border-bottom:1px solid #e2e8f0;">
+                        <td style="padding:10px; max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${r.filename || ''}">${r.filename || ''}</td>
+                        <td style="padding:10px;"><span style="padding:4px 10px; border-radius:10px; background:${badgeColor}22; color:${badgeColor}; font-weight:600;">${status || '-'}</span></td>
+                        <td style="padding:10px; text-align:center;">${ocrVal}</td>
+                        <td style="padding:10px; text-align:center;">${timeVal}</td>
+                        <td style="padding:10px;">${r.completed_at || '-'}</td>
+                        <td style="padding:10px; text-align:center;">${link ? `<a href=\"${link}\" target=\"_blank\" style=\"color:#1d4ed8;\">Ver</a>` : '-'}</td>
+                    </tr>
+                `;
+            };
+            container.innerHTML = `
+                <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:0.95rem;">
+                    <thead>
+                        <tr style="text-align:left; border-bottom:1px solid #e2e8f0;">
+                            <th style="padding:10px; width:40%;">Archivo</th>
+                            <th style="padding:10px; width:14%;">Estado</th>
+                            <th style="padding:10px; width:8%; text-align:center;">OCR</th>
+                            <th style="padding:10px; width:10%; text-align:center;">Tiempo</th>
+                            <th style="padding:10px; width:18%;">Fecha</th>
+                            <th style="padding:10px; width:10%; text-align:center;">Rutas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows.map(toRow).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
 
     
         // IA CASCADE FUNCTIONS (alineadas con el layout actual)
@@ -2627,66 +2736,7 @@
         }
 
     
-        function loadProcessingLog() {
-            fetch('/api/autoprocessor/log?limit=20')
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success && data.log && data.log.length > 0) {
-                        const logHTML = `
-                            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                                <thead>
-                                    <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                                        <th style="padding: 10px; text-align: left;">Archivo</th>
-                                        <th style="padding: 10px; text-align: center;">Estado</th>
-                                        <th style="padding: 10px; text-align: center;">OCR</th>
-                                        <th style="padding: 10px; text-align: center;">Tiempo</th>
-                                        <th style="padding: 10px; text-align: left;">Fecha</th>
-                                        <th style="padding: 10px; text-align: center;">Rutas</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${data.log.map(item => `
-                                        <tr style="border-bottom: 1px solid #eee;">
-                                            <td style="padding: 10px; max-width: 200px; overflow: hidden; text-overflow: ellipsis;" title="${item.filename}">
-                                                ${item.filename}
-                                            </td>
-                                            <td style="padding: 10px; text-align: center;">
-                                                <span style="padding: 4px 8px; border-radius: 4px; background: ${item.status === 'SUCCESS' ? '#d4edda' : '#f8d7da'}; color: ${item.status === 'SUCCESS' ? '#155724' : '#721c24'}; font-size: 0.8rem; font-weight: bold;">
-                                                    ${item.status}
-                                                </span>
-                                            </td>
-                                            <td style="padding: 10px; text-align: center;">
-                                                ${item.ocr_chars ? item.ocr_chars + ' chars' : '-'}
-                                            </td>
-                                            <td style="padding: 10px; text-align: center;">
-                                                ${item.processing_time ? item.processing_time.toFixed(2) + 's' : '-'}
-                                            </td>
-                                            <td style="padding: 10px; font-size: 0.85rem; color: #666;">
-                                                ${item.completed_at ? new Date(item.completed_at).toLocaleString('es-ES') : '-'}
-                                            </td>
-                                            <td style="padding: 10px; text-align: center;">
-                                                <button onclick="showFilePaths('${item.filename}', '${item.backup_path}', '${item.final_path}')" style="padding: 4px 8px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
-                                                    📂 Ver
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        `;
-                        
-                        document.getElementById('processing-log').innerHTML = logHTML;
-                    } else {
-                        document.getElementById('processing-log').innerHTML = 
-                            '<p style="color: #999; text-align: center; padding: 40px;">No hay registros en el historial</p>';
-                    }
-                })
-                .catch(e => {
-                    console.error('Error cargando log:', e);
-                    document.getElementById('processing-log').innerHTML = 
-                        '<p style="color: #dc3545; text-align: center; padding: 40px;">❌ Error cargando historial</p>';
-                });
-        }
+        // (definición legacy de loadProcessingLog eliminada; usar la versión con filtros)
         
         function showFilePaths(filename, backup, final) {
             alert('📂 Trazabilidad de: ' + filename + '\n\n' +

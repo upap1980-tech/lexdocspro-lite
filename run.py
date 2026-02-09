@@ -2011,6 +2011,7 @@ def dashboard_stats_detailed():
 # ═══════════════════════════════════════════════════════════════
 
 @app.route('/api/autoprocessor/status', methods=['GET'])
+@jwt_required_custom
 def autoprocessor_status():
     """Obtener estado del auto-procesador"""
     try:
@@ -2021,6 +2022,7 @@ def autoprocessor_status():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/autoprocessor/start', methods=['POST'])
+@jwt_required_custom
 def autoprocessor_start():
     """Iniciar el auto-procesador"""
     try:
@@ -2034,6 +2036,7 @@ def autoprocessor_start():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/autoprocessor/stop', methods=['POST'])
+@jwt_required_custom
 def autoprocessor_stop():
     """Detener el auto-procesador"""
     try:
@@ -2047,6 +2050,7 @@ def autoprocessor_stop():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/autoprocessor/scan', methods=['POST'])
+@jwt_required_custom
 def autoprocessor_scan():
     """Escanear y procesar archivos"""
     try:
@@ -2074,6 +2078,7 @@ def autoprocessor_scan():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/autoprocessor/reset', methods=['POST'])
+@jwt_required_custom
 def autoprocessor_reset():
     """Resetear estadísticas"""
     try:
@@ -2094,6 +2099,7 @@ def autoprocessor_reset():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/autoprocessor/log', methods=['GET'])
+@jwt_required_custom
 def autoprocessor_log():
     """Obtener log de procesamiento con trazabilidad"""
     try:
@@ -2105,6 +2111,30 @@ def autoprocessor_log():
             'log': log,
             'total': len(log)
         }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/autoprocessor/file', methods=['GET'])
+@jwt_required_custom
+def autoprocessor_file():
+    """Servir archivos procesados/backup/errores de forma segura."""
+    try:
+        path = request.args.get('path')
+        preview = request.args.get('preview', '0') == '1'
+        if not path:
+            return jsonify({'success': False, 'error': 'path requerido'}), 400
+        allowed_roots = [
+            os.path.expanduser("~/Desktop/PROCESADOS"),
+            os.path.expanduser("~/Desktop/BACKUP_LEXDOCS"),
+            os.path.expanduser("~/Desktop/ERRORES_LEXDOCS"),
+            os.path.expanduser("~/Desktop/PENDIENTES_LEXDOCS"),
+        ]
+        abs_path = os.path.abspath(path)
+        if not any(abs_path.startswith(root) for root in allowed_roots):
+            return jsonify({'success': False, 'error': 'Path no permitido'}), 403
+        if not os.path.exists(abs_path):
+            return jsonify({'success': False, 'error': 'Archivo no encontrado'}), 404
+        return send_file(abs_path, as_attachment=not preview)
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
