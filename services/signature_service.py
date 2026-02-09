@@ -77,6 +77,8 @@ class SignatureService:
             date = datetime.datetime.utcnow()
             dct = {
                 "sigflags": 3,
+                "sigpage": 0,
+                "mdalg": "sha256",
                 "contact": "LexDocsPro",
                 "location": "ES",
                 "signingdate": date.strftime("D:%Y%m%d%H%M%S+00'00'"),
