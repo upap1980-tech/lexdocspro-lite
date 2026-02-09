@@ -66,36 +66,10 @@ class SignatureService:
             print(f"❌ {err}")
             return False, err
 
-        # Convertir a objetos OpenSSL que exige endesive
-        def _to_pkey(keyobj):
-            if isinstance(keyobj, crypto.PKey):
-                return keyobj
-            if hasattr(keyobj, "private_bytes"):
-                pem = keyobj.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
-                return crypto.load_privatekey(crypto.FILETYPE_PEM, pem)
-            raise TypeError("No se pudo convertir la clave privada a OpenSSL")
-
-        def _to_cert(certobj):
-            if isinstance(certobj, crypto.X509):
-                return certobj
-            if hasattr(certobj, "public_bytes"):
-                pem = certobj.public_bytes(Encoding.PEM)
-                return crypto.load_certificate(crypto.FILETYPE_PEM, pem)
-            raise TypeError("No se pudo convertir certificado a OpenSSL")
-
-        try:
-            key = _to_pkey(key_c)
-            cert = _to_cert(cert_c)
-            other_certs = []
-            for oc in other_certs_c or []:
-                try:
-                    other_certs.append(_to_cert(oc))
-                except Exception as e:
-                    print(f"⚠️  No se pudo convertir certificado intermedio: {e}")
-        except Exception as e:
-            err = f"Error convirtiendo certificados a OpenSSL: {e}"
-            print(f"❌ {err}")
-            return False, err
+        # Usar directamente objetos cryptography (endesive los acepta)
+        key = key_c
+        cert = cert_c
+        other_certs = other_certs_c or []
 
         try:
             with open(input_path, 'rb') as f:
