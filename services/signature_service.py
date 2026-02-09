@@ -76,14 +76,22 @@ class SignatureService:
             print(f"❌ {err}")
             return False, err
 
-        try:
-            simple_signer = signers.SimpleSigner.load_pkcs12(
-                filepath=cert_path,
-                passphrase=passphrase.encode() if passphrase else None,
-                key_passphrase=passphrase.encode() if passphrase else None,
-            )
-        except Exception as e:
-            err = f"Error cargando PKCS#12 con pyHanko: {e}"
+        # Intentar varias combinaciones de passphrase (algunos .p12 usan pass distinta para clave)
+        pwd = passphrase.encode() if passphrase else None
+        load_errors = []
+        simple_signer = None
+        for cpwd, kpwd in [(pwd, pwd), (pwd, None), (None, pwd), (None, None)]:
+            try:
+                simple_signer = signers.SimpleSigner.load_pkcs12(
+                    filepath=cert_path,
+                    passphrase=cpwd,
+                    key_passphrase=kpwd,
+                )
+                break
+            except Exception as e:
+                load_errors.append(str(e))
+        if not simple_signer:
+            err = f"Error cargando PKCS#12 con pyHanko: {' | '.join(load_errors[-2:])}"
             print(f"❌ {err}")
             return False, err
 
