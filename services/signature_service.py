@@ -69,7 +69,6 @@ class SignatureService:
         # Firma con pyHanko (más robusto)
         try:
             from pyhanko.sign import signers
-            from pyhanko.sign.general import sign_pdf
             from pyhanko.sign.fields import SigFieldSpec
         except Exception as e:
             err = f"Dependencias pyHanko no disponibles: {e}"
@@ -105,7 +104,7 @@ class SignatureService:
 
         try:
             meta = signers.PdfSignatureMetadata(field_name="Sig1", md_algorithm="sha256")
-            out = sign_pdf(
+            out = signers.sign_pdf(
                 pdf_in,
                 signature_meta=meta,
                 signer=simple_signer,
