@@ -1101,9 +1101,12 @@
         <section id="banking" class="section">
             <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
                 <h2 style="margin-top:0;">🏦 Banking</h2>
-                <div style="display:flex; gap:8px; margin-bottom:10px;">
+                <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
                     <button onclick="uiLoadBanking()" style="padding:8px 12px; background:#0f766e; color:#fff; border:none; border-radius:6px; cursor:pointer;">🔄 Cargar Banking</button>
+                    <input id="banking-filter" type="text" placeholder="Filtrar transacciones (concepto/banco/importe)" oninput="applyBankingFilter()" style="padding:8px; border:1px solid #cbd5e1; border-radius:8px; min-width:260px;" />
                 </div>
+                <div id="banking-kpis" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+                <div id="banking-table-wrap" style="margin-bottom:10px;"></div>
                 <pre id="banking-output" style="background:#0f172a; color:#e2e8f0; padding:10px; border-radius:8px; max-height:260px; overflow:auto;">Banking output...</pre>
             </div>
         </section>
@@ -3002,11 +3005,83 @@
                 apiJson('/api/banking/institutions'),
                 apiJson('/api/banking/transactions')
             ]);
-            setPre('banking-output', {
+            const payload = {
                 stats: stats.data,
                 institutions: institutions.data,
                 transactions: tx.data
+            };
+            window.bankingCache = payload;
+            renderBankingKpis(payload);
+            applyBankingFilter();
+            setPre('banking-output', payload);
+        }
+
+        function renderBankingKpis(payload) {
+            const wrap = document.getElementById('banking-kpis');
+            if (!wrap) return;
+            const st = payload?.stats?.stats || {};
+            const configured = !!payload?.stats?.configured;
+            const banks = Number(st.bancos_activos || 0);
+            const pending = Number(st.pendientes_conciliar || 0);
+            const alerts = Number(st.alerts_criticas || 0);
+            const sync = st.ultimo_sincro || 'N/A';
+            const cards = [
+                [`Config`, configured ? 'OK' : 'NO', configured],
+                [`Bancos`, `${banks}`, banks > 0],
+                [`Pendientes`, `${pending}`, pending === 0],
+                [`Alertas`, `${alerts}`, alerts === 0],
+                [`Último sync`, `${sync}`, !!st.ultimo_sincro],
+            ];
+            wrap.innerHTML = cards.map(([k, v, ok]) => {
+                const bg = ok ? '#dcfce7' : '#fef3c7';
+                const fg = ok ? '#166534' : '#92400e';
+                return `<div style="background:${bg}; color:${fg}; padding:8px 10px; border-radius:10px; border:1px solid #e2e8f0; font-weight:600;">${k}: ${v}</div>`;
+            }).join('');
+        }
+
+        function applyBankingFilter() {
+            const payload = window.bankingCache || {};
+            const items = payload?.transactions?.transactions || [];
+            const q = (document.getElementById('banking-filter')?.value || '').toLowerCase().trim();
+            const filtered = items.filter(t => {
+                if (!q) return true;
+                const text = `${t.concept || ''} ${t.bank || ''} ${t.amount || ''} ${t.currency || ''}`.toLowerCase();
+                return text.includes(q);
             });
+            renderBankingTable(filtered);
+        }
+
+        function renderBankingTable(items) {
+            const wrap = document.getElementById('banking-table-wrap');
+            if (!wrap) return;
+            if (!items.length) {
+                wrap.innerHTML = '<div style="padding:8px; color:#64748b; border:1px solid #e2e8f0; border-radius:8px;">Sin transacciones para el filtro actual.</div>';
+                return;
+            }
+            wrap.innerHTML = `
+                <div style="max-height:280px; overflow:auto; border:1px solid #e2e8f0; border-radius:8px;">
+                    <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                        <thead style="background:#f8fafc; position:sticky; top:0;">
+                            <tr>
+                                <th style="text-align:left; padding:8px; border-bottom:1px solid #e2e8f0;">Fecha</th>
+                                <th style="text-align:left; padding:8px; border-bottom:1px solid #e2e8f0;">Concepto</th>
+                                <th style="text-align:left; padding:8px; border-bottom:1px solid #e2e8f0;">Banco</th>
+                                <th style="text-align:right; padding:8px; border-bottom:1px solid #e2e8f0;">Importe</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${items.map(t => `
+                                <tr>
+                                    <td style="padding:8px; border-bottom:1px solid #f1f5f9;">${t.date || '-'}</td>
+                                    <td style="padding:8px; border-bottom:1px solid #f1f5f9;">${t.concept || '-'}</td>
+                                    <td style="padding:8px; border-bottom:1px solid #f1f5f9;">${t.bank || '-'}</td>
+                                    <td style="padding:8px; border-bottom:1px solid #f1f5f9; text-align:right;">${Number(t.amount || 0).toFixed(2)} ${t.currency || ''}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
         }
 
         async function uiLoadUsuarios() {

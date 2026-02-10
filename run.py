@@ -475,6 +475,13 @@ def run_ocr():
         }), 400
 
     full_path = resolve_ocr_path(filename)
+    if not full_path:
+        return jsonify({
+            'success': False,
+            'error': 'Ruta no permitida o inexistente',
+            'roots': DEFAULT_OCR_PATHS
+        }), 404
+
     if not os.path.exists(full_path):
         return jsonify({
             'success': False,
