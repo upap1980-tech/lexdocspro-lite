@@ -3615,22 +3615,64 @@ def legacy_analytics_detailed():
 
 @app.route('/api/expedientes/listar', methods=['GET'])
 def legacy_expedientes_listar():
-    current_path = request.args.get('path', BASE_DIR)
-    base = Path(current_path)
+    requested_path = (request.args.get('path') or '').strip()
+
+    roots = []
+    for raw in [
+        EXPEDIENTES_DIR,
+        os.path.expanduser('~/Library/Mobile Documents/com~apple~CloudDocs/EXPEDIENTES'),
+        BASE_DIR,
+    ]:
+        p = Path(raw).expanduser().resolve()
+        if p.exists() and p.is_dir() and str(p) not in [str(x) for x in roots]:
+            roots.append(p)
+
+    if not roots:
+        return jsonify({'success': False, 'error': 'No hay raíces de expedientes disponibles'}), 500
+
+    if requested_path:
+        current = Path(requested_path).expanduser().resolve()
+    else:
+        current = roots[0]
+
+    if not any(current == r or r in current.parents for r in roots):
+        return jsonify({
+            'success': False,
+            'error': 'Ruta fuera de raíces permitidas',
+            'current_path': str(roots[0]),
+            'roots': [str(r) for r in roots]
+        }), 400
+
     files = []
-    if base.exists() and base.is_dir():
-        for item in sorted(base.iterdir())[:50]:
+    if current.exists() and current.is_dir():
+        entries = sorted(
+            list(current.iterdir()),
+            key=lambda x: (not x.is_dir(), x.name.lower())
+        )
+        for item in entries[:200]:
             try:
                 stat = item.stat()
                 files.append({
                     'name': item.name,
+                    'path': str(item.resolve()),
                     'is_dir': item.is_dir(),
-                    'size': stat.st_size if item.is_file() else '-',
+                    'size': stat.st_size if item.is_file() else None,
                     'mtime': datetime.fromtimestamp(stat.st_mtime).strftime('%d/%m/%Y %H:%M')
                 })
             except Exception:
                 continue
-    return jsonify({'success': True, 'current_path': str(base), 'files': files}), 200
+
+    parent_path = None
+    if current.parent != current and any(current.parent == r or r in current.parent.parents for r in roots):
+        parent_path = str(current.parent)
+
+    return jsonify({
+        'success': True,
+        'current_path': str(current),
+        'parent_path': parent_path,
+        'roots': [str(r) for r in roots],
+        'files': files
+    }), 200
 
 @app.route('/api/lexnet-urgent', methods=['GET'])
 def legacy_lexnet_urgent():
