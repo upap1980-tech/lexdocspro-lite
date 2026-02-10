@@ -1324,6 +1324,21 @@
                     <label>Límite
                         <input id="lexnet-filter-limit" type="number" min="1" max="200" value="20" style="width:80px; margin-left:6px;" />
                     </label>
+                    <label>Offset
+                        <input id="lexnet-filter-offset" type="number" min="0" max="5000" value="0" style="width:80px; margin-left:6px;" />
+                    </label>
+                    <label>Tipo
+                        <input id="lexnet-filter-case-type" type="text" placeholder="JUICIO_VERBAL" style="width:150px; margin-left:6px;" />
+                    </label>
+                    <label>Procedimiento
+                        <input id="lexnet-filter-procedure" type="text" placeholder="ABC/2026" style="width:150px; margin-left:6px;" />
+                    </label>
+                    <label>Desde
+                        <input id="lexnet-filter-date-from" type="date" style="margin-left:6px;" />
+                    </label>
+                    <label>Hasta
+                        <input id="lexnet-filter-date-to" type="date" style="margin-left:6px;" />
+                    </label>
                     <button onclick="loadLexnetNotifications()" style="padding:8px 14px; background:#0f766e; color:white; border:none; border-radius:6px; cursor:pointer;">🔄 Cargar Notificaciones</button>
                 </div>
 
@@ -2150,11 +2165,21 @@
             const unread = document.getElementById('lexnet-filter-unread')?.value || '';
             const urgency = document.getElementById('lexnet-filter-urgency')?.value || '';
             const limit = document.getElementById('lexnet-filter-limit')?.value || '20';
+            const offset = document.getElementById('lexnet-filter-offset')?.value || '0';
+            const caseType = (document.getElementById('lexnet-filter-case-type')?.value || '').trim();
+            const procedure = (document.getElementById('lexnet-filter-procedure')?.value || '').trim();
+            const dateFrom = document.getElementById('lexnet-filter-date-from')?.value || '';
+            const dateTo = document.getElementById('lexnet-filter-date-to')?.value || '';
 
             const params = new URLSearchParams();
             if (unread) params.set('unread', unread);
             if (urgency) params.set('urgency', urgency);
             params.set('limit', limit);
+            params.set('offset', offset);
+            if (caseType) params.set('case_type', caseType);
+            if (procedure) params.set('procedure_number', procedure);
+            if (dateFrom) params.set('date_from', dateFrom);
+            if (dateTo) params.set('date_to', dateTo);
 
             fetch(`/api/lexnet/notifications?${params.toString()}`)
                 .then(r => r.json())
@@ -2176,9 +2201,9 @@
                                 <strong>${n.title || 'Sin título'}</strong>
                                 <span>${n.urgency || 'NORMAL'}</span>
                             </div>
-                            <div style="font-size:12px; color:#64748b;">ID: ${n.id} | Read: ${n.read ? 'Sí' : 'No'} | Procedure: ${n.procedure_number || '-'}</div>
+                            <div style="font-size:12px; color:#64748b;">ID: ${n.id} | Read: ${n.read ? 'Sí' : 'No'} | Procedure: ${n.procedure_number || '-'} | Case: ${n.case_type || '-'} | Fecha: ${n.created_at || '-'}</div>
                             <div style="margin-top:6px;">
-                                <button onclick="markLexnetRead(${n.id})" style="padding:4px 8px; border:none; border-radius:4px; background:#334155; color:white; cursor:pointer;">Marcar leída</button>
+                                ${n.read ? '' : `<button onclick="markLexnetRead(${n.id})" style="padding:4px 8px; border:none; border-radius:4px; background:#334155; color:white; cursor:pointer;">Marcar leída</button>`}
                             </div>
                         </div>
                     `).join('');

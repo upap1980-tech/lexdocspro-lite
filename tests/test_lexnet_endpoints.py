@@ -18,10 +18,10 @@ class TestLexNetEndpoints(unittest.TestCase):
         if getattr(run, "JWT_EXTENSION_AVAILABLE", False):
             with run.app.app_context():
                 token = run.create_access_token(
-                    identity=1,
+                    identity="1",
                     additional_claims={"rol": "ADMIN", "email": "test@local"},
                 )
-            cls.auth_headers = {"Cookie": f"access_token_cookie={token}"}
+            cls.auth_headers = {"Authorization": f"Bearer {token}"}
 
     @classmethod
     def tearDownClass(cls):
@@ -65,7 +65,7 @@ class TestLexNetEndpoints(unittest.TestCase):
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 """,
                 (
-                    None,
+                    1,
                     "lexnet",
                     title,
                     "body-test",
@@ -109,7 +109,7 @@ class TestLexNetEndpoints(unittest.TestCase):
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    None,
+                    1,
                     "lexnet",
                     title,
                     "body-test-adv",
