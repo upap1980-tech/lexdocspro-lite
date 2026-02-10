@@ -81,6 +81,14 @@ docs/MANUAL_TEST_CHECKLIST.md
 
 QA rápida diaria (10 pasos):
 docs/QA_RAPIDA_10_PASOS.md
+
+Plan de ejecución producción (P0/P1/P2):
+docs/PRODUCTION_EXECUTION_PLAN_P0_P1_P2.md
+
+Automatizaciones operativas:
+- `scripts/automations/daily_p0_health.sh`
+- `scripts/automations/pre_push_gate.sh`
+- `scripts/automations/release_readiness_report.sh`
 📖 Documentación
 Setup Completo
 

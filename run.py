@@ -7,9 +7,13 @@ import uuid
 import hashlib
 import json
 import secrets
+import threading
+import time
 from pathlib import Path
 from datetime import datetime, timedelta
-from flask import Flask, render_template, jsonify, request, send_file, send_from_directory, make_response
+from collections import defaultdict, deque
+from functools import wraps
+from flask import Flask, render_template, jsonify, request, send_file, send_from_directory, make_response, g
 from flask_cors import CORS
 try:
     from flask_jwt_extended import (
@@ -48,6 +52,14 @@ from services.ia_cascade_service import ia_cascade
 # Cargar variables de entorno
 load_dotenv()
 
+# Utilidades de entorno
+def _env_bool(name: str, default: bool = False) -> bool:
+    val = os.getenv(name)
+    if val is None:
+        return default
+    return str(val).strip().lower() in ("1", "true", "yes", "on")
+
+
 # Crear app Flask PRIMERO
 app = Flask(__name__)
 
@@ -61,8 +73,9 @@ app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(seconds=int(os.getenv('JWT_R
 
 # ⭐ COOKIES + HEADER JWT CONFIG (fallback seguro)
 app.config['JWT_TOKEN_LOCATION'] = os.getenv('JWT_TOKEN_LOCATION', 'cookies,headers').split(',')
-app.config['JWT_COOKIE_SECURE'] = False
-app.config['JWT_COOKIE_CSRF_PROTECT'] = False
+app.config['JWT_COOKIE_SECURE'] = _env_bool('JWT_COOKIE_SECURE', os.getenv('FLASK_ENV', 'development') == 'production')
+app.config['JWT_COOKIE_CSRF_PROTECT'] = _env_bool('JWT_COOKIE_CSRF_PROTECT', os.getenv('FLASK_ENV', 'development') == 'production')
+app.config['JWT_COOKIE_SAMESITE'] = os.getenv('JWT_COOKIE_SAMESITE', 'Lax')
 app.config['JWT_COOKIE_NAME'] = 'access_token_cookie'
 
 # Inicializar JWT
@@ -99,10 +112,71 @@ CORS(app, resources={
     r"/api/*": {
         "origins": cors_origins,
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"],
+        "allow_headers": ["Content-Type", "Authorization", "X-Request-ID", "X-Correlation-ID"],
         "supports_credentials": True
     }
 })
+
+# ================================
+# SEGURIDAD + TRAZABILIDAD
+# ================================
+_RATE_LIMIT_BUCKETS = defaultdict(deque)
+_RATE_LIMIT_LOCK = threading.Lock()
+
+
+def rate_limit(max_requests: int, window_seconds: int):
+    """Rate limiting in-memory por IP+endpoint."""
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()
+            key = f"{request.path}:{client_ip}"
+            now = time.time()
+            with _RATE_LIMIT_LOCK:
+                bucket = _RATE_LIMIT_BUCKETS[key]
+                cutoff = now - window_seconds
+                while bucket and bucket[0] < cutoff:
+                    bucket.popleft()
+                if len(bucket) >= max_requests:
+                    retry_after = max(1, int(window_seconds - (now - bucket[0])))
+                    return jsonify({
+                        "success": False,
+                        "error": "Rate limit exceeded",
+                        "retry_after_seconds": retry_after
+                    }), 429
+                bucket.append(now)
+            return fn(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+@app.before_request
+def attach_request_context():
+    g.request_started_at = time.time()
+    g.request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    g.correlation_id = request.headers.get("X-Correlation-ID") or g.request_id
+
+
+@app.after_request
+def apply_security_headers(response):
+    request_id = getattr(g, "request_id", None)
+    correlation_id = getattr(g, "correlation_id", None)
+    started = getattr(g, "request_started_at", None)
+    if request_id:
+        response.headers["X-Request-ID"] = request_id
+    if correlation_id:
+        response.headers["X-Correlation-ID"] = correlation_id
+    if started:
+        response.headers["X-Response-Time-Ms"] = str(int((time.time() - started) * 1000))
+
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+    response.headers.setdefault("Content-Security-Policy", "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src 'self' http: https: ws: wss:; img-src 'self' data: blob:;")
+    if _env_bool("SECURITY_HSTS_ENABLED", os.getenv("FLASK_ENV", "development") == "production"):
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    return response
 
 # Registrar blueprint de autenticación (opcional)
 try:
@@ -254,6 +328,30 @@ os.makedirs(GENERATED_DOCS_DIR, exist_ok=True)
 # ============================================
 
 print("="*60)
+
+
+def _startup_dependency_checks():
+    checks = []
+    checks.append(("SMTP", all(os.getenv(k) for k in ("SMTP_HOST", "SMTP_USER", "SMTP_PASS", "SMTP_FROM"))))
+    checks.append(("BANKING", all(os.getenv(k) for k in ("BANKING_PROVIDER", "BANKING_BASE_URL"))))
+    ollama_default = os.getenv("DEFAULT_AI_PROVIDER", "ollama").lower() == "ollama"
+    ollama_ok = False
+    if ollama_default:
+        try:
+            ollama_ok = ai_service.providers.get('ollama').is_available() if ai_service and ai_service.providers.get('ollama') else False
+        except Exception:
+            ollama_ok = False
+    else:
+        ollama_ok = True
+    checks.append(("OLLAMA", ollama_ok))
+
+    print("🔎 Startup dependency checks:")
+    for name, ok in checks:
+        marker = "✅" if ok else "⚠️"
+        print(f"  {marker} {name}: {'OK' if ok else 'PENDIENTE'}")
+
+
+_startup_dependency_checks()
 print("🚀 LexDocsPro LITE v2.0 - Sistema Legal Multi-IA")
 print("="*60)
 print(f"📁 Base: {BASE_DIR}")
@@ -1726,6 +1824,7 @@ def document_thumbnails():
 
 @app.route('/api/lexnet/upload-notification', methods=['POST'])
 @abogado_or_admin_required
+@rate_limit(max_requests=30, window_seconds=60)
 def lexnet_upload_notification():
     """
     Subir y parsear archivo de notificación LexNET (PDF o XML)
@@ -3021,6 +3120,7 @@ def list_certificates():
 
 @app.route('/api/signature/sign', methods=['POST'])
 @abogado_or_admin_required
+@rate_limit(max_requests=20, window_seconds=60)
 def sign_document():
     """
     Firmar un documento PDF con un certificado
@@ -3125,6 +3225,36 @@ def health_check():
         'service': 'lexdocspro-lite',
         'status': 'ok'
     }), 200
+
+
+@app.route('/api/health/ready', methods=['GET'])
+def health_ready_check():
+    """Readiness para producción: DB + IA local + SMTP + watchdog."""
+    try:
+        db_ok = bool(db and db.conn)
+    except Exception:
+        db_ok = False
+
+    try:
+        ai_local = ai_service.providers.get('ollama').is_available() if ai_service and ai_service.providers.get('ollama') else False
+    except Exception:
+        ai_local = False
+
+    smtp_ok = all(os.getenv(k) for k in ('SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'))
+    watchdog_ok = bool(autoprocessor.get_status().get('running', False))
+    ready = bool(db_ok and watchdog_ok and (ai_local or os.getenv("DEFAULT_AI_PROVIDER", "ollama") != "ollama"))
+
+    return jsonify({
+        'success': True,
+        'ready': ready,
+        'checks': {
+            'db': db_ok,
+            'ia_local_ollama': ai_local,
+            'smtp_config': smtp_ok,
+            'watchdog_running': watchdog_ok,
+        },
+        'timestamp': datetime.now().isoformat()
+    }), (200 if ready else 503)
 
 @app.route('/api/status/overview', methods=['GET'])
 def status_overview():
@@ -3239,6 +3369,7 @@ def get_ai_status():
 
 @app.route('/api/alerts/test-email', methods=['POST'])
 @abogado_or_admin_required
+@rate_limit(max_requests=10, window_seconds=60)
 def test_email_alert():
     """Enviar un email de prueba (Email Alerts feature)"""
     try:
@@ -3583,6 +3714,7 @@ def legacy_usuarios_stats():
 
 @app.route('/api/usuarios/registrar', methods=['POST'])
 @admin_required
+@rate_limit(max_requests=20, window_seconds=60)
 def legacy_usuarios_registrar():
     data = request.get_json(silent=True) or {}
     nombre = (data.get('nombre') or '').strip()
@@ -4006,19 +4138,62 @@ def legacy_deploy_status():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.json.get('email')
-        password = request.json.get('password')
-        
-        if email == 'admin@lexdocs.com' and password == 'admin123':
-            access_token = create_access_token(
-                identity=email,
-                additional_claims={'rol': 'ADMIN'}
+        client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()
+        key = f"/login:{client_ip}"
+        now = time.time()
+        with _RATE_LIMIT_LOCK:
+            bucket = _RATE_LIMIT_BUCKETS[key]
+            cutoff = now - 60
+            while bucket and bucket[0] < cutoff:
+                bucket.popleft()
+            if len(bucket) >= 20:
+                return {'error': 'Rate limit exceeded. Reintenta en 1 minuto.'}, 429
+            bucket.append(now)
+
+        data = request.get_json(silent=True) or {}
+        email = (data.get('email') or '').strip().lower()
+        password = (data.get('password') or '').strip()
+        if not email or not password:
+            return {'error': 'email y password requeridos'}, 400
+
+        # Login real vía tabla users. Fallback hardcoded solo si está habilitado explícitamente.
+        try:
+            from services.auth_service import AuthDB, AuthService
+            auth_result = AuthService(AuthDB()).authenticate(email, password)
+            if auth_result.get('success'):
+                user = auth_result.get('user', {})
+                access_token = create_access_token(
+                    identity=str(user.get('id') or email),
+                    additional_claims={'rol': user.get('rol', 'LECTURA')}
+                )
+                response = make_response({'success': True, 'token': access_token, 'user': {'email': user.get('email'), 'rol': user.get('rol')}})
+                response.set_cookie(
+                    'access_token_cookie',
+                    access_token,
+                    max_age=3600,
+                    secure=app.config.get('JWT_COOKIE_SECURE', False),
+                    samesite=app.config.get('JWT_COOKIE_SAMESITE', 'Lax'),
+                    httponly=True
+                )
+                return response, 200
+        except Exception as e:
+            print(f"⚠️ Login AuthService error: {e}")
+
+        allow_dev_fallback = _env_bool('ALLOW_DEV_LOGIN_FALLBACK', os.getenv('FLASK_ENV', 'development') != 'production')
+        if allow_dev_fallback and email == 'admin@lexdocs.com' and password == 'admin123':
+            access_token = create_access_token(identity=email, additional_claims={'rol': 'ADMIN'})
+            response = make_response({'success': True, 'token': access_token, 'warning': 'dev_fallback_login'})
+            response.set_cookie(
+                'access_token_cookie',
+                access_token,
+                max_age=3600,
+                secure=app.config.get('JWT_COOKIE_SECURE', False),
+                samesite=app.config.get('JWT_COOKIE_SAMESITE', 'Lax'),
+                httponly=True
             )
-            response = make_response({'success': True, 'token': access_token})
-            response.set_cookie('access_token_cookie', access_token, max_age=3600)
             return response, 200
-        else:
-            return {'error': 'Credenciales inválidas'}, 401
+
+        return {'error': 'Credenciales inválidas'}, 401
     
     # GET - Mostrar formulario login
     return '''
