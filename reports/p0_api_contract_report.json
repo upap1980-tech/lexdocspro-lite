@@ -2,9 +2,9 @@
   "skill": "api_contract_skill",
   "status": "PASS",
   "summary": {
-    "backend_routes_total": 89,
-    "frontend_endpoints_total": 55,
-    "frontend_endpoints_matched": 55,
+    "backend_routes_total": 110,
+    "frontend_endpoints_total": 66,
+    "frontend_endpoints_matched": 66,
     "missing_endpoints": 0,
     "payload_mismatches": 0,
     "response_mismatches": 0

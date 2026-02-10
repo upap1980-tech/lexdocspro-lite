@@ -1182,6 +1182,12 @@ def lexnet_analyze():
         provider = data.get('provider', 'ollama')
         archivos = data.get('archivos', [])
         nombre = data.get('nombre')  # compat contrato frontend legacy
+        principal = data.get('principal')  # compat payload legacy
+        # Compat: algunos clientes envían textos.principal y esperan que se procese igual.
+        if isinstance(textos, dict) and 'principal' in textos and textos.get('principal'):
+            textos.setdefault('cuerpo', textos.get('principal'))
+        if principal and isinstance(textos, dict) and not any(textos.values()):
+            textos['cuerpo'] = principal
         
         print(f"📊 Analizando LexNET con {provider}")
         print(f"📄 Textos recibidos: {list(textos.keys())}")
@@ -3609,10 +3615,15 @@ def legacy_alerts_history():
 @app.route('/api/firma/status', methods=['GET'])
 def legacy_firma_status():
     certs = signature_service.list_available_certificates()
+    last_cert = certs[0]['name'] if certs else None
     return jsonify({
         'success': True,
         'certificates': certs,
         'certificates_path': signature_service.certificates_path,
+        # Campos legacy esperados por frontend histórico
+        'ultimo_certificado': last_cert,
+        'hash': None,
+        'expira': None,
         'message': 'Estado de firma cargado',
         'timestamp': datetime.now().isoformat()
     }), 200
