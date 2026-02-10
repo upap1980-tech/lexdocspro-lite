@@ -3709,31 +3709,110 @@ def legacy_lexnet_analizar_plazo():
 
 @app.route('/api/config/get', methods=['GET'])
 def legacy_config_get():
+    # Estado rápido de servicios para panel de configuración
+    smtp_ok = False
+    smtp_error = None
+    try:
+        from services.email_service import EmailService
+        _ok, _err = EmailService()._validate_config()
+        smtp_ok = bool(_ok)
+        smtp_error = None if _ok else _err
+    except Exception as e:
+        smtp_error = str(e)
+
+    ia_ok = False
+    try:
+        ia_ok = ia_cascade is not None and bool(getattr(ia_cascade, "providers", {}))
+    except Exception:
+        ia_ok = False
+
+    lexnet_ok = False
+    try:
+        from services.lexnet_notifications import LexNetNotifications
+        LexNetNotifications(db_manager=db)
+        lexnet_ok = True
+    except Exception:
+        lexnet_ok = False
+
+    watchdog_status = {}
+    try:
+        watchdog_status = autoprocessor.get_status() or {}
+    except Exception:
+        watchdog_status = {}
+
     return jsonify({
         'success': True,
         'message': 'Configuración cargada',
         'config': {
+            'alert_email': LEGACY_CONFIG.get('alert_email', 'admin@lexdocs.com'),
             'ollama_model': LEGACY_CONFIG.get('ollama_model', OLLAMA_MODEL),
             'pendientes_dir': LEGACY_CONFIG.get('pendientes_dir', PENDIENTES_DIR),
-            'ia_fallback': LEGACY_CONFIG.get('ia_fallback', True)
-        }
+            'ia_fallback': LEGACY_CONFIG.get('ia_fallback', True),
+            'default_ai_provider': LEGACY_CONFIG.get('default_ai_provider', DEFAULT_AI_PROVIDER),
+        },
+        'services': {
+            'ia_cascade': {'ok': ia_ok},
+            'smtp': {'ok': smtp_ok, 'error': smtp_error},
+            'lexnet': {'ok': lexnet_ok},
+            'watchdog': {
+                'ok': bool(watchdog_status.get('running')),
+                'running': bool(watchdog_status.get('running')),
+                'queued_files': int(watchdog_status.get('queued_files', 0)),
+                'processed_today': int(watchdog_status.get('processed_today', 0)),
+            }
+        },
+        'timestamp': datetime.now().isoformat()
     }), 200
 
 @app.route('/api/config/save', methods=['POST'])
 def legacy_config_save():
     data = request.get_json(silent=True) or {}
+    updated = {}
+
+    alert_email = (data.get('alert_email') or '').strip()
+    if alert_email:
+        LEGACY_CONFIG['alert_email'] = alert_email
+        updated['alert_email'] = alert_email
+
     if 'ollama_model' in data:
-        LEGACY_CONFIG['ollama_model'] = data['ollama_model']
+        value = str(data['ollama_model']).strip()
+        if value:
+            LEGACY_CONFIG['ollama_model'] = value
+            updated['ollama_model'] = value
+
+    if 'pendientes_dir' in data:
+        value = str(data['pendientes_dir']).strip()
+        if value:
+            LEGACY_CONFIG['pendientes_dir'] = value
+            updated['pendientes_dir'] = value
+
     if 'ia_fallback' in data:
-        LEGACY_CONFIG['ia_fallback'] = bool(data['ia_fallback'])
+        value = bool(data['ia_fallback'])
+        LEGACY_CONFIG['ia_fallback'] = value
+        updated['ia_fallback'] = value
+
+    if 'default_ai_provider' in data:
+        value = str(data['default_ai_provider']).strip().lower()
+        if value:
+            LEGACY_CONFIG['default_ai_provider'] = value
+            updated['default_ai_provider'] = value
+
+    if not updated:
+        return jsonify({
+            'success': False,
+            'message': 'No hay campos válidos para guardar'
+        }), 400
+
     return jsonify({
         'success': True,
         'message': 'Configuración guardada',
+        'updated': updated,
         'services': {
             'autoprocesador': 'online',
             'ia_cascade': 'online',
             'storage': 'online'
-        }
+        },
+        'timestamp': datetime.now().isoformat()
     }), 200
 
 @app.route('/api/deploy/status', methods=['GET'])

@@ -1358,10 +1358,40 @@
         <section id="config" class="section">
             <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
                 <h2 style="margin-top:0;">⚙️ Configuración</h2>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin-bottom:12px;">
+                    <label style="display:flex; flex-direction:column; gap:6px;">
+                        <span style="font-size:13px; color:#475569;">Alert email</span>
+                        <input id="cfg-alert-email" type="email" placeholder="alerts@dominio.com" style="padding:8px; border:1px solid #cbd5e1; border-radius:8px;" />
+                    </label>
+                    <label style="display:flex; flex-direction:column; gap:6px;">
+                        <span style="font-size:13px; color:#475569;">Modelo Ollama</span>
+                        <input id="cfg-ollama-model" type="text" placeholder="lexdocs-legal-pro" style="padding:8px; border:1px solid #cbd5e1; border-radius:8px;" />
+                    </label>
+                    <label style="display:flex; flex-direction:column; gap:6px;">
+                        <span style="font-size:13px; color:#475569;">Directorio pendientes</span>
+                        <input id="cfg-pendientes-dir" type="text" placeholder="/Users/..../PENDIENTES_LEXDOCS" style="padding:8px; border:1px solid #cbd5e1; border-radius:8px;" />
+                    </label>
+                    <label style="display:flex; flex-direction:column; gap:6px;">
+                        <span style="font-size:13px; color:#475569;">Provider IA por defecto</span>
+                        <select id="cfg-default-provider" style="padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
+                            <option value="ollama">ollama</option>
+                            <option value="groq">groq</option>
+                            <option value="perplexity">perplexity</option>
+                            <option value="openai">openai</option>
+                            <option value="gemini">gemini</option>
+                            <option value="deepseek">deepseek</option>
+                        </select>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; margin-top:24px;">
+                        <input id="cfg-ia-fallback" type="checkbox" checked />
+                        <span style="font-size:13px; color:#475569;">Fallback IA activo</span>
+                    </label>
+                </div>
                 <div style="display:flex; gap:8px; margin-bottom:10px;">
                     <button onclick="uiLoadConfig()" style="padding:8px 12px; background:#1d4ed8; color:#fff; border:none; border-radius:6px; cursor:pointer;">📥 Cargar Config</button>
                     <button onclick="uiSaveConfig()" style="padding:8px 12px; background:#16a34a; color:#fff; border:none; border-radius:6px; cursor:pointer;">💾 Guardar Config</button>
                 </div>
+                <div id="cfg-services-badges" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
                 <pre id="config-output" style="background:#0f172a; color:#e2e8f0; padding:10px; border-radius:8px; max-height:260px; overflow:auto;">Config output...</pre>
             </div>
         </section>
@@ -3172,6 +3202,19 @@
 
         async function uiLoadConfig() {
             const { data } = await apiJson('/api/config/get');
+            const cfg = data?.config || {};
+            const set = (id, val='') => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (el.type === 'checkbox') el.checked = !!val;
+                else el.value = val ?? '';
+            };
+            set('cfg-alert-email', cfg.alert_email || '');
+            set('cfg-ollama-model', cfg.ollama_model || '');
+            set('cfg-pendientes-dir', cfg.pendientes_dir || '');
+            set('cfg-default-provider', cfg.default_ai_provider || 'ollama');
+            set('cfg-ia-fallback', !!cfg.ia_fallback);
+            renderConfigServiceBadges(data?.services || {});
             setPre('config-output', data);
         }
 
@@ -3180,11 +3223,32 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    ollama_model: 'lexdocs-legal-pro',
-                    ia_fallback: true
+                    alert_email: document.getElementById('cfg-alert-email')?.value || '',
+                    ollama_model: document.getElementById('cfg-ollama-model')?.value || '',
+                    pendientes_dir: document.getElementById('cfg-pendientes-dir')?.value || '',
+                    default_ai_provider: document.getElementById('cfg-default-provider')?.value || 'ollama',
+                    ia_fallback: !!document.getElementById('cfg-ia-fallback')?.checked
                 })
             });
             setPre('config-output', data);
+            await uiLoadConfig();
+        }
+
+        function renderConfigServiceBadges(services) {
+            const wrap = document.getElementById('cfg-services-badges');
+            if (!wrap) return;
+            const entries = [
+                ['IA Cascade', !!services?.ia_cascade?.ok],
+                ['SMTP', !!services?.smtp?.ok],
+                ['LexNET', !!services?.lexnet?.ok],
+                ['Watchdog', !!services?.watchdog?.ok]
+            ];
+            wrap.innerHTML = entries.map(([label, ok]) => {
+                const bg = ok ? '#dcfce7' : '#fef3c7';
+                const fg = ok ? '#166534' : '#92400e';
+                const dot = ok ? '●' : '◐';
+                return `<span style="padding:6px 10px; border-radius:999px; background:${bg}; color:${fg}; font-weight:600;">${dot} ${label}</span>`;
+            }).join('');
         }
 
         async function uiLoadDeployStatus() {
