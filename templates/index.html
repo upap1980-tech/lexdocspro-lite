@@ -1126,6 +1126,7 @@
                     <button onclick="uiLoadUsuarios()" style="padding:8px 12px; background:#1d4ed8; color:#fff; border:none; border-radius:6px; cursor:pointer;">👥 Equipo</button>
                     <button onclick="uiInvitarUsuario()" style="padding:8px 12px; background:#7c3aed; color:#fff; border:none; border-radius:6px; cursor:pointer;">📩 Invitar</button>
                 </div>
+                <div id="usuarios-kpis" style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;"></div>
                 <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
                     <input id="usuarios-search" placeholder="Buscar por nombre/email" oninput="applyUsuariosFilters()" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; min-width:220px;">
                     <select id="usuarios-filter-rol" onchange="applyUsuariosFilters()" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
@@ -3086,10 +3087,34 @@
         }
 
         async function uiLoadUsuarios() {
-            const { data } = await apiJson('/api/usuarios/equipo');
-            window.uiUsuariosCache = data?.usuarios || [];
+            const [equipo, stats] = await Promise.all([
+                apiJson('/api/usuarios/equipo'),
+                apiJson('/api/usuarios/stats')
+            ]);
+            const data = equipo?.data || {};
+            window.uiUsuariosCache = data.usuarios || [];
             applyUsuariosFilters();
-            setPre('usuarios-output', data);
+            renderUsuariosKpis(stats?.data?.stats || null);
+            setPre('usuarios-output', { equipo: data, stats: stats?.data || {} });
+        }
+
+        function renderUsuariosKpis(stats) {
+            const wrap = document.getElementById('usuarios-kpis');
+            if (!wrap) return;
+            if (!stats) {
+                wrap.innerHTML = '';
+                return;
+            }
+            const items = [
+                ['Total', stats.total || 0, '#eff6ff', '#1d4ed8'],
+                ['Activos', stats.active || 0, '#ecfdf5', '#166534'],
+                ['Inactivos', stats.inactive || 0, '#fef2f2', '#991b1b'],
+                ['Admins', stats.by_role?.ADMIN || 0, '#f5f3ff', '#6d28d9'],
+                ['Abogados', stats.by_role?.ABOGADO || 0, '#fffbeb', '#92400e'],
+            ];
+            wrap.innerHTML = items.map(([label, val, bg, fg]) =>
+                `<div style="padding:8px 10px; border-radius:10px; border:1px solid #e2e8f0; background:${bg}; color:${fg}; font-weight:700;">${label}: ${val}</div>`
+            ).join('');
         }
 
         async function uiInvitarUsuario() {
@@ -3097,6 +3122,10 @@
             const email = document.getElementById('usuarios-email')?.value || '';
             const rol = document.getElementById('usuarios-rol')?.value || 'LECTURA';
             const password = document.getElementById('usuarios-password')?.value || '';
+            if (!email || !email.includes('@')) {
+                alert('Introduce un email válido.');
+                return;
+            }
             const { data } = await apiJson('/api/usuarios/registrar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -3173,6 +3202,8 @@
         }
 
         async function uiToggleUsuario(userId, activo) {
+            const action = String(activo) === 'true' ? 'activar' : 'desactivar';
+            if (!confirm(`¿Confirmas ${action} este usuario?`)) return;
             const { data } = await apiJson(`/api/usuarios/${userId}/estado`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -3183,11 +3214,13 @@
         }
 
         async function uiResetUsuarioPassword(userId) {
+            if (!confirm('¿Resetear password del usuario seleccionado?')) return;
             const { data } = await apiJson(`/api/usuarios/${userId}/reset-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
             });
             setPre('usuarios-output', data);
+            if (data?.success) await uiLoadUsuarios();
         }
 
         async function uiLoadAnalytics() {

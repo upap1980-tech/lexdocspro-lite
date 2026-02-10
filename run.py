@@ -3554,6 +3554,33 @@ def legacy_usuarios_equipo():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'usuarios': []}), 500
 
+@app.route('/api/usuarios/stats', methods=['GET'])
+@abogado_or_admin_required
+def legacy_usuarios_stats():
+    """Resumen operativo del módulo Usuarios para panel enterprise."""
+    try:
+        from services.auth_service import AuthDB
+        adb = AuthDB()
+        rows = adb.list_users()
+        total = len(rows)
+        active = sum(1 for u in rows if u.get('activo'))
+        by_role = {'ADMIN': 0, 'ABOGADO': 0, 'LECTURA': 0}
+        for u in rows:
+            role = (u.get('rol') or 'LECTURA').upper()
+            by_role[role] = by_role.get(role, 0) + 1
+        return jsonify({
+            'success': True,
+            'stats': {
+                'total': total,
+                'active': active,
+                'inactive': max(0, total - active),
+                'by_role': by_role,
+            },
+            'timestamp': datetime.now().isoformat()
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/usuarios/registrar', methods=['POST'])
 @admin_required
 def legacy_usuarios_registrar():
