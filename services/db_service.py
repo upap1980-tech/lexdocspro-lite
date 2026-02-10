@@ -19,7 +19,7 @@ class DatabaseService:
         conn = self._connect()
         cursor = conn.cursor()
         
-        today = date.today()
+        today = date.today().isoformat()
         
         cursor.execute("SELECT COUNT(*) FROM saved_documents WHERE DATE(created_at) = ?", (today,))
         total_hoy = cursor.fetchone()[0]
@@ -64,7 +64,7 @@ class DatabaseService:
     
     def obtener_procesados_hoy(self):
         """Docs procesados hoy"""
-        today = date.today()
+        today = date.today().isoformat()
         conn = self._connect()
         cursor = conn.cursor()
         
