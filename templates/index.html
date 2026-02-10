@@ -1400,6 +1400,8 @@
             <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
                 <h2 style="margin-top:0;">🚀 Deploy Status</h2>
                 <button onclick="uiLoadDeployStatus()" style="padding:8px 12px; background:#0f766e; color:#fff; border:none; border-radius:6px; cursor:pointer; margin-bottom:10px;">🔄 Cargar Deploy</button>
+                <div id="deploy-badges" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+                <div id="deploy-runtime" style="font-size:13px; color:#475569; margin-bottom:10px;"></div>
                 <pre id="deploy-output" style="background:#0f172a; color:#e2e8f0; padding:10px; border-radius:8px; max-height:260px; overflow:auto;">Deploy output...</pre>
             </div>
         </section>
@@ -3253,7 +3255,25 @@
 
         async function uiLoadDeployStatus() {
             const { data } = await apiJson('/api/deploy/status');
+            renderDeployStatus(data);
             setPre('deploy-output', data);
+        }
+
+        function renderDeployStatus(data) {
+            const badges = document.getElementById('deploy-badges');
+            const runtime = document.getElementById('deploy-runtime');
+            if (!badges || !runtime) return;
+            const services = data?.services || {};
+            const entries = Object.entries(services);
+            badges.innerHTML = entries.map(([name, value]) => {
+                const ok = String(value).toLowerCase() === 'online';
+                const bg = ok ? '#dcfce7' : '#fef3c7';
+                const fg = ok ? '#166534' : '#92400e';
+                const dot = ok ? '●' : '◐';
+                return `<span style="padding:6px 10px; border-radius:999px; background:${bg}; color:${fg}; font-weight:600;">${dot} ${name}: ${value}</span>`;
+            }).join('');
+            const rt = data?.runtime || {};
+            runtime.textContent = `Host: ${rt.host || '-'} | Port: ${rt.port || '-'} | Python: ${rt.python || '-'} | ENV: ${rt.flask_env || '-'} | Last deploy: ${data?.last_deploy || '-'}`;
         }
 
         async function uiAIStatus() {

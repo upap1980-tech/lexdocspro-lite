@@ -3817,16 +3817,114 @@ def legacy_config_save():
 
 @app.route('/api/deploy/status', methods=['GET'])
 def legacy_deploy_status():
+    # Estado real y compatible con la respuesta legacy.
+    import socket
+    from config import DB_PATH
+
+    def _status_label(ok):
+        return 'Online' if ok else 'Degraded'
+
+    # Database
+    db_ok = False
+    db_error = None
+    try:
+        conn = db.get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        cur.fetchone()
+        conn.close()
+        db_ok = True
+    except Exception as e:
+        db_error = str(e)
+
+    # Ollama
+    ollama_ok = False
+    ollama_error = None
+    ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434').rstrip('/')
+    try:
+        resp = requests.get(f"{ollama_url}/api/tags", timeout=2)
+        ollama_ok = resp.status_code < 500
+        if not ollama_ok:
+            ollama_error = f"HTTP {resp.status_code}"
+    except Exception as e:
+        ollama_error = str(e)
+
+    # Storage
+    storage_ok = True
+    storage_error = None
+    ap_status = {}
+    try:
+        ap_status = autoprocessor.get_status() or {}
+    except Exception:
+        ap_status = {}
+    storage_paths = [
+        PENDIENTES_DIR,
+        ap_status.get('processed_dir') or os.path.expanduser('~/Desktop/PROCESADOS_LEXDOCS'),
+        ap_status.get('error_dir') or os.path.expanduser('~/Desktop/ERRORES_LEXDOCS'),
+        ap_status.get('backup_dir') or os.path.expanduser('~/Desktop/BACKUP_LEXDOCS'),
+        GENERATED_DOCS_DIR,
+    ]
+    for p in storage_paths:
+        try:
+            os.makedirs(p, exist_ok=True)
+            probe = os.path.join(p, '.lexdocs_probe')
+            with open(probe, 'w', encoding='utf-8') as f:
+                f.write('ok')
+            os.remove(probe)
+        except Exception as e:
+            storage_ok = False
+            storage_error = f"{p}: {e}"
+            break
+
+    # PWA assets mínimos
+    pwa_ok = True
+    pwa_error = None
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    required_assets = ['templates/index.html', 'static/css/style.css']
+    for asset in required_assets:
+        if not os.path.exists(os.path.join(project_root, asset)):
+            pwa_ok = False
+            pwa_error = f"Falta {asset}"
+            break
+
+    # Watchdog/autoprocesador
+    watchdog = ap_status
+
+    host = os.getenv('HOST', '0.0.0.0')
+    port = int(os.getenv('PORT', '5002'))
+    hostname = socket.gethostname()
+
     return jsonify({
         'success': True,
         'services': {
-            'database': 'Online',
-            'ollama': 'Degraded',
-            'storage': 'Online',
-            'pwa': 'Online'
+            # Compat con consumidores legacy del frontend
+            'database': _status_label(db_ok),
+            'ollama': _status_label(ollama_ok),
+            'storage': _status_label(storage_ok),
+            'pwa': _status_label(pwa_ok),
+        },
+        'detailed_services': {
+            'database': {'ok': db_ok, 'path': str(DB_PATH), 'error': db_error},
+            'ollama': {'ok': ollama_ok, 'base_url': ollama_url, 'error': ollama_error},
+            'storage': {'ok': storage_ok, 'paths': storage_paths, 'error': storage_error},
+            'pwa': {'ok': pwa_ok, 'required_assets': required_assets, 'error': pwa_error},
+            'watchdog': {
+                'ok': bool(watchdog.get('running')),
+                'running': bool(watchdog.get('running')),
+                'queued_files': int(watchdog.get('queued_files', 0)),
+                'processed_today': int(watchdog.get('processed_today', 0)),
+            }
+        },
+        'runtime': {
+            'host': host,
+            'port': port,
+            'hostname': hostname,
+            'python': f"{os.sys.version_info.major}.{os.sys.version_info.minor}.{os.sys.version_info.micro}",
+            'flask_env': os.getenv('FLASK_ENV', 'development'),
         },
         'uptime': 'N/A',
-        'last_deploy': datetime.now().strftime('%d/%m/%Y %H:%M')
+        'last_deploy': datetime.now().strftime('%d/%m/%Y %H:%M'),
+        'timestamp': datetime.now().isoformat(),
     }), 200
 
 # ==================== LOGIN ENDPOINT ====================
