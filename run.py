@@ -3156,6 +3156,47 @@ def status_overview():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/pwa/status', methods=['GET'])
+def pwa_status():
+    """Estado detallado PWA para panel UI."""
+    try:
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        manifest_candidates = [
+            os.path.join(project_root, 'static', 'manifest.json'),
+            os.path.join(project_root, 'manifest.json'),
+        ]
+        sw_candidates = [
+            os.path.join(project_root, 'static', 'sw.js'),
+            os.path.join(project_root, 'sw.js'),
+        ]
+
+        manifest_path = next((p for p in manifest_candidates if os.path.exists(p)), None)
+        sw_path = next((p for p in sw_candidates if os.path.exists(p)), None)
+
+        manifest_ok = manifest_path is not None
+        sw_ok = sw_path is not None
+
+        details = {
+            'manifest': {
+                'ok': manifest_ok,
+                'path': manifest_path,
+            },
+            'service_worker': {
+                'ok': sw_ok,
+                'path': sw_path,
+            },
+            'https_required': False,  # localhost permitido en dev
+            'installable': bool(manifest_ok and sw_ok),
+        }
+
+        return jsonify({
+            'success': True,
+            'status': details,
+            'timestamp': datetime.now().isoformat(),
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # ============================================
 # NEW FEATURE ENDPOINTS (v2.3.1 CLASSIC)
 # ============================================
