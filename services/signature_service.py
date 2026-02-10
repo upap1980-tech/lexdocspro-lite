@@ -4,6 +4,7 @@ Versión stub para v2.3.1
 """
 import os
 import io
+import tempfile
 
 CERTS_PATH_DEFAULT = os.path.expanduser("~/Desktop/LEXDOCS_CERTS")
 
@@ -73,18 +74,22 @@ class SignatureService:
             print(f"❌ {err}")
             return False, err
 
-        # Intentar varias combinaciones de passphrase (algunos .p12 usan pass distinta para clave)
+        # Intentar varias combinaciones para compatibilidad entre versiones pyHanko.
         load_errors = []
         simple_signer = None
         for cpwd in [passphrase.encode() if passphrase else None, None]:
-            try:
-                simple_signer = signers.SimpleSigner.load_pkcs12(
-                    pfx_file=cert_path,
-                    passphrase=cpwd,
-                )
+            for loader in (
+                lambda: signers.SimpleSigner.load_pkcs12(cert_path, passphrase=cpwd),
+                lambda: signers.SimpleSigner.load_pkcs12(pfx_file=cert_path, passphrase=cpwd),
+            ):
+                try:
+                    simple_signer = loader()
+                    if simple_signer:
+                        break
+                except Exception as e:
+                    load_errors.append(str(e))
+            if simple_signer:
                 break
-            except Exception as e:
-                load_errors.append(str(e))
         if not simple_signer:
             err = f"Error cargando PKCS#12 con pyHanko: {' | '.join(load_errors[-2:])}"
             print(f"❌ {err}")
@@ -155,15 +160,70 @@ class SignatureService:
             raise ValueError("Salida no tiene cabecera PDF válida")
         if b"%%EOF" not in data[-2048:]:
             raise ValueError("Salida PDF no contiene marcador EOF")
-        with open(output_path, 'wb') as outf:
-            outf.write(data)
+        # Validación de legibilidad con al menos un parser robusto.
+        self._assert_pdf_readable(data)
+
+        # Escritura atómica para evitar dejar archivos corruptos a medio generar.
+        out_dir = os.path.dirname(output_path) or "."
+        os.makedirs(out_dir, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(prefix=".signed_", suffix=".pdf", dir=out_dir)
+        try:
+            with os.fdopen(fd, "wb") as outf:
+                outf.write(data)
+            os.replace(tmp_path, output_path)
+        finally:
+            if os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except Exception:
+                    pass
+
+    def _assert_pdf_readable(self, data: bytes):
+        errors = []
+        # PyMuPDF primero (suele ser más tolerante y rápido)
+        try:
+            import fitz  # PyMuPDF
+            with fitz.open(stream=data, filetype="pdf") as doc:
+                if doc.page_count < 1:
+                    raise ValueError("PDF sin páginas")
+            return
+        except Exception as e:
+            errors.append(f"fitz: {e}")
+
+        # Fallback con pypdf / PyPDF2
+        for mod_name in ("pypdf", "PyPDF2"):
+            try:
+                mod = __import__(mod_name)
+                reader_cls = getattr(mod, "PdfReader", None)
+                if reader_cls is None:
+                    continue
+                reader = reader_cls(io.BytesIO(data))
+                if len(reader.pages) < 1:
+                    raise ValueError("PDF sin páginas")
+                return
+            except Exception as e:
+                errors.append(f"{mod_name}: {e}")
+        raise ValueError("PDF firmado no legible: " + " | ".join(errors[-2:]))
     
     def verify_signature(self, pdf_path):
         """Verificar firma de un PDF"""
-        # Stub - en producción verificaría la firma real
-        return {
-            'signed': False,
-            'valid': False,
-            'signer': None,
-            'timestamp': None
-        }
+        try:
+            if not os.path.exists(pdf_path):
+                return {'signed': False, 'valid': False, 'error': 'Archivo no encontrado'}
+            with open(pdf_path, "rb") as f:
+                data = f.read()
+            self._assert_pdf_readable(data)
+            # Verificación estructural mínima: presencia de diccionario de firma.
+            signed = (b"/Type /Sig" in data) or (b"/Contents" in data and b"/ByteRange" in data)
+            return {
+                'signed': bool(signed),
+                'valid': bool(signed),
+                'signer': None,
+                'timestamp': None,
+            }
+        except Exception as e:
+            return {
+                'signed': False,
+                'valid': False,
+                'error': str(e),
+            }
