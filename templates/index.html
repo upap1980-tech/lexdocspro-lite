@@ -1192,6 +1192,9 @@
             <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
                 <h2 style="margin-top:0;">🧠 Documentos E2E</h2>
                 <p style="color:#64748b;">Flujo: smart-analyze → propose-save → confirm-save → listado BD.</p>
+                <div id="ia-agent-status" style="margin-bottom:10px; padding:8px 10px; border-radius:8px; background:#e2e8f0; color:#0f172a; font-size:13px;">
+                    Estado: pendiente de validación
+                </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
                     <input id="doc-e2e-file" type="file" accept=".pdf,.xml,.doc,.docx,.txt,.jpg,.jpeg,.png">
                     <input id="doc-e2e-year" type="number" value="2026" style="width:90px; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
@@ -1223,6 +1226,7 @@
                     <button onclick="uiChatLegacy()" style="padding:8px 12px; background:#0f766e; color:#fff; border:none; border-radius:6px; cursor:pointer;">💬 Chat</button>
                     <button onclick="uiIAConsultarLegacy()" style="padding:8px 12px; background:#7c3aed; color:#fff; border:none; border-radius:6px; cursor:pointer;">🧠 IA Consultar</button>
                     <button onclick="uiIAAgentTaskLegacy()" style="padding:8px 12px; background:#334155; color:#fff; border:none; border-radius:6px; cursor:pointer;">🧩 IA Agent Task</button>
+                    <button onclick="uiAgentSmoke()" style="padding:8px 12px; background:#0f172a; color:#fff; border:none; border-radius:6px; cursor:pointer;">🧪 Smoke IA Agent</button>
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
                     <input id="doc-saved-id" type="number" placeholder="saved doc_id" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; width:130px;">
@@ -2256,6 +2260,14 @@
             if (el) el.textContent = typeof value === 'string' ? value : pretty(value);
         }
 
+        function setIaAgentStatus(message, ok = true) {
+            const el = document.getElementById('ia-agent-status');
+            if (!el) return;
+            el.textContent = `Estado: ${message}`;
+            el.style.background = ok ? '#dcfce7' : '#fee2e2';
+            el.style.color = ok ? '#166534' : '#991b1b';
+        }
+
         async function uiLoadFiles() {
             const p = document.getElementById('files-path')?.value || '';
             const { data } = await apiJson(`/api/files?path=${encodeURIComponent(p)}`);
@@ -2400,6 +2412,14 @@
 
         async function uiLoadAIProvidersLegacy() {
             const { data } = await apiJson('/api/ai/providers');
+            const sel = document.getElementById('ia-legacy-provider');
+            if (sel && Array.isArray(data?.providers) && data.providers.length) {
+                sel.innerHTML = data.providers
+                    .map(p => `<option value="${p}">${p}</option>`)
+                    .join('');
+                if (data.default) sel.value = data.default;
+            }
+            setIaAgentStatus(`Providers cargados (${(data?.providers || []).length})`, true);
             setPre('doc-e2e-output', data);
         }
 
@@ -2416,6 +2436,7 @@
                     mode: 'standard'
                 })
             });
+            setIaAgentStatus(data?.success ? `Chat OK (${provider})` : `Chat error (${provider})`, !!data?.success);
             setPre('doc-e2e-output', data);
         }
 
@@ -2427,6 +2448,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prompt, provider })
             });
+            setIaAgentStatus(data?.success ? `Consulta IA OK (${provider})` : `Consulta IA error (${provider})`, !!data?.success);
             setPre('doc-e2e-output', data);
         }
 
@@ -2437,6 +2459,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ task })
             });
+            setIaAgentStatus(data?.success ? 'IA Agent Task OK' : 'IA Agent Task error', !!data?.success);
             setPre('doc-e2e-output', data);
         }
 
@@ -2516,6 +2539,12 @@
                 })
             });
             uiState.doc.saved = data;
+            if (data?.document_id) {
+                const idEl = document.getElementById('doc-saved-id');
+                if (idEl) idEl.value = String(data.document_id);
+                const fbEl = document.getElementById('feedback-expediente-id');
+                if (fbEl && !fbEl.value) fbEl.value = String(data.document_id);
+            }
             setPre('doc-e2e-output', data);
         }
 
@@ -2555,10 +2584,46 @@
                 const firstId = data.documents[0].id;
                 const idInput = document.getElementById('doc-saved-id');
                 if (idInput) idInput.value = String(firstId);
+                const fbEl = document.getElementById('feedback-expediente-id');
+                if (fbEl && !fbEl.value) fbEl.value = String(firstId);
                 const detail = await apiJson(`/api/document/saved/${firstId}`);
                 setPre('doc-e2e-output', { list: data, first_detail: detail.data });
             } else {
                 setPre('doc-e2e-output', data);
+            }
+        }
+
+        async function uiAgentSmoke() {
+            try {
+                const p = await apiJson('/api/ai/providers');
+                const provider = (p.data?.default || (p.data?.providers || [])[0] || 'ollama');
+                const c = await apiJson('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: 'Ping legal', context: '', provider, mode: 'standard' })
+                });
+                const q = await apiJson('/api/ia/consultar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: 'Checklist breve', provider })
+                });
+                const t = await apiJson('/api/ia/agent-task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task: 'Generar 3 pasos de revisión' })
+                });
+                const ok = !!(c.data?.success && q.data?.success && t.data?.success);
+                setIaAgentStatus(ok ? 'Smoke IA Agent en verde' : 'Smoke IA Agent con incidencias', ok);
+                setPre('doc-e2e-output', {
+                    providers: p.data,
+                    chat: c.data,
+                    consultar: q.data,
+                    agent_task: t.data,
+                    smoke_ok: ok
+                });
+            } catch (e) {
+                setIaAgentStatus(`Smoke falló: ${e.message}`, false);
+                setPre('doc-e2e-output', { success: false, error: e.message });
             }
         }
 
@@ -3180,6 +3245,9 @@
                 uiLoadPwaBusinessStatus();
                 uiLoadJurisdictions();
                 uiLoadBusinessHistory();
+            }
+            if (tab === 'ia-agent') {
+                uiLoadAIProvidersLegacy();
             }
         };
 
