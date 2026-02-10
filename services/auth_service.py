@@ -115,9 +115,32 @@ class AuthService:
         if not user.get("activo", 1):
             conn.close()
             return {"success": False, "error": "Usuario inactivo"}
-        if not check_password_hash(user["password_hash"], password):
+        stored_hash = (user.get("password_hash") or "").strip()
+        password_ok = False
+        rehash_needed = False
+
+        # Ruta normal: hash válido de werkzeug
+        if stored_hash:
+            try:
+                password_ok = check_password_hash(stored_hash, password)
+            except Exception:
+                # Hash legacy/corrupto en DB: evitamos 500 y degradamos a verificación segura de compat.
+                password_ok = False
+
+        # Compatibilidad legacy controlada:
+        # si el valor almacenado coincide exactamente con la contraseña enviada,
+        # se considera migración de emergencia y se rehasea al formato estándar.
+        if not password_ok and stored_hash and stored_hash == password:
+            password_ok = True
+            rehash_needed = True
+
+        if not password_ok:
             conn.close()
             return {"success": False, "error": "Credenciales inválidas"}
+
+        if rehash_needed:
+            new_hash = generate_password_hash(password)
+            cur.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, user["id"]))
         cur.execute("UPDATE users SET last_login = ? WHERE id = ?", (datetime.now().isoformat(), user["id"]))
         conn.commit()
         conn.close()
