@@ -1204,20 +1204,49 @@ def smart_analyze_document():
         temppath = os.path.join(tempdir, file.filename)
         file.save(temppath)
         
-        # EXTRAER TEXTO
+        # EXTRAER TEXTO (con fallback para no romper flujo si falla PyMuPDF)
         text_content = ""
         if file.filename.lower().endswith('.pdf'):
+            extraction_errors = []
+
+            # 1) PyMuPDF (rápido cuando está sano)
             try:
                 import fitz  # PyMuPDF
-            except ModuleNotFoundError:
+                doc = fitz.open(temppath)
+                for page in doc:
+                    text_content += page.get_text() or ""
+                doc.close()
+            except Exception as e:
+                extraction_errors.append(f"fitz: {e}")
+
+            # 2) pypdf/PyPDF2 fallback
+            if not text_content.strip():
+                try:
+                    try:
+                        from pypdf import PdfReader
+                    except Exception:
+                        from PyPDF2 import PdfReader
+                    reader = PdfReader(temppath)
+                    chunks = []
+                    for p in reader.pages:
+                        chunks.append(p.extract_text() or "")
+                    text_content = "\n".join(chunks)
+                except Exception as e:
+                    extraction_errors.append(f"pypdf: {e}")
+
+            # 3) OCR service fallback (último recurso)
+            if not text_content.strip():
+                try:
+                    text_content = doc_processor.ocr_service.extract_text(temppath) or ""
+                except Exception as e:
+                    extraction_errors.append(f"ocr_service: {e}")
+
+            if not text_content.strip():
                 return jsonify({
                     'success': False,
-                    'error': "Dependencia faltante: PyMuPDF (fitz). Instala requirements del entorno activo."
-                }), 503
-            doc = fitz.open(temppath)
-            for page in doc:
-                text_content += page.get_text()
-            doc.close()
+                    'error': 'No se pudo extraer texto del PDF',
+                    'detail': ' | '.join(extraction_errors)[:1500]
+                }), 422
         
         print(f"📝 Extraído: {len(text_content)} caracteres")
         print(f"--- PREVIEW ---\n{text_content[:500]}\n---------------")
@@ -3687,7 +3716,10 @@ def login():
         password = request.json.get('password')
         
         if email == 'admin@lexdocs.com' and password == 'admin123':
-            access_token = create_access_token(identity=email)
+            access_token = create_access_token(
+                identity=email,
+                additional_claims={'rol': 'ADMIN'}
+            )
             response = make_response({'success': True, 'token': access_token})
             response.set_cookie('access_token_cookie', access_token, max_age=3600)
             return response, 200

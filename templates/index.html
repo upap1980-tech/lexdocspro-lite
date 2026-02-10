@@ -1210,6 +1210,15 @@
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
                     <input id="ia-legacy-prompt" placeholder="Prompt IA general" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; min-width:280px;">
+                    <select id="ia-legacy-provider" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                        <option value="ollama">ollama</option>
+                        <option value="groq">groq</option>
+                        <option value="openai">openai</option>
+                        <option value="gemini">gemini</option>
+                        <option value="deepseek">deepseek</option>
+                        <option value="perplexity">perplexity</option>
+                    </select>
+                    <input id="ia-legacy-task" placeholder="Tarea IA Agent (opcional)" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; min-width:260px;">
                     <button onclick="uiLoadAIProvidersLegacy()" style="padding:8px 12px; background:#1d4ed8; color:#fff; border:none; border-radius:6px; cursor:pointer;">🤖 AI Providers</button>
                     <button onclick="uiChatLegacy()" style="padding:8px 12px; background:#0f766e; color:#fff; border:none; border-radius:6px; cursor:pointer;">💬 Chat</button>
                     <button onclick="uiIAConsultarLegacy()" style="padding:8px 12px; background:#7c3aed; color:#fff; border:none; border-radius:6px; cursor:pointer;">🧠 IA Consultar</button>
@@ -2395,8 +2404,8 @@
         }
 
         async function uiChatLegacy() {
-            const prompt = document.getElementById('ia-general-prompt')?.value || 'Resumen de estado legal';
-            const provider = document.getElementById('ia-general-provider')?.value || 'ollama';
+            const prompt = document.getElementById('ia-legacy-prompt')?.value || 'Resumen de estado legal';
+            const provider = document.getElementById('ia-legacy-provider')?.value || 'ollama';
             const { data } = await apiJson('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2411,8 +2420,8 @@
         }
 
         async function uiIAConsultarLegacy() {
-            const prompt = document.getElementById('ia-general-prompt')?.value || 'Analiza esta consulta';
-            const provider = document.getElementById('ia-general-provider')?.value || 'ollama';
+            const prompt = document.getElementById('ia-legacy-prompt')?.value || 'Analiza esta consulta';
+            const provider = document.getElementById('ia-legacy-provider')?.value || 'ollama';
             const { data } = await apiJson('/api/ia/consultar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2422,7 +2431,7 @@
         }
 
         async function uiIAAgentTaskLegacy() {
-            const task = document.getElementById('ia-general-task')?.value || 'Preparar checklist de revisión documental';
+            const task = document.getElementById('ia-legacy-task')?.value || 'Preparar checklist de revisión documental';
             const { data } = await apiJson('/api/ia/agent-task', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2544,6 +2553,8 @@
             const { data } = await apiJson('/api/document/saved?limit=20');
             if (data?.documents?.length) {
                 const firstId = data.documents[0].id;
+                const idInput = document.getElementById('doc-saved-id');
+                if (idInput) idInput.value = String(firstId);
                 const detail = await apiJson(`/api/document/saved/${firstId}`);
                 setPre('doc-e2e-output', { list: data, first_detail: detail.data });
             } else {
@@ -2591,7 +2602,7 @@
             const templates = templatesRes.data || {};
             const firstType = Object.keys(templates)[0];
             if (!firstType) {
-                setPre('doc-e2e-output', { success: False, error: 'Sin templates' });
+                setPre('doc-e2e-output', { success: false, error: 'Sin templates' });
                 return;
             }
             const tpl = templates[firstType];
