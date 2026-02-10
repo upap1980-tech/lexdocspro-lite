@@ -14,7 +14,7 @@ shortcuts run "Crear nuevo atajo" <<EOF
     {
       "type": "GetContentsOfURL",
       "parameters": {
-        "URL": "http://localhost:5001/api/document/smart-analyze",
+        "URL": "http://localhost:5002/api/document/smart-analyze",
         "Method": "POST",
         "RequestBodyType": "Form",
         "FormFields": [
@@ -69,7 +69,7 @@ shortcuts run "Crear nuevo atajo" <<EOF
     {
       "type": "GetContentsOfURL",
       "parameters": {
-        "URL": "http://localhost:5001/api/document/save-organized",
+        "URL": "http://localhost:5002/api/document/save-organized",
         "Method": "POST",
         "RequestBodyType": "JSON",
         "Headers": {

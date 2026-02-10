@@ -3,6 +3,7 @@ Signature Service - Firma digital de documentos PDF
 Versión stub para v2.3.1
 """
 import os
+import io
 
 CERTS_PATH_DEFAULT = os.path.expanduser("~/Desktop/LEXDOCS_CERTS")
 
@@ -36,10 +37,7 @@ class SignatureService:
         Firmar PDF con certificado PKCS#12 usando endesive (CMS).
         """
         try:
-            from cryptography.hazmat.primitives.serialization import pkcs12, Encoding, PrivateFormat, NoEncryption
-            from endesive import pdf
-            from OpenSSL import crypto
-            import datetime
+            from cryptography.hazmat.primitives.serialization import pkcs12
         except Exception as e:
             err = f"Dependencias de firma no disponibles: {e}"
             print(f"❌ {err}")
@@ -102,13 +100,13 @@ class SignatureService:
 
         try:
             meta = signers.PdfSignatureMetadata(field_name="Sig1", md_algorithm="sha256")
-            # pyHanko requiere writer incremental sobre stream binario
-            import io
             from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
             from pyhanko.sign.signers import PdfSigner
             from pyhanko.stamp import TextStampStyle
 
-            writer = IncrementalPdfFileWriter(io.BytesIO(pdf_in))
+            # Mantener stream con seek/read para compatibilidad entre versiones pyHanko.
+            input_stream = io.BytesIO(pdf_in)
+            writer = IncrementalPdfFileWriter(input_stream)
             bio_out = io.BytesIO()
             field_spec = SigFieldSpec("Sig1", on_page=0, box=(36, 36, 260, 120))
             pdf_signer = PdfSigner(
@@ -123,30 +121,42 @@ class SignatureService:
                 output=bio_out,
             )
             out = bio_out.getvalue()
-            if len(out) < len(pdf_in) * 0.5:
-                raise ValueError("El PDF firmado quedó demasiado pequeño, posible corrupción")
-            with open(output_path, 'wb') as outf:
-                outf.write(out)
-
-            # Validar lectura
-            try:
-                from PyPDF2 import PdfReader
-                PdfReader(output_path)
-            except Exception as e:
-                err = f"PDF firmado generado pero no es legible ({e})"
-                print(f"❌ {err}")
-                try:
-                    os.remove(output_path)
-                except Exception:
-                    pass
-                return False, err
+            self._write_and_validate_pdf(output_path, out, len(pdf_in))
 
             print(f"✅ PDF firmado en {output_path}")
             return True, None
         except Exception as e:
-            err = f"Error firmando PDF: {e}"
-            print(f"❌ {err}")
-            return False, err
+            # Fallback de compatibilidad para algunas variantes pyHanko.
+            try:
+                from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
+                writer = IncrementalPdfFileWriter(io.BytesIO(pdf_in))
+                out_buf = io.BytesIO()
+                signers.sign_pdf(
+                    writer,
+                    signature_meta=meta,
+                    signer=simple_signer,
+                    new_field_spec=SigFieldSpec("Sig1", on_page=0, box=(36, 36, 260, 120)),
+                    existing_fields_only=False,
+                    output=out_buf,
+                )
+                out = out_buf.getvalue()
+                self._write_and_validate_pdf(output_path, out, len(pdf_in))
+                print(f"✅ PDF firmado en {output_path} (fallback)")
+                return True, None
+            except Exception as e2:
+                err = f"Error firmando PDF: {e} | fallback: {e2}"
+                print(f"❌ {err}")
+                return False, err
+
+    def _write_and_validate_pdf(self, output_path: str, data: bytes, input_size: int):
+        if not data or len(data) < max(256, int(input_size * 0.5)):
+            raise ValueError("El PDF firmado quedó demasiado pequeño, posible corrupción")
+        if not data.startswith(b"%PDF-"):
+            raise ValueError("Salida no tiene cabecera PDF válida")
+        if b"%%EOF" not in data[-2048:]:
+            raise ValueError("Salida PDF no contiene marcador EOF")
+        with open(output_path, 'wb') as outf:
+            outf.write(data)
     
     def verify_signature(self, pdf_path):
         """Verificar firma de un PDF"""

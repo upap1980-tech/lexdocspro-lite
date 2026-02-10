@@ -19,7 +19,7 @@ PASSED_TESTS=0
 FAILED_TESTS=0
 
 # URL base
-BASE_URL="http://localhost:5001"
+BASE_URL="http://localhost:5002"
 
 # Función para test exitoso
 test_pass() {

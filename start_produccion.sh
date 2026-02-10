@@ -3,7 +3,18 @@ set -euo pipefail
 
 PROJECT_NAME="LexDocsPro-LITE"
 PROJECT_DIR="/Users/victormfrancisco/Desktop/PROYECTOS/LexDocsPro-LITE"
-BACKEND_PORT="${BACKEND_PORT:-5002}"
+
+PORTS_REGISTRY="/Users/victormfrancisco/Desktop/PROYECTOS/LANZADORES/ports_registry.sh"
+if [[ ! -f "$PORTS_REGISTRY" ]]; then
+  echo "[ERROR] Missing ports registry: $PORTS_REGISTRY"
+  exit 1
+fi
+source "$PORTS_REGISTRY"
+if ! get_project_ports "$PROJECT_NAME" BACKEND_PORT FRONTEND_PORT; then
+  echo "[ERROR] No fixed ports configured for project: $PROJECT_NAME"
+  exit 1
+fi
+readonly BACKEND_PORT FRONTEND_PORT
 HOST_BIND="${HOST_BIND:-0.0.0.0}"
 
 function echo_title() { echo -e "\033]0;$1\007"; }
@@ -68,6 +79,28 @@ function check_ai_keys() {
   fi
 }
 
+function check_ollama() {
+  if [[ -z "${OLLAMA_BASE_URL:-}" ]]; then
+    echo "[WARN] OLLAMA_BASE_URL no configurado. IA local no arrancará."
+    echo "       Configura OLLAMA_BASE_URL (p.ej. http://localhost:11434) y levanta con: ollama serve"
+    echo "       Modelos sugeridos: lexdocs-legal-pro (instala con: ollama pull lexdocs-legal-pro)"
+  fi
+}
+
+function check_smtp() {
+  if [[ -z "${SMTP_HOST:-}" || -z "${SMTP_USER:-}" || -z "${SMTP_PASS:-}" ]]; then
+    echo "[WARN] SMTP incompleto (SMTP_HOST/USER/PASS). Email Alerts quedará en modo simulado."
+    echo "       Rellena SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM; TLS recomendado (SMTP_USE_TLS=true)."
+  fi
+}
+
+function check_banking() {
+  if [[ -z "${BANKING_GOCARDLESS_SECRET_ID:-}" || -z "${BANKING_GOCARDLESS_SECRET_KEY:-}" ]]; then
+    echo "[WARN] Banking sin credenciales GoCardless. /api/banking/* responderá configured:false."
+    echo "       Necesitas BANKING_GOCARDLESS_SECRET_ID y BANKING_GOCARDLESS_SECRET_KEY (+ BANKING_ACCOUNT_IDS opcional)."
+  fi
+}
+
 function check_email() {
   if [[ -z "${SMTP_HOST:-}" || -z "${SMTP_USER:-}" || -z "${SMTP_PASS:-}" ]]; then
     echo "[WARN] SMTP not fully configured. Email Alerts may fail."
@@ -94,8 +127,13 @@ function run_backend() {
   check_env_file
   source "$PROJECT_DIR/.env" 2>/dev/null || true
   check_ai_keys
+  check_ollama
+  check_smtp
+  check_banking
   check_email
   check_certificates
+  # Abrir login en Safari en paralelo (no bloquea). Espera breve para que Flask arranque.
+  (sleep 2 && open -a "Safari" "http://localhost:5002/login") >/dev/null 2>&1 &
   echo_title "$PROJECT_NAME backend :$BACKEND_PORT"
   echo "[INFO] Starting backend: $backend_file (host $HOST_BIND port $BACKEND_PORT)"
   export HOST="$HOST_BIND"

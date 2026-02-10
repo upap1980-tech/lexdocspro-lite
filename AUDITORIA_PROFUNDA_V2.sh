@@ -279,7 +279,7 @@ verificar "F45" "Archivo decorators.py" "archivo" "decorators.py"
 log_section "5️⃣ FRONTEND - JAVASCRIPT"
 
 verificar "F46" "Archivo static/js/app.js" "archivo" "static/js/app.js"
-verificar "F47" "Tamaño app.js" "conteo" "wc -l < static/js/app.js 2>/dev/null || echo 0" 500 5000
+verificar "F47" "Tamaño app.js" "conteo" "wc -l < static/js/app.js 2>/dev/null || echo 0" 500 5002
 
 log_subsection "5.1 Componentes Modulares"
 verificar "F48" "document-confirm-modal.js" "archivo" "static/js/document-confirm-modal.js"

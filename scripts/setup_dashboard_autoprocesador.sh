@@ -1021,7 +1021,7 @@ main() {
     echo
     echo -e "${BLUE}Para ver los cambios:${NC}"
     echo -e "  ${GREEN}1.${NC} Reinicia el servidor: ${YELLOW}python run.py${NC}"
-    echo -e "  ${GREEN}2.${NC} Abre: ${YELLOW}http://localhost:5001${NC}"
+    echo -e "  ${GREEN}2.${NC} Abre: ${YELLOW}http://localhost:5002${NC}"
     echo -e "  ${GREEN}3.${NC} Haz clic en: ${YELLOW}🤖 Auto-Procesador${NC}"
     echo
     echo -e "${YELLOW}💡 Nota:${NC} Si el navegador muestra la versión anterior,"

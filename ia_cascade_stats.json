@@ -1,60 +1,71 @@
 {
   "ollama": {
-    "total_calls": 1,
-    "successful_calls": 0,
-    "failed_calls": 1,
-    "total_time": 0.0,
-    "avg_time": 0.0,
-    "last_call": "2026-02-05T14:17:20.325614",
-    "last_error": "No se pudo conectar con Ollama (¿está ejecutándose?)",
-    "tokens_used": 0,
-    "uptime_percentage": 0.0
+    "total_calls": 34,
+    "successful_calls": 34,
+    "failed_calls": 0,
+    "total_time": 1834.2106165885925,
+    "avg_time": 53.94737107613508,
+    "last_call": "2026-02-10T12:15:37.803653",
+    "last_error": null,
+    "tokens_used": 8104,
+    "uptime_percentage": 100.0
   },
   "groq": {
-    "total_calls": 1,
+    "total_calls": 5,
     "successful_calls": 0,
-    "failed_calls": 1,
+    "failed_calls": 5,
     "total_time": 0.0,
     "avg_time": 0.0,
-    "last_call": "2026-02-05T14:17:20.326089",
-    "last_error": "HTTPSConnectionPool(host='api.groq.com', port=443): Max retries exceeded with url: /openai/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='api.groq.com', port=443): Failed to resolve 'api.groq.com' ([Errno 8] nodename nor servname provided, or not known)\"))",
+    "last_call": "2026-02-09T15:10:33.588175",
+    "last_error": "HTTP 400: {\"error\":{\"message\":\"The model `llama-3.1-70b-versatile` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which mo",
     "tokens_used": 0,
     "uptime_percentage": 0.0
   },
   "perplexity": {
-    "total_calls": 0,
+    "total_calls": 2,
     "successful_calls": 0,
-    "failed_calls": 0,
+    "failed_calls": 2,
     "total_time": 0.0,
     "avg_time": 0.0,
-    "last_call": null,
-    "last_error": null,
+    "last_call": "2026-02-09T15:13:19.588598",
+    "last_error": "HTTP 400: {\"error\":{\"message\":\"Invalid model 'llama-3.1-sonar-large-128k-online'. Permitted models can be found in the documentation at https://docs.perplexity.ai/docs/getting-started/models.\",\"type\":\"invalid_m",
     "tokens_used": 0,
-    "uptime_percentage": 100.0
+    "uptime_percentage": 0.0
   },
   "openai": {
-    "total_calls": 0,
+    "total_calls": 2,
     "successful_calls": 0,
-    "failed_calls": 0,
+    "failed_calls": 2,
     "total_time": 0.0,
     "avg_time": 0.0,
-    "last_call": null,
-    "last_error": null,
+    "last_call": "2026-02-09T15:03:34.874292",
+    "last_error": "HTTP 404: {\n    \"error\": {\n        \"message\": \"The model `gpt-4-turbo-preview` does not exist or you do not have access to it.\",\n        \"type\": \"invalid_request_error\",\n        \"param\": null,\n        \"code\": \"",
     "tokens_used": 0,
-    "uptime_percentage": 100.0
+    "uptime_percentage": 0.0
   },
   "gemini": {
-    "total_calls": 0,
+    "total_calls": 1,
     "successful_calls": 0,
-    "failed_calls": 0,
+    "failed_calls": 1,
     "total_time": 0.0,
     "avg_time": 0.0,
-    "last_call": null,
-    "last_error": null,
+    "last_call": "2026-02-09T15:03:44.924393",
+    "last_error": "HTTP 404: {\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"models/gemini-pro is not found for API version v1, or is not supported for generateContent. Call ListModels to see the list of available models and thei",
     "tokens_used": 0,
-    "uptime_percentage": 100.0
+    "uptime_percentage": 0.0
   },
   "deepseek": {
+    "total_calls": 2,
+    "successful_calls": 0,
+    "failed_calls": 2,
+    "total_time": 0.0,
+    "avg_time": 0.0,
+    "last_call": "2026-02-09T15:03:55.040431",
+    "last_error": "HTTP 402: {\"error\":{\"message\":\"Insufficient Balance\",\"type\":\"unknown_error\",\"param\":null,\"code\":\"invalid_request_error\"}}",
+    "tokens_used": 0,
+    "uptime_percentage": 0.0
+  },
+  "claude": {
     "total_calls": 0,
     "successful_calls": 0,
     "failed_calls": 0,
@@ -65,7 +76,73 @@
     "tokens_used": 0,
     "uptime_percentage": 100.0
   },
-  "claude": {
+  "ollama::moondream:latest": {
+    "total_calls": 1,
+    "successful_calls": 0,
+    "failed_calls": 0,
+    "total_time": 0.0,
+    "avg_time": 0.0,
+    "last_call": "2026-02-09T15:10:28.703878",
+    "last_error": null,
+    "tokens_used": 0,
+    "uptime_percentage": 100.0
+  },
+  "ollama::llava:7b": {
+    "total_calls": 1,
+    "successful_calls": 0,
+    "failed_calls": 0,
+    "total_time": 0.0,
+    "avg_time": 0.0,
+    "last_call": "2026-02-09T15:13:07.270052",
+    "last_error": null,
+    "tokens_used": 0,
+    "uptime_percentage": 100.0
+  },
+  "ollama::qwen2.5:3b": {
+    "total_calls": 0,
+    "successful_calls": 0,
+    "failed_calls": 0,
+    "total_time": 0.0,
+    "avg_time": 0.0,
+    "last_call": null,
+    "last_error": null,
+    "tokens_used": 0,
+    "uptime_percentage": 100.0
+  },
+  "ollama::deepseek-r1:1.5b": {
+    "total_calls": 0,
+    "successful_calls": 0,
+    "failed_calls": 0,
+    "total_time": 0.0,
+    "avg_time": 0.0,
+    "last_call": null,
+    "last_error": null,
+    "tokens_used": 0,
+    "uptime_percentage": 100.0
+  },
+  "ollama::lexdocs-legal-pro:latest": {
+    "total_calls": 0,
+    "successful_calls": 0,
+    "failed_calls": 0,
+    "total_time": 0.0,
+    "avg_time": 0.0,
+    "last_call": null,
+    "last_error": null,
+    "tokens_used": 0,
+    "uptime_percentage": 100.0
+  },
+  "ollama::mistral:latest": {
+    "total_calls": 0,
+    "successful_calls": 0,
+    "failed_calls": 0,
+    "total_time": 0.0,
+    "avg_time": 0.0,
+    "last_call": null,
+    "last_error": null,
+    "tokens_used": 0,
+    "uptime_percentage": 100.0
+  },
+  "ollama::llama3:latest": {
     "total_calls": 0,
     "successful_calls": 0,
     "failed_calls": 0,

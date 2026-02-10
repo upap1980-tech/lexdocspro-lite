@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- CONFIGURACIÓN ---
-URL="http://localhost:5001"
+URL="http://localhost:5002"
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
@@ -12,8 +12,8 @@ echo -e "${BLUE}   DIAGNÓSTICO LEXDOCSPRO ENTERPRISE v3.1         ${NC}"
 echo -e "${BLUE}====================================================${NC}"
 
 # 1. Verificar Procesos
-echo -n "1. Servidor Flask (Puerto 5001): "
-if lsof -Pi :5001 -sTCP:LISTEN -t >/dev/null ; then
+echo -n "1. Servidor Flask (Puerto 5002): "
+if lsof -Pi :5002 -sTCP:LISTEN -t >/dev/null ; then
     echo -e "${GREEN}ONLINE${NC}"
 else
     echo -e "${RED}OFFLINE${NC}"

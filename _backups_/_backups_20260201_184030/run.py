@@ -79,7 +79,7 @@ print("="*60)
 # FUNCIÓN MULTI-IA CON CASCADA
 # ============================================
 
-def analizar_documento_con_ia_cascade(texto, max_chars=5000):
+def analizar_documento_con_ia_cascade(texto, max_chars=5002):
     """
     Analiza documento con múltiples IAs en cascada:
     1. Ollama local (privado, gratis, sin límites)
@@ -561,7 +561,7 @@ def smart_analyze_document():
             'confianza': 'baja'
         }
         
-        ai_response, provider = analizar_documento_con_ia_cascade(text_content, max_chars=5000)
+        ai_response, provider = analizar_documento_con_ia_cascade(text_content, max_chars=5002)
         
         if ai_response:
             print(f"\n📥 Respuesta de {provider.upper()}:")
@@ -724,10 +724,10 @@ if __name__ == '__main__':
     print("🚀 Iniciando LexDocsPro LITE v2.0...")
     print(f"📁 Directorio: {BASE_DIR}")
     print(f"📄 Documentos generados: {GENERATED_DOCS_DIR}")
-    print("🌐 Abriendo navegador en http://localhost:5011")
+    print("🌐 Abriendo navegador en http://localhost:5002")
     
     import webbrowser
-    webbrowser.open('http://localhost:5011')
+    webbrowser.open('http://localhost:5002')
     
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=True, host='0.0.0.0', port=5002)
 

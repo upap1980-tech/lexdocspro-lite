@@ -22,6 +22,19 @@ class AIService:
             'groq': GroqProvider()  # NUEVO
         }
         self.default_provider = os.getenv('DEFAULT_AI_PROVIDER', 'ollama')
+
+    # ---------- Gestión de modelos Ollama ----------
+    def get_ollama_models(self) -> Dict:
+        provider = self.providers.get('ollama')
+        if not provider:
+            return {'success': False, 'error': 'Proveedor Ollama no disponible'}
+        return provider.list_models()
+
+    def set_ollama_model(self, model_name: str) -> Dict:
+        provider = self.providers.get('ollama')
+        if not provider:
+            return {'success': False, 'error': 'Proveedor Ollama no disponible'}
+        return provider.set_model(model_name)
         
     def chat(self, prompt: str, context: str = '', provider: str = None, 
              mode: str = 'standard') -> Dict:
@@ -180,6 +193,37 @@ class OllamaProvider:
     def __init__(self):
         self.base_url = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
         self.model = os.getenv('OLLAMA_MODEL', 'lexdocs-legal')
+        self._cached_models = None
+
+    def list_models(self) -> Dict:
+        try:
+            resp = requests.get(f"{self.base_url}/api/tags", timeout=3)
+            data = resp.json()
+            models = [m.get('name') for m in data.get('models', []) if m.get('name')]
+            self._cached_models = models
+            return {
+                'success': True,
+                'models': models,
+                'current': self.model
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f"No se pudieron listar modelos Ollama: {e}",
+                'current': self.model,
+                'models': self._cached_models or []
+            }
+
+    def set_model(self, model_name: str) -> Dict:
+        if not model_name:
+            return {'success': False, 'error': 'Nombre de modelo vacío'}
+        # Validar contra lista si está disponible; si falla, aún permite setear.
+        models_info = self.list_models()
+        if models_info.get('success') and models_info.get('models'):
+            if model_name not in models_info['models']:
+                return {'success': False, 'error': f"Modelo '{model_name}' no está disponible en Ollama"}
+        self.model = model_name
+        return {'success': True, 'current': self.model}
     
     def generate(self, prompt_dict: Dict, mode: str) -> str:
         response = requests.post(

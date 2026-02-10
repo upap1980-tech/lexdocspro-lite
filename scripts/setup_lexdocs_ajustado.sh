@@ -757,7 +757,7 @@ main() {
     echo -e "${BLUE}Para iniciar el sistema:${NC}"
     echo -e "  ${GREEN}1.${NC} Activar entorno: ${YELLOW}source .venv/bin/activate${NC}"
     echo -e "  ${GREEN}2.${NC} Iniciar servidor: ${YELLOW}python run.py${NC}"
-    echo -e "  ${GREEN}3.${NC} Abrir navegador: ${YELLOW}http://localhost:5000${NC}"
+    echo -e "  ${GREEN}3.${NC} Abrir navegador: ${YELLOW}http://localhost:5002${NC}"
     echo
     echo -e "${BLUE}Nuevos endpoints API disponibles:${NC}"
     echo -e "  • /api/autoprocesador/stats"

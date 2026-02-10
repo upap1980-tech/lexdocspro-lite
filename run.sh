@@ -12,5 +12,7 @@ fi
 
 export PYTHONUNBUFFERED=1
 export PYTHONPATH="${ROOT_DIR}"
+export HOST="0.0.0.0"
+export PORT="5002"
 
 exec "$PY" "${ROOT_DIR}/run.py" "$@"

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE_URL="http://localhost:5001"
+BASE_URL="http://localhost:5002"
 echo "🧪 Probando endpoints del Auto-Procesador en ${BASE_URL}"
 echo "================================================"
 

@@ -116,7 +116,7 @@ ANTHROPIC_API_KEY=
 # CONFIGURACIÓN
 FLASK_ENV=development
 DEBUG=True
-PORT=5000
+PORT=5002
 HOST=0.0.0.0
 EOF
 
@@ -372,7 +372,7 @@ def ocr_process():
         return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
+    port = int(os.getenv('PORT', 5002))
     host = os.getenv('HOST', '0.0.0.0')
     
     print(f"🌐 Servidor iniciando en http://{host}:{port}")
@@ -1259,7 +1259,7 @@ function updateStatus(message) {
     const bar = document.getElementById('statusBar');
     bar.textContent = message;
     bar.style.opacity = '1';
-    setTimeout(() => { bar.style.opacity = '0.7'; }, 3000);
+    setTimeout(() => { bar.style.opacity = '0.7'; }, 5002);
 }
 EOFJS
 
@@ -1282,7 +1282,7 @@ echo "  cd $PROJECT_DIR"
 echo "  source venv/bin/activate"
 echo "  python run.py"
 echo ""
-echo "🌐 Luego abre: http://localhost:5000"
+echo "🌐 Luego abre: http://localhost:5002"
 echo ""
 echo "════════════════════════════════════════════════════════════════"
 echo ""

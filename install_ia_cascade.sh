@@ -81,7 +81,7 @@ if [ $? -eq 0 ]; then
     echo "   python run.py"
     echo ""
     echo "3. Abre el navegador:"
-    echo "   http://127.0.0.1:5001"
+    echo "   http://127.0.0.1:5002"
     echo ""
     echo "4. Ve a la sección 'IA Cascade' en el sidebar"
     echo ""
