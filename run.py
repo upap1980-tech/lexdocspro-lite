@@ -72,7 +72,7 @@ jwt = JWTManager(app)
 # INICIALIZAR DATABASE MANAGER (necesita app creada primero)
 # ═══════════════════════════════════════════════════════════════
 from models import DatabaseManager
-from config import DB_PATH  # Importar DB_PATH
+from config import DB_PATH, EXPEDIENTES_DIR  # Importar DB_PATH
 db = DatabaseManager(app)
 print(f"🗄️  DatabaseManager inicializado: {DB_PATH}")
 
@@ -693,9 +693,241 @@ def business_strategy():
     try:
         data = request.get_json(silent=True) or {}
         strategy = business_skills_service.build_strategy(data)
-        return jsonify({"success": True, "strategy": strategy}), 200
+        user_id = get_jwt_identity()
+        critical, due_date, days_left = _business_deadline_criticality(strategy.get("deadline"))
+        alert_sent = False
+        if critical:
+            try:
+                from services.email_service import EmailService
+                email_service = EmailService()
+                ok, _ = email_service._validate_config()
+                if ok:
+                    alert_sent = email_service.send_alert(
+                        subject="LexDocsPro: Deadline crítico detectado",
+                        body=(
+                            f"Jurisdicción: {strategy.get('jurisdiction')}\n"
+                            f"Tipo: {strategy.get('doc_type')}\n"
+                            f"Vencimiento: {due_date or 'N/A'}\n"
+                            f"Días restantes: {days_left}\n"
+                            f"Consulta: {data.get('query', '')}"
+                        )
+                    )
+            except Exception:
+                alert_sent = False
+
+        history_id = _save_business_strategy_history(
+            user_id=user_id,
+            payload=data,
+            strategy=strategy,
+            critical=critical,
+            deadline_date=due_date,
+        )
+        return jsonify({
+            "success": True,
+            "strategy": strategy,
+            "history_id": history_id,
+            "deadline_critical": critical,
+            "deadline_days_left": days_left,
+            "alert_sent": alert_sent
+        }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+def _ensure_business_strategy_history_table():
+    conn = sqlite3.connect(str(DB_PATH))
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS business_strategy_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                jurisdiction TEXT,
+                doc_type TEXT,
+                query TEXT,
+                deadline_date TEXT,
+                critical INTEGER,
+                payload_json TEXT,
+                strategy_json TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _business_deadline_criticality(deadline_dict):
+    if not isinstance(deadline_dict, dict):
+        return False, None, None
+    dies_ad_quem = deadline_dict.get("dies_ad_quem")
+    if not dies_ad_quem:
+        return False, None, None
+    try:
+        due = datetime.strptime(dies_ad_quem, "%d/%m/%Y").date()
+        days_left = (due - datetime.now().date()).days
+        return days_left <= 2, due.isoformat(), days_left
+    except Exception:
+        return False, None, None
+
+
+def _save_business_strategy_history(user_id, payload, strategy, critical, deadline_date):
+    _ensure_business_strategy_history_table()
+    conn = sqlite3.connect(str(DB_PATH))
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO business_strategy_history
+            (user_id, jurisdiction, doc_type, query, deadline_date, critical, payload_json, strategy_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                str(user_id) if user_id is not None else None,
+                strategy.get("jurisdiction"),
+                strategy.get("doc_type"),
+                payload.get("query"),
+                deadline_date,
+                1 if critical else 0,
+                json.dumps(payload, ensure_ascii=False),
+                json.dumps(strategy, ensure_ascii=False),
+            ),
+        )
+        conn.commit()
+        return cur.lastrowid
+    finally:
+        conn.close()
+
+
+def _strategy_to_text(strategy):
+    steps = strategy.get("recommended_steps") or []
+    deadline = strategy.get("deadline") or {}
+    return (
+        f"Estrategia Procesal\n"
+        f"Jurisdiccion: {strategy.get('jurisdiction', '-')}\n"
+        f"Tipo documental: {strategy.get('doc_type', '-')}\n"
+        f"Vencimiento: {deadline.get('dies_ad_quem', 'N/A')}\n"
+        f"Dia de gracia: {deadline.get('dia_gracia', 'N/A')}\n\n"
+        f"Template Forense:\n{strategy.get('forensic_template', '')}\n\n"
+        f"Prompt Base:\n{strategy.get('styled_prompt', '')}\n\n"
+        f"Contexto RAG:\n{strategy.get('rag_context', '')}\n\n"
+        f"Pasos recomendados:\n- " + "\n- ".join(steps)
+    )
+
+
+@app.route('/api/business/strategy/export', methods=['POST'])
+@abogado_or_admin_required
+def business_strategy_export():
+    data = request.get_json(silent=True) or {}
+    strategy = data.get("strategy") or {}
+    if not strategy:
+        return jsonify({"success": False, "error": "strategy requerido"}), 400
+
+    export_format = (data.get("format") or "pdf").lower()
+    client_name = (data.get("client_name") or "GENERAL").strip().replace("/", "_")
+    year = int(data.get("year") or datetime.now().year)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    base_path = Path(EXPEDIENTES_DIR) / str(year) / client_name / "ESTRATEGIAS"
+    base_path.mkdir(parents=True, exist_ok=True)
+    strategy_text = _strategy_to_text(strategy)
+
+    if export_format == "txt":
+        out_file = base_path / f"Estrategia_{strategy.get('doc_type', 'general')}_{ts}.txt"
+        out_file.write_text(strategy_text, encoding="utf-8")
+        return jsonify({"success": True, "format": "txt", "path": str(out_file)}), 200
+
+    # PDF por defecto
+    out_file = base_path / f"Estrategia_{strategy.get('doc_type', 'general')}_{ts}.pdf"
+    try:
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import A4
+        c = canvas.Canvas(str(out_file), pagesize=A4)
+        w, h = A4
+        y = h - 50
+        for line in strategy_text.split("\n"):
+            c.drawString(40, y, line[:110])
+            y -= 16
+            if y < 40:
+                c.showPage()
+                y = h - 50
+        c.save()
+        return jsonify({"success": True, "format": "pdf", "path": str(out_file)}), 200
+    except Exception as e:
+        txt_fallback = base_path / f"Estrategia_{strategy.get('doc_type', 'general')}_{ts}.txt"
+        txt_fallback.write_text(strategy_text, encoding="utf-8")
+        return jsonify({
+            "success": True,
+            "warning": f"No se pudo generar PDF ({e}), exportado TXT",
+            "format": "txt",
+            "path": str(txt_fallback)
+        }), 200
+
+
+@app.route('/api/business/strategy/history', methods=['GET'])
+@abogado_or_admin_required
+def business_strategy_history():
+    limit = max(1, min(200, int(request.args.get("limit", 50))))
+    from_date = (request.args.get("from_date") or "").strip()
+    to_date = (request.args.get("to_date") or "").strip()
+    user_filter = (request.args.get("user_id") or "").strip()
+
+    _ensure_business_strategy_history_table()
+    conn = sqlite3.connect(str(DB_PATH))
+    conn.row_factory = sqlite3.Row
+    try:
+        cur = conn.cursor()
+        where_clauses = []
+        params = []
+
+        if from_date:
+            where_clauses.append("DATE(created_at) >= DATE(?)")
+            params.append(from_date)
+        if to_date:
+            where_clauses.append("DATE(created_at) <= DATE(?)")
+            params.append(to_date)
+        if user_filter:
+            where_clauses.append("LOWER(COALESCE(user_id,'')) LIKE ?")
+            params.append(f"%{user_filter.lower()}%")
+
+        where_sql = ""
+        if where_clauses:
+            where_sql = "WHERE " + " AND ".join(where_clauses)
+
+        query_sql = f"""
+            SELECT
+                id,
+                user_id,
+                jurisdiction,
+                doc_type,
+                query,
+                deadline_date,
+                critical,
+                payload_json,
+                strategy_json,
+                created_at
+            FROM business_strategy_history
+            {where_sql}
+            ORDER BY id DESC
+            LIMIT ?
+        """
+        params.append(limit)
+        cur.execute(query_sql, tuple(params))
+        items = [dict(r) for r in cur.fetchall()]
+
+        for item in items:
+            for key in ("payload_json", "strategy_json"):
+                raw = item.get(key)
+                if raw:
+                    try:
+                        item[key] = json.loads(raw)
+                    except Exception:
+                        pass
+
+        return jsonify({"success": True, "items": items}), 200
+    finally:
+        conn.close()
 
 @app.route('/api/documents/generate', methods=['POST'])
 @abogado_or_admin_required

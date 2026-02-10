@@ -1168,10 +1168,22 @@
                     <input id="bs-plazo-dias" type="number" value="5" min="0" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; width:130px;">
                 </div>
                 <textarea id="bs-query" rows="3" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px;" placeholder="Objetivo o consulta para estrategia procesal"></textarea>
-                <div style="margin-top:10px;">
+                <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
                     <button onclick="uiBuildBusinessStrategy()" style="padding:8px 12px; background:#7c3aed; color:#fff; border:none; border-radius:6px; cursor:pointer;">🧠 Construir Estrategia</button>
+                    <input id="bs-client-name" placeholder="Cliente (expediente)" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; min-width:200px;">
+                    <input id="bs-year" type="number" min="2020" max="2100" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; width:100px;" value="2026">
+                    <button onclick="uiExportBusinessStrategy('pdf')" style="padding:8px 12px; background:#0f766e; color:#fff; border:none; border-radius:6px; cursor:pointer;">📄 Exportar PDF</button>
+                    <button onclick="uiExportBusinessStrategy('txt')" style="padding:8px 12px; background:#334155; color:#fff; border:none; border-radius:6px; cursor:pointer;">📝 Exportar TXT</button>
+                    <button onclick="uiLoadBusinessHistory()" style="padding:8px 12px; background:#1d4ed8; color:#fff; border:none; border-radius:6px; cursor:pointer;">🕘 Historial</button>
+                </div>
+                <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                    <input id="bs-history-from" type="date" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                    <input id="bs-history-to" type="date" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                    <input id="bs-history-user" placeholder="Filtrar usuario (id/email)" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; min-width:220px;">
+                    <button onclick="uiLoadBusinessHistory()" style="padding:8px 12px; background:#334155; color:#fff; border:none; border-radius:6px; cursor:pointer;">Aplicar filtros</button>
                 </div>
                 <div id="business-structured" style="margin-top:10px;"></div>
+                <div id="business-history-wrap" style="margin-top:10px;"></div>
                 <pre id="business-output" style="margin-top:10px; background:#0f172a; color:#e2e8f0; padding:10px; border-radius:8px; max-height:260px; overflow:auto;">Business skills output...</pre>
             </div>
         </section>
@@ -2941,8 +2953,44 @@
                     plazo_dias: plazoDias
                 })
             });
+            window.uiBusinessLastStrategy = data?.strategy || null;
             renderBusinessStructured(data);
+            if (data?.success) {
+                uiLoadBusinessHistory();
+            }
             setPre('business-output', data);
+        }
+
+        async function uiExportBusinessStrategy(format) {
+            if (!window.uiBusinessLastStrategy) {
+                alert('Primero genera una estrategia.');
+                return;
+            }
+            const client_name = (document.getElementById('bs-client-name')?.value || 'GENERAL').trim();
+            const year = Number(document.getElementById('bs-year')?.value || new Date().getFullYear());
+            const { data } = await apiJson('/api/business/strategy/export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    strategy: window.uiBusinessLastStrategy,
+                    format,
+                    client_name,
+                    year
+                })
+            });
+            setPre('business-output', data);
+        }
+
+        async function uiLoadBusinessHistory() {
+            const fromDate = document.getElementById('bs-history-from')?.value || '';
+            const toDate = document.getElementById('bs-history-to')?.value || '';
+            const userId = document.getElementById('bs-history-user')?.value || '';
+            const params = new URLSearchParams({ limit: '50' });
+            if (fromDate) params.set('from_date', fromDate);
+            if (toDate) params.set('to_date', toDate);
+            if (userId.trim()) params.set('user_id', userId.trim());
+            const { data } = await apiJson(`/api/business/strategy/history?${params.toString()}`);
+            renderBusinessHistory(data);
         }
 
         async function uiLoadPwaBusinessStatus() {
@@ -2977,18 +3025,118 @@
                 return;
             }
             const s = data.strategy;
+            const deadline = s.deadline || {};
+            const deadlineText = deadline.dies_ad_quem || 'N/A';
+            const critical = data?.deadline_critical;
             const steps = (s.recommended_steps || []).map(x => `<li>${x}</li>`).join('');
             wrap.innerHTML = `
                 <div style="border:1px solid #e2e8f0; border-radius:10px; padding:12px; background:#f8fafc;">
                     <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px; margin-bottom:8px;">
                         <div><strong>Jurisdicción:</strong> ${s.jurisdiction || '-'}</div>
                         <div><strong>Doc Type:</strong> ${s.doc_type || '-'}</div>
-                        <div><strong>Deadline:</strong> ${s.deadline?.fecha_limite || 'N/A'}</div>
+                        <div><strong>Deadline:</strong> ${deadlineText}</div>
+                    </div>
+                    <div style="margin-bottom:8px; color:${critical ? '#b91c1c' : '#166534'};">
+                        <strong>Alerta:</strong> ${critical ? `CRITICA (${data?.deadline_days_left ?? 'N/A'} dias)` : 'Normal'}
+                        ${critical ? ` | Email: ${data?.alert_sent ? 'enviado' : 'no enviado'}` : ''}
                     </div>
                     <div style="margin-bottom:8px;"><strong>Plantilla:</strong> ${(s.forensic_template || '').toString().substring(0, 180)}</div>
                     <div><strong>Pasos recomendados:</strong><ol style="margin:6px 0 0 18px;">${steps}</ol></div>
                 </div>
             `;
+        }
+
+        function uiEsc(v) {
+            return String(v ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderBusinessHistory(data) {
+            const wrap = document.getElementById('business-history-wrap');
+            if (!wrap) return;
+            const items = Array.isArray(data?.items) ? data.items : [];
+            window.uiBusinessHistoryItems = items;
+            if (!items.length) {
+                wrap.innerHTML = `<div style="padding:10px; border:1px solid #e2e8f0; border-radius:10px; background:#fff;">Sin estrategias guardadas.</div>`;
+                return;
+            }
+            const rows = items.map((i, idx) => `
+                <tr>
+                    <td style="padding:8px; border-bottom:1px solid #e2e8f0;">${uiEsc(i.created_at)}</td>
+                    <td style="padding:8px; border-bottom:1px solid #e2e8f0;">${uiEsc(i.user_id)}</td>
+                    <td style="padding:8px; border-bottom:1px solid #e2e8f0;">${uiEsc(i.jurisdiction)}</td>
+                    <td style="padding:8px; border-bottom:1px solid #e2e8f0;">${uiEsc(i.doc_type)}</td>
+                    <td style="padding:8px; border-bottom:1px solid #e2e8f0;">${uiEsc(i.deadline_date || '-')}</td>
+                    <td style="padding:8px; border-bottom:1px solid #e2e8f0; color:${i.critical ? '#b91c1c' : '#166534'};">${i.critical ? 'CRITICA' : 'Normal'}</td>
+                    <td style="padding:8px; border-bottom:1px solid #e2e8f0;">
+                        <button onclick="uiReuseBusinessStrategyByIndex(${idx})"
+                            style="padding:4px 8px; background:#0f766e; color:#fff; border:none; border-radius:6px; cursor:pointer;">
+                            Reusar
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            wrap.innerHTML = `
+                <div style="border:1px solid #e2e8f0; border-radius:10px; background:#fff; overflow:auto;">
+                    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                        <thead style="background:#f1f5f9;">
+                            <tr>
+                                <th style="text-align:left; padding:8px;">Fecha</th>
+                                <th style="text-align:left; padding:8px;">Usuario</th>
+                                <th style="text-align:left; padding:8px;">Jurisdiccion</th>
+                                <th style="text-align:left; padding:8px;">Tipo</th>
+                                <th style="text-align:left; padding:8px;">Deadline</th>
+                                <th style="text-align:left; padding:8px;">Criticidad</th>
+                                <th style="text-align:left; padding:8px;">Accion</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function uiReuseBusinessStrategyByIndex(index) {
+            const list = Array.isArray(window.uiBusinessHistoryItems) ? window.uiBusinessHistoryItems : [];
+            const item = list[index];
+            if (!item) {
+                alert('No se encontro la estrategia en historial.');
+                return;
+            }
+            const strategy = item?.strategy_json || null;
+            const payload = item?.payload_json || {};
+            if (!strategy) {
+                alert('Esta fila no tiene estrategia reutilizable.');
+                return;
+            }
+            window.uiBusinessLastStrategy = strategy;
+
+            const jurisdictionSel = document.getElementById('bs-jurisdiction');
+            if (jurisdictionSel && strategy.jurisdiction) jurisdictionSel.value = strategy.jurisdiction;
+            const docTypeSel = document.getElementById('bs-doc-type');
+            if (docTypeSel && strategy.doc_type) docTypeSel.value = strategy.doc_type;
+            const queryInput = document.getElementById('bs-query');
+            if (queryInput) queryInput.value = payload.query || item.query || '';
+
+            if (payload.fecha_notificacion) {
+                const f = document.getElementById('bs-fecha-notificacion');
+                if (f) f.value = payload.fecha_notificacion;
+            }
+            if (payload.plazo_dias !== undefined) {
+                const p = document.getElementById('bs-plazo-dias');
+                if (p) p.value = String(payload.plazo_dias);
+            }
+
+            renderBusinessStructured({
+                success: true,
+                strategy,
+                deadline_critical: !!item.critical
+            });
+            setPre('business-output', { success: true, reused_from_history_id: item.id, strategy, payload });
         }
 
     
@@ -3020,6 +3168,7 @@
             if (tab === 'pwa') {
                 uiLoadPwaBusinessStatus();
                 uiLoadJurisdictions();
+                uiLoadBusinessHistory();
             }
         };
 
