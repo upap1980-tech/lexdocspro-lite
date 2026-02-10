@@ -1144,16 +1144,34 @@
 
         <section id="pwa" class="section">
             <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
-                <h2 style="margin-top:0;">📱 Business Skills</h2>
+                <h2 style="margin-top:0;">📱 PWA Status + Business Skills</h2>
+                <p style="margin-top:0; color:#64748b;">
+                    Monitoriza estado operativo PWA/servicios y genera estrategia procesal asistida por jurisdicción, tipo documental y plazo.
+                </p>
+                <div id="pwa-status-badges" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                    <button onclick="uiLoadPwaBusinessStatus()" style="padding:8px 12px; background:#0f172a; color:#fff; border:none; border-radius:6px; cursor:pointer;">🔄 Estado</button>
                     <button onclick="uiLoadJurisdictions()" style="padding:8px 12px; background:#1d4ed8; color:#fff; border:none; border-radius:6px; cursor:pointer;">🌍 Jurisdicciones</button>
-                    <input id="bs-jurisdiction" placeholder="ES_GENERAL" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                    <select id="bs-jurisdiction" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; min-width:200px;">
+                        <option value="ES_GENERAL">ES_GENERAL</option>
+                    </select>
                     <button onclick="uiLoadBusinessTemplates()" style="padding:8px 12px; background:#0f766e; color:#fff; border:none; border-radius:6px; cursor:pointer;">📄 Templates</button>
+                    <select id="bs-doc-type" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; min-width:180px;">
+                        <option value="escrito_tramite">escrito_tramite</option>
+                        <option value="demanda">demanda</option>
+                        <option value="recurso">recurso</option>
+                        <option value="lexnet_urgente">lexnet_urgente</option>
+                    </select>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                    <input id="bs-fecha-notificacion" type="date" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                    <input id="bs-plazo-dias" type="number" value="5" min="0" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; width:130px;">
                 </div>
                 <textarea id="bs-query" rows="3" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px;" placeholder="Objetivo o consulta para estrategia procesal"></textarea>
                 <div style="margin-top:10px;">
                     <button onclick="uiBuildBusinessStrategy()" style="padding:8px 12px; background:#7c3aed; color:#fff; border:none; border-radius:6px; cursor:pointer;">🧠 Construir Estrategia</button>
                 </div>
+                <div id="business-structured" style="margin-top:10px;"></div>
                 <pre id="business-output" style="margin-top:10px; background:#0f172a; color:#e2e8f0; padding:10px; border-radius:8px; max-height:260px; overflow:auto;">Business skills output...</pre>
             </div>
         </section>
@@ -2885,30 +2903,92 @@
 
         async function uiLoadJurisdictions() {
             const { data } = await apiJson('/api/business/jurisdictions');
+            const sel = document.getElementById('bs-jurisdiction');
+            if (sel && Array.isArray(data?.jurisdictions)) {
+                sel.innerHTML = data.jurisdictions
+                    .map(j => `<option value="${j.id}">${j.id} - ${j.name}</option>`)
+                    .join('');
+            }
             setPre('business-output', data);
         }
 
         async function uiLoadBusinessTemplates() {
             const jurisdiction = document.getElementById('bs-jurisdiction')?.value || 'ES_GENERAL';
             const { data } = await apiJson(`/api/business/templates?jurisdiction=${encodeURIComponent(jurisdiction)}`);
+            const docTypeSel = document.getElementById('bs-doc-type');
+            if (docTypeSel && Array.isArray(data?.templates) && data.templates.length) {
+                docTypeSel.innerHTML = data.templates
+                    .map(t => `<option value="${t.doc_type}">${t.doc_type} - ${t.title}</option>`)
+                    .join('');
+            }
             setPre('business-output', data);
         }
 
         async function uiBuildBusinessStrategy() {
             const jurisdiction = document.getElementById('bs-jurisdiction')?.value || 'ES_GENERAL';
             const query = document.getElementById('bs-query')?.value || '';
+            const docType = document.getElementById('bs-doc-type')?.value || 'escrito_tramite';
+            const fechaNotificacion = document.getElementById('bs-fecha-notificacion')?.value || '';
+            const plazoDias = Number(document.getElementById('bs-plazo-dias')?.value || '0');
             const { data } = await apiJson('/api/business/strategy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     jurisdiction,
-                    doc_type: 'escrito_tramite',
+                    doc_type: docType,
                     query,
-                    fecha_notificacion: '2026-02-05',
-                    plazo_dias: 5
+                    fecha_notificacion: fechaNotificacion || undefined,
+                    plazo_dias: plazoDias
                 })
             });
+            renderBusinessStructured(data);
             setPre('business-output', data);
+        }
+
+        async function uiLoadPwaBusinessStatus() {
+            const [overview, deploy] = await Promise.all([
+                apiJson('/api/status/overview'),
+                apiJson('/api/deploy/status')
+            ]);
+            const box = document.getElementById('pwa-status-badges');
+            if (box) {
+                const svc = overview?.data?.services || {};
+                const deploySvc = deploy?.data?.services || {};
+                const badges = [
+                    { name: 'IA local', ok: !!svc.ia_local },
+                    { name: 'SMTP', ok: !!svc.smtp },
+                    { name: 'LexNET', ok: !!svc.lexnet },
+                    { name: 'AutoProcessor', ok: !!svc.autoprocesor },
+                    { name: 'PWA', ok: String(deploySvc.pwa || '').toLowerCase() === 'online' },
+                ];
+                box.innerHTML = badges.map(b => `
+                    <span style="padding:4px 10px; border-radius:999px; font-size:13px; background:${b.ok ? '#dcfce7' : '#fee2e2'}; color:${b.ok ? '#166534' : '#991b1b'};">
+                        ${b.ok ? '●' : '○'} ${b.name}
+                    </span>
+                `).join('');
+            }
+        }
+
+        function renderBusinessStructured(data) {
+            const wrap = document.getElementById('business-structured');
+            if (!wrap) return;
+            if (!data?.success || !data?.strategy) {
+                wrap.innerHTML = '';
+                return;
+            }
+            const s = data.strategy;
+            const steps = (s.recommended_steps || []).map(x => `<li>${x}</li>`).join('');
+            wrap.innerHTML = `
+                <div style="border:1px solid #e2e8f0; border-radius:10px; padding:12px; background:#f8fafc;">
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px; margin-bottom:8px;">
+                        <div><strong>Jurisdicción:</strong> ${s.jurisdiction || '-'}</div>
+                        <div><strong>Doc Type:</strong> ${s.doc_type || '-'}</div>
+                        <div><strong>Deadline:</strong> ${s.deadline?.fecha_limite || 'N/A'}</div>
+                    </div>
+                    <div style="margin-bottom:8px;"><strong>Plantilla:</strong> ${(s.forensic_template || '').toString().substring(0, 180)}</div>
+                    <div><strong>Pasos recomendados:</strong><ol style="margin:6px 0 0 18px;">${steps}</ol></div>
+                </div>
+            `;
         }
 
     
@@ -2936,6 +3016,10 @@
             }
             if (tab === 'usuarios') {
                 uiLoadUsuarios();
+            }
+            if (tab === 'pwa') {
+                uiLoadPwaBusinessStatus();
+                uiLoadJurisdictions();
             }
         };
 
